@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f15">
+<title>Баланс · версия 1.16</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Crect width='108' height='108' rx='24' fill='%230b0f15'/%3E%3Cg fill='none' stroke-width='6' stroke-linecap='round'%3E%3Cpath d='M54 30A24 24 0 1 1 30 54' stroke='%233ee2c4'/%3E%3Cpath d='M54 38A16 16 0 1 1 38 54' stroke='%23ff6a91'/%3E%3Cpath d='M54 46A8 8 0 1 1 46 54' stroke='%2359a9ff'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0b0f15;--surface:#121821;--surface2:#19212c;--surface3:#222c39;--line:#263140;
+  --text:#eef2f7;--muted:#9aa7b6;--faint:#6f7c8c;--accent:#6fd6ca;--accent-ink:#06211e;
+  --c-act:#3fe0c5;--c-heart:#ff6f91;--c-sleep:#9d8cff;--c-body:#ffb84d;--c-food:#5fd97a;--c-well:#5aa9ff;--c-fit:#ff8a4c;
+  --warn-bg:#2a2416;--warn-line:#5a4a26;--warn:#ecd49b;
+  --shadow:0 18px 50px #0008;--r:16px;
+  --fs-xs:12px;--fs-s:13px;--fs-m:15px;--fs-l:18px;--fs-xl:24px;--fs-2xl:34px;
+}
+[data-theme=light]{
+  --bg:#eef1f5;--surface:#ffffff;--surface2:#f3f5f8;--surface3:#e7ebf0;--line:#dde3ea;
+  --text:#121821;--muted:#566273;--faint:#7c8796;--accent:#0f8f84;--accent-ink:#ffffff;
+  --c-act:#0aa58e;--c-heart:#e63e6d;--c-sleep:#6b54f0;--c-body:#d98a0b;--c-food:#22a447;--c-well:#2f7ff0;--c-fit:#ea6420;
+  --warn-bg:#fff6df;--warn-line:#f0d9a0;--warn:#7a5a10;
+  --shadow:0 18px 50px #1b263533;
+}
+[data-theme=dark][data-pal=midnight]{--bg:#070b1a;--surface:#0f1530;--surface2:#161d3d;--surface3:#1f2850;--line:#28325e;--text:#eef1ff;--muted:#9ea8cc;--faint:#6d779c;--accent:#7aa2ff;--accent-ink:#0a1236}
+[data-theme=dark][data-pal=amethyst]{--bg:#0e0a16;--surface:#171126;--surface2:#201832;--surface3:#2a2040;--line:#352a50;--text:#f3eefc;--muted:#aa9fc2;--faint:#776d8f;--accent:#c08cff;--accent-ink:#200b3a}
+[data-theme=dark][data-pal=emerald]{--bg:#06110e;--surface:#0d1b17;--surface2:#13241f;--surface3:#1b3029;--line:#223b33;--text:#eaf7f1;--muted:#93b0a5;--faint:#647f74;--accent:#4fe0a0;--accent-ink:#032116}
+[data-theme=dark][data-pal=black]{--bg:#000000;--surface:#0d0d0f;--surface2:#151518;--surface3:#1e1e22;--line:#26262b;--text:#f5f5f5;--muted:#a1a1a8;--faint:#6e6e75;--accent:#ffb547;--accent-ink:#2a1a00}
+[data-theme=light][data-pal=sand]{--bg:#f5efe6;--surface:#fffdf9;--surface2:#f6f0e6;--surface3:#ece3d5;--line:#e3d7c5;--text:#241a11;--muted:#6e5f50;--faint:#93846f;--accent:#c0612b;--accent-ink:#ffffff}
+[data-theme=light][data-pal=lavender]{--bg:#f1eefa;--surface:#ffffff;--surface2:#f6f4fc;--surface3:#eae6f7;--line:#dfd9f1;--text:#1b1530;--muted:#5f5878;--faint:#857e9e;--accent:#6b4fe0;--accent-ink:#ffffff}
+[data-theme=light][data-pal=mint]{--bg:#eaf5f0;--surface:#ffffff;--surface2:#f1f8f5;--surface3:#e0efe8;--line:#d2e6dd;--text:#10231b;--muted:#4f665c;--faint:#78897f;--accent:#138a5e;--accent-ink:#ffffff}
+[data-theme=light][data-pal=sky]{--bg:#ecf3fc;--surface:#ffffff;--surface2:#f2f7fd;--surface3:#e1ebf8;--line:#d4e1f2;--text:#0f1a2b;--muted:#4f5f76;--faint:#7a889c;--accent:#2370d8;--accent-ink:#ffffff}
+.pals{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.pal{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.pal .psw{width:100%;aspect-ratio:3/4;border-radius:14px;border:2px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:4px;justify-content:flex-end;position:relative;overflow:hidden}
+.pal .psw i{display:block;height:7px;border-radius:4px}
+.pal .psw em{position:absolute;top:6px;left:6px;width:14px;height:14px;border-radius:50%}
+.pal.on{color:var(--text)}.pal.on .psw{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.lay{grid-template-columns:repeat(3,1fr)!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:var(--fs-m)/1.45 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.num{font-variant-numeric:tabular-nums}
+
+/* stage: phone frame on desktop, full screen on phone */
+.stage{min-height:100%;display:flex;justify-content:center;align-items:center;gap:40px;padding:24px}
+.notes{max-width:360px;color:var(--muted);font-size:var(--fs-s)}
+.notes h1{color:var(--text);font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+.notes .tag{display:inline-block;margin:6px 0 18px;padding:5px 10px;border-radius:99px;background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);font-size:var(--fs-xs);font-weight:700}
+.notes ol{padding-left:18px;margin:0}.notes li{margin:0 0 10px}.notes b{color:var(--text)}
+.phone{position:relative;width:412px;height:min(892px,calc(100vh - 48px));background:var(--bg);border:1px solid var(--line);border-radius:38px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+@media (max-width:860px){.notes{display:none}}
+@media (max-width:520px){.stage{padding:0;display:block}.phone{width:100%;height:100dvh;border:0;border-radius:0;box-shadow:none}}
+
+.status{display:flex;justify-content:space-between;padding:12px 22px 4px;font-size:var(--fs-xs);color:var(--muted);font-weight:600}
+.screen{flex:1;overflow-y:auto;padding:6px 16px 118px;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.view{display:none}.view.on{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* header */
+.top{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
+.top h2{margin:0;font-size:var(--fs-xl);letter-spacing:-.02em}
+.top small{display:block;color:var(--muted);font-size:var(--fs-s)}
+.top .sp{flex:1}
+.iconbtn{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.iconbtn:active{transform:scale(.96)}
+.avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(140deg,#4f67a0,#2a3854);color:#fff;font-weight:800;font-size:var(--fs-l)}
+
+.demo{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:12px;background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);font-size:var(--fs-xs);font-weight:600;margin-bottom:14px}
+
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px}
+.day{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:var(--fs-xs);color:var(--muted);min-height:48px}
+.day b{font-size:var(--fs-m);color:var(--text)}
+.day.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.day.on b{color:var(--accent-ink)}
+.day .dot{width:5px;height:5px;border-radius:50%;background:var(--c-act)}.day.on .dot{background:var(--accent-ink)}
+.day .dot.off{background:transparent}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.laysw{display:flex;gap:4px;padding:4px;margin:0 0 12px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.laysw button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;border-radius:10px;color:var(--muted);font-size:var(--fs-s);font-weight:600;transition:background .2s,color .2s}
+.laysw button svg{width:17px;height:17px}
+.laysw button.on{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:22px 2px 10px}
+.sec h3{margin:0;font-size:var(--fs-l);letter-spacing:-.01em}
+.sec button,.link{color:var(--accent);font-size:var(--fs-s);font-weight:600;min-height:32px}
+
+/* today */
+.today{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 14%,var(--surface)),var(--surface) 70%)}
+.today .lbl{font-size:var(--fs-xs);font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.today p{margin:6px 0 14px;font-size:var(--fs-l);line-height:1.35;font-weight:600;letter-spacing:-.01em}
+.today p em{font-style:normal;color:var(--accent)}
+.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ring{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:10px 4px;border-radius:14px;background:var(--surface2)}
+.ring svg{width:64px;height:64px}
+.ring b{font-size:var(--fs-m)}.ring small{font-size:var(--fs-xs);color:var(--muted)}
+
+/* key metrics */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{text-align:left;display:flex;flex-direction:column;gap:6px;min-height:150px}
+.kpi:active,.row:active{transform:scale(.985)}
+.kpi .h{display:flex;align-items:center;gap:8px;font-size:var(--fs-s);color:var(--muted);font-weight:600}
+.kpi .h .ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.kpi .h svg.i{width:16px;height:16px}
+.kpi .v{font-size:var(--fs-xl);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.kpi .v small{font-size:var(--fs-s);font-weight:600;color:var(--muted);margin-left:3px}
+.kpi .spark{height:34px;margin-top:auto}
+.delta{font-size:var(--fs-xs);color:var(--muted)}
+.delta b{color:var(--text);font-weight:700}
+
+.insight{display:flex;gap:12px;align-items:flex-start}
+.insight .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c-sleep) 18%,transparent);color:var(--c-sleep)}
+.insight b{display:block;font-size:var(--fs-m)}.insight span{font-size:var(--fs-s);color:var(--muted)}
+.streak{display:flex;align-items:center;gap:12px;margin-top:10px}
+.streak .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c-fit) 18%,transparent);color:var(--c-fit)}
+.pips{display:flex;gap:4px;margin-top:6px}.pips i{width:18px;height:6px;border-radius:3px;background:var(--surface3)}.pips i.on{background:var(--c-fit)}
+
+/* groups */
+.group{margin-bottom:8px;padding:0;overflow:hidden}
+.group>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;min-height:56px}
+.group>summary::-webkit-details-marker{display:none}
+.group .gic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.group .gt{flex:1}.group .gt b{display:block;font-size:var(--fs-m)}.group .gt small{color:var(--muted);font-size:var(--fs-xs)}
+.group .chev{color:var(--faint);transition:transform .2s}
+.group[open] .chev{transform:rotate(180deg)}
+.rows{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;min-height:52px;text-align:left;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .n{flex:1;font-size:var(--fs-m)}
+.row .n small{display:block;color:var(--muted);font-size:var(--fs-xs)}
+.row .val{font-weight:700;font-size:var(--fs-m)}
+.row .chev{color:var(--faint)}
+.row.empty .n{color:var(--muted)}
+.pill{font-size:var(--fs-xs);font-weight:700;padding:5px 10px;border-radius:99px;background:var(--surface2);color:var(--accent);border:1px solid var(--line);white-space:nowrap}
+.mini{width:54px;height:22px}
+
+.foot{color:var(--faint);font-size:var(--fs-xs);margin:16px 4px 0;line-height:1.5}
+
+/* dynamics */
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px 12px;padding:0 16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;min-height:38px;padding:8px 14px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-size:var(--fs-s);font-weight:600}
+.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.seg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line);margin-bottom:12px}
+.seg button{min-height:36px;border-radius:10px;font-size:var(--fs-s);font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--surface3);color:var(--text)}
+.picker{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-bottom:12px}
+.picker .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.picker .t{flex:1}.picker .t small{display:block;color:var(--muted);font-size:var(--fs-xs)}.picker .t b{font-size:var(--fs-l)}
+.big{font-size:var(--fs-2xl);font-weight:800;letter-spacing:-.03em;line-height:1}
+.big small{font-size:var(--fs-m);color:var(--muted);font-weight:600;margin-left:4px}
+.chart{margin:14px -4px 6px}
+.chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;font-size:var(--fs-xs);color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat{padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.stat small{display:block;color:var(--muted);font-size:var(--fs-xs)}.stat b{font-size:var(--fs-m)}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;font-size:var(--fs-s);color:var(--muted);min-height:44px;width:100%;text-align:left}
+.sw{width:46px;height:28px;border-radius:99px;background:var(--surface3);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px #0004}
+.sw.on{background:var(--accent)}.sw.on::after{transform:translateX(18px)}
+.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+.heat i{aspect-ratio:1;border-radius:6px;background:var(--surface3)}
+.heat i.l1{background:color-mix(in srgb,var(--accent) 35%,var(--surface3))}
+.heat i.l2{background:color-mix(in srgb,var(--accent) 65%,var(--surface3))}
+.heat i.l3{background:var(--accent)}
+.hl{display:flex;justify-content:space-between;color:var(--faint);font-size:var(--fs-xs);margin-top:4px}
+.note{display:flex;gap:10px;font-size:var(--fs-s);color:var(--muted);margin-top:12px}
+.note svg.i{width:18px;height:18px;color:var(--faint);margin-top:1px}
+.emptybox{text-align:center;padding:30px 12px;color:var(--muted);font-size:var(--fs-s)}
+.emptybox .ic{width:52px;height:52px;margin:0 auto 10px;border-radius:16px;display:grid;place-items:center;background:var(--surface2);color:var(--faint)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:var(--fs-m)}
+.btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
+.btn svg.i{width:18px;height:18px}
+
+/* more */
+.profile{display:flex;align-items:center;gap:14px;width:100%;text-align:left}
+.profile .avatar{width:54px;height:54px;font-size:22px}
+.profile .t{flex:1}.profile b{font-size:var(--fs-l)}.profile small{display:block;color:var(--muted);font-size:var(--fs-s)}
+.list{padding:0;overflow:hidden}
+.item{display:flex;align-items:center;gap:14px;width:100%;padding:13px 16px;min-height:60px;text-align:left;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--surface2);color:var(--accent)}
+.item .ic svg.i{width:20px;height:20px}
+.item .t{flex:1}.item .t b{display:block;font-size:var(--fs-m);font-weight:600}.item .t small{color:var(--muted);font-size:var(--fs-xs)}
+.item .chev{color:var(--faint)}
+.badge{font-size:var(--fs-xs);font-weight:700;color:var(--accent);padding:4px 9px;border-radius:99px;border:1px solid var(--line)}
+.lbl2{font-size:var(--fs-xs);font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:22px 4px 8px}
+
+/* sub pages */
+.subhead{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
+.subhead h2{margin:0;font-size:var(--fs-xl);letter-spacing:-.02em}
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:var(--fs-s);margin-top:10px}
+.flow span{padding:6px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--line)}
+.flow span.me{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.flow svg.i{width:16px;height:16px;color:var(--faint)}
+.src{margin-bottom:8px;padding:0;overflow:hidden}
+.src>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;min-height:60px}
+.src>summary::-webkit-details-marker{display:none}
+.src .logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#0b0f15;flex:none}
+.src .t{flex:1}.src .t b{display:block;font-size:var(--fs-m)}.src .t small{color:var(--muted);font-size:var(--fs-xs)}
+.src .body{padding:0 16px 14px;font-size:var(--fs-s);color:var(--muted)}
+.src .body p{margin:8px 0}.src .body b{color:var(--text)}
+.src[open] .chev{transform:rotate(180deg)}.src .chev{color:var(--faint);transition:transform .2s}
+.pinrow{display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:56px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.pinrow:last-child{border-bottom:0}
+.pinrow .n{flex:1}.pinrow .n small{display:block;color:var(--muted);font-size:var(--fs-xs)}
+.star{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--faint);border:1px solid var(--line)}
+.star.on{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.th{border-radius:16px;padding:12px;border:2px solid var(--line);text-align:left;min-height:120px;display:flex;flex-direction:column;gap:8px}
+.th.on{border-color:var(--accent)}
+.th .pv{flex:1;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.th .pv i{display:block;height:8px;border-radius:4px}
+
+/* tab bar */
+
+#tabbar{transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s}
+#tabbar.hide{transform:translateY(120%);opacity:0;pointer-events:none}
+.paddbottom{padding-bottom:100px}
+.tabbar{position:absolute;left:12px;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:0 10px 30px #0004}
+.tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;border-radius:16px;font-size:var(--fs-xs);font-weight:600;color:var(--muted)}
+.tabbar button.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+
+/* sheet */
+.scrim{position:absolute;inset:0;background:#0007;opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:var(--bg);border-radius:26px 26px 0 0;border-top:1px solid var(--line);padding:10px 16px 28px;transform:translateY(105%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s .3s;z-index:21;scrollbar-width:none}
+.sheet.on{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.grab{width:44px;height:5px;border-radius:3px;background:var(--surface3);margin:0 auto 12px}
+.sheet .hd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.sheet .hd .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.sheet .hd .t{flex:1}.sheet .hd .t b{display:block;font-size:var(--fs-l)}.sheet .hd .t small{color:var(--muted);font-size:var(--fs-s)}
+.opts{display:flex;flex-direction:column;gap:2px;padding:0}
+.opt{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;min-height:52px;text-align:left;border-radius:12px}
+.opt.on{background:var(--surface2)}
+.opt .dotc{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.opt .n{flex:1}.opt small{color:var(--muted);font-size:var(--fs-xs)}
+.addcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border-style:dashed;margin-top:4px}
+.addcard .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.addcard .t b{display:block}.addcard .t small{color:var(--muted);font-size:var(--fs-xs)}
+.tagm{font-size:11px;font-weight:700;color:var(--c-well);background:color-mix(in srgb,var(--c-well) 15%,transparent);padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:1px}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-size:var(--fs-s);color:var(--muted)}
+.field input{font:inherit;font-size:var(--fs-l);color:var(--text);background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:50px;width:100%}
+.field input:focus{outline:2px solid var(--accent);border-color:transparent}
+.optg{font-size:var(--fs-xs);font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:14px 14px 4px}
+
+.srcline{display:flex;gap:8px;flex-wrap:wrap;margin:-2px 2px 12px;font-size:var(--fs-xs);color:var(--muted)}
+.srcline span{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+.srcline i{width:8px;height:8px;border-radius:50%}
+.catlbl{display:flex;align-items:center;gap:8px;margin:16px 2px 8px;font-size:var(--fs-s);font-weight:700;color:var(--c)}
+.catlbl svg.i{width:16px;height:16px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mc{position:relative;overflow:hidden;text-align:left;display:flex;flex-direction:column;gap:4px;min-height:158px;padding:14px;border-radius:20px;border:1px solid color-mix(in srgb,var(--c) 28%,var(--line));
+  background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--c) 30%,transparent),transparent 60%),linear-gradient(170deg,color-mix(in srgb,var(--c) 12%,var(--surface)),var(--surface));transition:transform .15s}
+.mc:active{transform:scale(.97)}
+.mc
+/* ---- compact layouts ---- */
+.tmini{display:none;align-items:center;gap:10px;padding:10px 12px;margin-bottom:12px}
+.tmini .tr{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.tmini svg{width:40px;height:40px;flex:none}
+.tmini b{display:block;font-size:var(--fs-s);line-height:1.15}.tmini small{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
+body[data-layout]:not([data-layout=cards]) #week,body[data-layout]:not([data-layout=cards]) .today{display:none}
+body[data-layout]:not([data-layout=cards]) .tmini{display:flex}
+body[data-layout]:not([data-layout=cards]) .top{margin:2px 0 10px}
+body[data-layout]:not([data-layout=cards]) .top .avatar{width:38px;height:38px;font-size:var(--fs-m)}
+body[data-layout]:not([data-layout=cards]) .top h2{font-size:var(--fs-l)}
+.vmicro svg{width:100%;height:auto;display:block}
+/* A tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tl{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 11px 8px;border-radius:16px;min-height:0;border:1px solid color-mix(in srgb,var(--c) 28%,var(--line));background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--c) 26%,transparent),transparent 60%),var(--surface)}
+.tl .h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl .h .ic{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:var(--c);color:#0b0f15;flex:none}.tl .h svg.i{width:13px;height:13px}
+.tl .row1{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
+.tl .v{font-size:19px;font-weight:800;letter-spacing:-.02em}.tl .v small{font-size:11px;color:var(--muted);font-weight:600;margin-left:2px}
+.tl .dd{font-size:11px;font-weight:700;color:var(--muted)}
+.tl .vmicro{margin-top:4px;height:38px;display:flex;align-items:flex-end}
+.tl .vmicro svg{max-height:38px}
+/* B list */
+.lst{padding:0;overflow:hidden}
+.lr{display:grid;grid-template-columns:32px 1fr 84px auto;align-items:center;gap:10px;width:100%;padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);min-height:56px}
+.lr:last-child{border-bottom:0}
+.lr .ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--c);color:#0b0f15}.lr .ic svg.i{width:17px;height:17px}
+.lr .n{font-size:var(--fs-s);font-weight:600;line-height:1.2;min-width:0}.lr .n small{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.lr .vmicro{height:32px;display:flex;align-items:center}.lr .vmicro svg{max-height:32px}
+.lr .val{font-size:var(--fs-m);font-weight:800;text-align:right;white-space:nowrap}.lr .val small{display:block;font-size:10px;color:var(--muted);font-weight:600}
+.lcat{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--c);padding:10px 12px 2px;border-bottom:0}
+/* C grid3 */
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.g3 .t{display:flex;flex-direction:column;text-align:left;padding:9px 9px 7px;border-radius:14px;border:1px solid color-mix(in srgb,var(--c) 26%,var(--line));background:linear-gradient(170deg,color-mix(in srgb,var(--c) 18%,var(--surface)),var(--surface))}
+.g3 .t .ic{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:var(--c);color:#0b0f15}.g3 .t svg.i{width:12px;height:12px}
+.g3 .t .v{font-size:16px;font-weight:800;margin-top:6px;letter-spacing:-.02em;white-space:nowrap}.g3 .t .v small{font-size:10px;color:var(--muted);margin-left:1px}
+.g3 .t .n{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g3 .t .vmicro{height:30px;margin-top:4px;display:flex;align-items:flex-end}.g3 .t .vmicro svg{max-height:30px}
+.g3 .t.w2{grid-column:span 2}
+.g3 .t.w3{grid-column:1/-1}
+.g3 .t{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.g3 .t .pickmark{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,var(--surface) 85%,transparent);border:2px solid var(--muted);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
+.g3 .t.pickOn{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.g3 .t.pickOn .pickmark{background:var(--accent);border-color:var(--accent)}
+.g3 .t.dragging{opacity:.35;border-style:dashed}
+.g3 .t.sel{box-shadow:0 0 0 2px var(--accent);border-color:var(--accent)}
+#dragGhost{grid-template-columns:1fr!important;position:fixed;z-index:80;pointer-events:none;opacity:.92;transform:scale(1.05);box-shadow:0 14px 34px #0008;border-radius:14px}
+body.dragmode,body.dragmode *{touch-action:none!important}
+body.pickmode #groups{padding-bottom:90px}
+/* D carousel */
+.crow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px 2px;scroll-snap-type:x mandatory}
+.crow::-webkit-scrollbar{display:none}
+.crow .tl{flex:0 0 142px;scroll-snap-align:start}
+.chd{display:flex;align-items:center;gap:6px;margin:12px 2px 6px;font-size:12px;font-weight:800;color:var(--c)}.chd svg.i{width:14px;height:14px}.chd span{margin-left:auto;color:var(--faint);font-weight:600}
+.lay{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.lay button{padding:12px;border-radius:14px;border:2px solid var(--line);text-align:left;font-size:var(--fs-s)}.lay button.on{border-color:var(--accent)}.lay small{display:block;color:var(--muted);font-size:11px}
+:focus-visible{outline-offset:3px;border-radius:22px}
+.mc .h{min-height:30px}
+.mc.wide{grid-column:span 2;min-height:150px}
+.mc.full{grid-column:1/-1;min-height:150px}
+.mc.dragging{opacity:.4;border-style:dashed;pointer-events:none}
+.mc.sel{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.mc.pickmark{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--surface) 80%,transparent);border:2px solid var(--line);color:var(--text);display:grid;place-items:center;font-size:16px;font-weight:800;z-index:5}
+body.pickmode .mc.pickOn .pickmark{background:var(--accent);border-color:var(--accent);color:#fff}
+body.pickmode .mc{cursor:pointer}
+body.pickmode .mc:active{transform:none}
+body.pickmode .mc.pickOn{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.mc .h{display:flex;align-items:center;gap:8px;font-size:var(--fs-s);font-weight:700;color:var(--text)}
+.mc .h .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--c);color:#0b0f15}
+.mc .h .ic svg.i{width:17px;height:17px}
+.mc .h .src{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted)}
+.mc .v{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-top:6px}
+.mc .v small{font-size:var(--fs-s);font-weight:600;color:var(--muted);margin-left:3px;letter-spacing:0}
+.mc .d{font-size:var(--fs-xs);color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chipd{display:inline-flex;align-items:center;gap:3px;font-weight:700;padding:2px 7px;border-radius:99px;background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--text)}
+.vwrap{margin-top:auto;padding-top:6px}
+.vwrap svg,.hero svg{width:100%;height:auto;display:block;overflow:visible}
+.hero{margin:12px 0 4px}
+.ecg{stroke-dasharray:900;animation:none}body.anim .ecg{animation:draw 2.4s ease-out both}
+@keyframes draw{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
+@keyframes chReveal{from{clip-path:inset(-40% 100% -40% -6%)}to{clip-path:inset(-40% -6% -40% -6%)}}
+@keyframes bGr{from{transform:scaleY(.02)}to{transform:scaleY(1)}}
+body.anim .animrun{animation:chReveal .7s cubic-bezier(.2,.8,.2,1) both}
+body.anim .animrun svg rect{transform-box:fill-box;transform-origin:50% 100%;animation:bGr .7s .12s cubic-bezier(.2,.8,.2,1) both}
+.wave{animation:wave 3.5s linear infinite}
+@keyframes wave{to{transform:translateX(27px)}}
+.mc .spark{height:44px;margin:auto -2px -2px;width:calc(100% + 4px)}
+.mc.wide .spark{height:54px}
+.mc .bar{height:8px;border-radius:99px;background:var(--surface3);overflow:hidden;margin-top:auto}
+.mc .bar i{display:block;height:100%;border-radius:99px;background:var(--c)}
+.phases{display:flex;height:12px;border-radius:99px;overflow:hidden;gap:2px;margin-top:auto}
+.phases i{display:block;height:100%}
+.today{background:radial-gradient(120% 120% at 100% 0%,color-mix(in srgb,var(--c-sleep) 30%,transparent),transparent 55%),radial-gradient(120% 120% at 0% 100%,color-mix(in srgb,var(--c-act) 26%,transparent),transparent 55%),var(--surface)!important}
+/* detail */
+.sheet.full{max-height:94%}
+.dhero{border-radius:22px;padding:16px;margin-bottom:12px;background:radial-gradient(130% 100% at 100% 0%,color-mix(in srgb,var(--c) 35%,transparent),transparent 60%),linear-gradient(170deg,color-mix(in srgb,var(--c) 14%,var(--surface)),var(--surface));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line))}
+.tip{display:flex;justify-content:space-between;align-items:baseline;min-height:22px;font-size:var(--fs-s);color:var(--muted);margin-top:10px}
+.tip b{color:var(--text);font-size:var(--fs-m)}
+.chart.tap{cursor:crosshair;touch-action:pan-y}
+.dl{padding:4px 16px}
+.drow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);font-size:var(--fs-s)}
+.drow:last-child{border-bottom:0}
+.drow .k{flex:1;color:var(--muted)}.drow .val{font-weight:700;font-size:var(--fs-m)}
+.drow .pb{flex:0 0 90px;height:8px;border-radius:99px;background:var(--surface3);overflow:hidden}.drow .pb i{display:block;height:100%;background:var(--c);border-radius:99px}
+.about{font-size:var(--fs-s);color:var(--muted);line-height:1.55}
+.h4{font-size:var(--fs-m);font-weight:700;margin:16px 2px 8px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="notes">
+    <h1>Баланс 1.16</h1>
+    <span class="tag">Ваши измерения и настройки</span>
+    <ol>
+      <li><b>Только ваши данные.</b> На «Обзоре» — то, что удалось собрать из источников, и то, что вы добавили сами. Пустых показателей нет.</li>
+      <li><b>Карточки с мини-графиками.</b> Цвет по категории, значение, сравнение «к обычному» и график за неделю.</li>
+      <li><b>Подробный экран.</b> Нажмите на карточку: диаграмма показателя, история за выбранный период и сведения о сохранённых измерениях.</li>
+      <li><b>Добавить показатель.</b> Давление, глюкоза, вес с обычных весов — всё в одном месте, с пометкой «вручную».</li>
+      <li><b>Верхний блок.</b> Восемь фигур и настраиваемые показатели под ними.</li>
+      <li><b>Крупный текст</b> и удобные кнопки, светлая и тёмная тема.</li>
+    </ol>
+    <p style="margin-top:16px">На телефоне файл открывается во весь экран.</p>
+  </aside>
+
+  <main class="phone" id="phone">
+    <div class="screen" id="screen">
+
+      <!-- OVERVIEW -->
+      <section class="view on" id="v-overview">
+        <div id="topBlock"></div>
+
+
+
+        <div class="srcline" id="countAll"></div>
+        <div id="groups"></div>
+        <button class="card addcard" data-act="add"><span class="ic"><svg class="i"><use href="#i-plus"/></svg></span><span class="t"><b>Добавить показатель</b></span></button>
+
+      </section>
+
+      <!-- DYNAMICS -->
+      <section class="view" id="v-goal"></section>
+      <section class="view" id="v-dynamics">
+        <div class="top"><div><h2>Динамика</h2><small>История по сохранённым записям</small></div><div class="sp"></div>
+        </div>
+        <div class="seg" id="periods"></div>
+        <div class="chips" id="cats"></div>
+        <button class="card picker" id="picker"></button>
+        <div class="dhero" id="dynCard"></div>
+
+        <div class="sec"><h3>Полнота данных</h3><span class="delta">4 недели</span></div>
+        <div class="card">
+          <div style="font-size:var(--fs-s);color:var(--muted)">Дни, за которые источник передал записи</div>
+          <div class="heat" id="heat"></div>
+          <div class="hl"><span>меньше показателей</span><span>больше</span></div>
+          <div class="note"><svg class="i"><use href="#i-info"/></svg><span>Цвет показывает только наличие записей, а не оценку здоровья.</span></div>
+        </div>
+      </section>
+
+      <!-- MORE -->
+      <section class="view" id="v-more">
+        <div class="top"><div><h2>Ещё</h2><small>Настройки и инструменты</small></div></div>
+        <button class="card profile" data-go="profile"><div class="avatar">А</div><div class="t"><b>Анзор</b><small>Профиль и личные настройки</small></div><svg class="i chev"><use href="#i-right"/></svg></button>
+        <div id="moreList"></div>
+        <p class="foot">Основные показатели — на «Обзоре», графики — в «Динамике», настройки и источники — здесь.</p>
+      </section>
+
+      <!-- SOURCES -->
+      <section class="view" id="v-sources">
+        <div class="subhead"><button class="iconbtn" data-back aria-label="Назад"><svg class="i"><use href="#i-left"/></svg></button><h2>Источники</h2></div>
+        <div class="card" id="hcCard"></div>
+        <div id="srcCard"></div>
+        <div class="chips" id="srcF" style="margin-top:14px"></div>
+        <div id="srcList"></div>
+        <div class="card" style="margin-top:6px">
+          <b>Как получить больше данных</b>
+          <div class="note"><svg class="i"><use href="#i-info"/></svg><span>Сначала синхронизируйте приложение бренда. Разрешение без записей — не ошибка «Баланса».</span></div>
+          <div class="note"><svg class="i"><use href="#i-info"/></svg><span>Фирменные оценки (readiness, energy) часто остаются только в приложении бренда.</span></div>
+          <div class="note"><svg class="i"><use href="#i-info"/></svg><span>Apple Health не является прямым источником для Android.</span></div>
+        </div>
+      </section>
+
+      <!-- PIN -->
+      <section class="view" id="v-pin">
+        <div class="subhead"><button class="iconbtn" data-back aria-label="Назад"><svg class="i"><use href="#i-left"/></svg></button><h2>Что показывать</h2></div>
+        <p style="color:var(--muted);font-size:var(--fs-s);margin:0 2px 12px">Здесь все показатели, которые удалось собрать, и ваши ручные. Скройте лишнее — данные продолжат сохраняться.</p>
+        <div class="card list" id="pinList"></div>
+      </section>
+
+      <!-- THEMES -->
+      <section class="view" id="v-themes">
+        <div class="subhead"><button class="iconbtn" data-back aria-label="Назад"><svg class="i"><use href="#i-left"/></svg></button><h2>Оформление</h2></div>
+        <div class="themes">
+          <button class="th" data-theme-set="dark"><div class="pv" style="background:#0b0f15"><i style="background:#6fd6ca;width:60%"></i><i style="background:#222c39"></i><i style="background:#222c39;width:80%"></i></div><b>Тёмный режим</b></button>
+          <button class="th" data-theme-set="light"><div class="pv" style="background:#eef1f5"><i style="background:#0f8f84;width:60%"></i><i style="background:#dde3ea"></i><i style="background:#dde3ea;width:80%"></i></div><b>Светлый режим</b></button>
+        </div>
+        <div class="lbl2">Ночные темы</div>
+        <div class="pals" id="palDark"></div>
+        <div class="lbl2">Дневные темы</div>
+        <div class="pals" id="palLight"></div>
+        <div class="lbl2">Яркость и контраст</div>
+        <label class="card contrast-control" for="contrastRange">
+          <span class="contrast-label"><span>Контраст текста и границ</span><output id="contrastValue" for="contrastRange">50%</output></span>
+          <input id="contrastRange" type="range" min="0" max="100" step="1" value="50" aria-label="Контраст интерфейса">
+          <span class="contrast-ends"><span>Мягче</span><span>Выразительнее</span></span>
+        </label>
+        <div class="lbl2">Вид главного экрана</div>
+        <div class="lay" id="layPick"></div>
+        <div class="lbl2">Верхняя фигура</div>
+        <div class="lay" id="topPick"></div>
+        <div class="lbl2">Анимации</div>
+        <div class="card" style="padding:2px 16px">
+          <div class="frow"><span class="k">Анимация графиков<small>мини-графики на карточках оживают</small></span><button class="sw" id="animSw" aria-label="Анимации"></button></div>
+        </div>
+      </section>
+
+      <!-- PAGE -->
+      <section class="view" id="v-page">
+        <div class="subhead"><button class="iconbtn" data-back aria-label="Назад"><svg class="i"><use href="#i-left"/></svg></button><h2 id="pTitle"></h2></div>
+        <div id="pBody"></div>
+      </section>
+
+      <!-- GENERIC -->
+      <section class="view" id="v-generic">
+        <div class="subhead"><button class="iconbtn" data-back aria-label="Назад"><svg class="i"><use href="#i-left"/></svg></button><h2 id="gTitle"></h2></div>
+        <div class="card"><div class="emptybox"><div class="ic" id="gIcon"></div><p id="gText" style="margin:0 0 6px"></p><small id="gNote" style="color:var(--faint)"></small></div></div>
+      </section>
+
+    </div>
+
+    <nav class="tabbar" id="tabbar" aria-label="Разделы">
+      <button data-tab="overview" class="on"><svg class="i"><use href="#i-home"/></svg>Обзор</button>
+      <button data-tab="dynamics"><svg class="i"><use href="#i-chart"/></svg>Динамика</button>
+      <button data-tab="goal"><svg class="i"><use href="#i-target"/></svg>Цель</button>
+      <button data-tab="more"><svg class="i"><use href="#i-menu"/></svg>Ещё</button>
+    </nav>
+
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+  </main>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-act" viewBox="0 0 24 24"><path d="M13 4a1.5 1.5 0 1 0 0-.01"/><path d="m9 20 3-6 3 3v4M7 12l3-4 4 1 2 3 3 1M12 14l-1-5"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 10a4 4 0 0 1 8 0z"/><path d="m12 10 1.5-2.5"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2.7 6.3 8.4a8 8 0 1 0 11.4 0z"/></symbol>
+  <symbol id="i-food" viewBox="0 0 24 24"><path d="M3 2v7a3 3 0 0 0 3 3v10M9 2v7M6 2v4M18 2c-2 1-3 4-3 7h3v13"/></symbol>
+  <symbol id="i-well" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 17l.7 1.8 1.8.7-1.8.7L19 22l-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 24 24"><path d="M6 6v12M18 6v12M3 9v6M21 9v6M6 12h12"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon2" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM20 17v4H6.5"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="i-layout" viewBox="0 0 24 24"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.4-4-7.9-9-7.9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3.3 1.3 1.3 2.8 2.5 2.8z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0z"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M6 16.5V10a4 4 0 0 1 4-4h5.5M18 7.5V14a4 4 0 0 1-4 4H8.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="m12 2 3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21l1.4-7L2 9.3l7-.8z"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></symbol>
+</svg>
+
+<script>
+const SOURCES=__SOURCES__;
+const CATS={
+  'Активность':{c:'--c-act',i:'i-act'},'Сердце':{c:'--c-heart',i:'i-heart'},'Сон':{c:'--c-sleep',i:'i-moon'},
+  'Состав тела':{c:'--c-body',i:'i-scale'},'Питание':{c:'--c-food',i:'i-food'},'Самочувствие':{c:'--c-well',i:'i-well'},'Фитнес':{c:'--c-fit',i:'i-fit'}
+};
+// id, name, cat, unit, chart, base, spread, decimals, hasData
+const M=[
+['steps','Шаги','Активность','шагов','bar',6482,2600,0,1],
+['distance','Дистанция','Активность','км','bar',4.8,1.8,1,1],
+['activeCalories','Активные калории','Активность','ккал','bar',428,150,0,1],
+['totalCalories','Всего калорий','Активность','ккал','bar',2168,250,0,0],
+['exercise','Тренировки','Активность','мин','bar',38,30,0,1],
+['floors','Этажи','Активность','этажей','bar',12,6,0,0],
+['elevation','Набор высоты','Активность','м','bar',86,40,0,0],
+['speed','Скорость','Активность','км/ч','line',5.4,.6,1,0],
+['heart','Пульс','Сердце','уд/мин','line',72,9,0,1],
+['restingHeart','Пульс в покое','Сердце','уд/мин','line',61,3,0,1],
+['bp','Давление','Сердце','мм рт. ст.','range',121,6,0,0],
+['spo2','Кислород в крови','Сердце','%','line',97,1,0,1],
+['hrv','Вариабельность пульса','Сердце','мс','line',42,8,0,1],
+['resp','Частота дыхания','Сердце','вдохов/мин','line',15,1.5,0,0],
+['sleep','Сон','Сон','ч','sleep',7.75,.8,2,1],
+['weight','Вес','Состав тела','кг','line',86,.6,1,0],
+['height','Рост','Состав тела','см','line',185,0,0,0],
+['bodyFat','Жировая масса','Состав тела','%','line',21.4,.5,1,0],
+['leanMass','Безжировая масса','Состав тела','кг','line',64.6,.4,1,0],
+['bodyWater','Водная масса тела','Состав тела','кг','line',42.1,.3,1,0],
+['boneMass','Костная масса','Состав тела','кг','line',3.4,.05,1,0],
+['water','Вода','Питание','мл','bar',1450,450,0,0],
+['nutrition','Питание','Питание','ккал','ring',1820,300,0,0],
+['temp','Температура','Самочувствие','°C','line',36.6,.2,1,0],
+['skinTemperature','Температура кожи','Самочувствие','°C Δ','line',.2,.2,1,0],
+['glucose','Глюкоза','Самочувствие','ммоль/л','line',5.2,.4,1,0],
+['mindfulness','Осознанность','Самочувствие','мин','bar',12,6,0,0],
+['vo2','VO₂ max','Фитнес','мл/кг/мин','line',39.2,.6,1,0],
+['bmr','Основной обмен','Фитнес','ккал/сут','line',1788,15,0,0],
+['power','Мощность','Фитнес','Вт','line',168,20,0,0],
+['cadence','Частота шагов','Фитнес','шаг/мин','line',112,8,0,0],
+['cyclingCadence','Частота педалирования','Фитнес','об/мин','line',82,6,0,0]
+].map(a=>({id:a[0],name:a[1],cat:a[2],unit:a[3],chart:a[4],base:a[5],spread:a[6],dec:a[7],has:!!a[8]}));
+const byId=Object.fromEntries(M.map(m=>[m.id,m]));
+const PERIODS=[['day','День',24],['week','Неделя',7],['month','Месяц',30],['6m','6 мес.',26],['year','Год',12],['all','Всё',24]];
+const SLEEP_PH=[['Глубокий',.18,1],['Лёгкий',.55,.6],['Быстрый',.22,.38],['Пробуждения',.05,.15]];
+const MI={distance:'i-route',activeCalories:'i-flame',exercise:'i-fit',heart:'i-heart',restingHeart:'i-pulse',bp:'i-gauge',spo2:'i-drop',hrv:'i-pulse',water:'i-drop',weight:'i-scale'};
+let mic=m=>MI[m.id]||CATS[m.cat].i;
+const WD=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const MON=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){setTimeout(()=>window.onStorageError?.(k),0);return false}}};
+const state={tab:'overview',stack:[],period:'week',cat:'Все',metric:'steps',cmp:false,
+  pinned:[],hidden:LS.get('balans2.hidden',[]),
+  anim:LS.get('balans2.anim',true),demo:false,
+  cardSize:LS.get('balans2.cardSize',{}),cardOrder:LS.get('balans2.cardOrder',[]),
+  manual:LS.get('balans2.manual',{}),theme:LS.get('balans2.theme','dark'),pal:Object.assign({dark:'graphite',light:'morning'},LS.get('balans2.pal',{})),srcF:'Все',layout:LS.get('balans2.layout','list')};
+const demoOn=()=>false;
+
+const $=s=>document.querySelector(s);
+const ic=(id,cls='i')=>`<svg class="${cls}"><use href="#${id}"/></svg>`;
+const cv=m=>`var(${CATS[m.cat].c})`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmt(v,dec=0){if(!Number.isFinite(v))return '—';return v.toLocaleString('ru-RU',{minimumFractionDigits:dec,maximumFractionDigits:dec}).replace(/\u00a0/g,' ')}
+function fmtSleep(h){if(!Number.isFinite(h))return '—';const mins=Math.round(h*60);return `${Math.floor(mins/60)} ч ${String(mins%60).padStart(2,'0')} м`}
+function show(m,v,lo){if(!Number.isFinite(v))return '—';return m.id==='sleep'?fmtSleep(v):m.id==='bp'?`${Math.round(v)}/${lo!=null?Math.round(lo):demoOn()?Math.round(v*.65):'—'}`:fmt(v,m.dec)}
+function showCur(m){const r=recs(m).at(-1);if(r)return show(m,r.v,r.lo);return demoOn()?show(m,m.base):'—'}
+
+// deterministic demo series
+function rng(seed){let s=0;for(const ch of seed)s=(s*31+ch.charCodeAt(0))>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function series(m,period,prev=false){
+  if(!demoOn()){
+    const rs=recs(m);
+    const days={day:1,week:7,month:30,'6m':183,year:366,all:36500}[period]||30;
+    let until=Date.now()-(prev?days*86400000:0),since=until-days*86400000;
+    if(period==='day'){const d=new Date();d.setHours(0,0,0,0);since=d.getTime()-(prev?86400000:0);until=prev?d.getTime()-1:Date.now()}
+    const actual=rs.filter(r=>{const t=recordTimestamp(r);return Number.isFinite(t)&&t>=since&&t<=until});
+    return actual.length?actual.map(r=>r.v):[];
+  }
+  if(!m.has&&!state.manual[m.id]?.demo&&recs(m).length)return recs(m).map(r=>r.v);
+  const n=PERIODS.find(p=>p[0]===period)[2];const r=rng(m.id+period+(prev?'p':''));
+  const out=[];let drift=0;
+  for(let i=0;i<n;i++){
+    let v;
+    if(period==='day'&&m.chart==='bar'){const h=i;const act=(h>7&&h<22)?(h===8||h===18?2.2:1):0.05;v=m.base/14*act*(.5+r());}
+    else{drift+=(r()-.5)*m.spread*.25;v=m.base+(r()-.5)*m.spread*1.4+drift*(m.chart==='line'?1:0)+(prev?-m.spread*.15:0);}
+    out.push(Math.max(0,v));
+  }
+  if(!prev&&period!=='day')out[n-1]=m.base;
+  return out;
+}
+function labels(period){
+  const n=PERIODS.find(p=>p[0]===period)[2];
+  if(period==='day')return Array.from({length:n},(_,i)=>i%6===0?String(i).padStart(2,'0')+':00':'');
+  if(period==='week')return ['Чт','Пт','Сб','Вс','Пн','Вт','Ср'];
+  if(period==='month')return Array.from({length:n},(_,i)=>{const d=new Date(2026,9,28-(n-1-i));return i%7===1?`${d.getDate()} ${MON[d.getMonth()]}`:''});
+  if(period==='6m')return Array.from({length:n},(_,i)=>{const d=new Date(2026,9,28-(n-1-i)*7);return i%5===0?MON[d.getMonth()]:''});
+  if(period==='year')return Array.from({length:n},(_,i)=>MON[(10+i)%12].slice(0,1).toUpperCase()+MON[(10+i)%12].slice(1,3));
+  return Array.from({length:n},(_,i)=>{const d=new Date(2024,10+i,1);return i%6===0?`${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`:''});
+}
+const deviceRecs=m=>[...(state.deviceData?.[m.id]||[]),...(state.bleData?.[m.id]||[])];
+function recordTimestamp(r){if(Number.isFinite(r.ts))return r.ts;const s=String(r.d||''),a=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s),b=/^(\d{1,2}) ([а-яё]+) (\d{4})$/i.exec(s);return a?new Date(+a[3],+a[2]-1,+a[1]).getTime():b&&MON.includes(b[2])?new Date(+b[3],MON.indexOf(b[2]),+b[1]).getTime():Date.parse(s)}
+const avail=m=>(demoOn()&&m.has)||(state.deviceData?.[m.id]?.length||0)>0||(state.bleData?.[m.id]?.length||0)>0||!!state.manual[m.id];
+const isManual=m=>{const r=recs(m).at(-1);return r?!r.source:!m.has&&!!state.manual[m.id]};
+const recordCache=new Map();
+const recs=m=>{
+ const a=state.manual[m.id]?.rec,b=state.deviceData?.[m.id],c=state.bleData?.[m.id],old=recordCache.get(m.id);
+ const key=[a,b,c,a?.length,b?.length,c?.length,a?.at(-1),b?.at(-1),c?.at(-1)];
+ if(old&&key.every((v,i)=>old.key[i]===v))return old.rows;
+ const rows=[...(a||[]),...(b||[]),...(c||[])].sort((x,y)=>(recordTimestamp(x)||0)-(recordTimestamp(y)||0));
+ recordCache.set(m.id,{key,rows});return rows;
+};
+const hasHistory=m=>recs(m).length>0;
+function ensureDemo(){if(!demoOn())return;const ids=['totalCalories','floors','elevation','speed','resp','height','bodyFat','leanMass','bodyWater','boneMass','nutrition','temp','skinTemperature','glucose','mindfulness','vo2','bmr','power','cadence','cyclingCadence'];
+  ids.forEach(id=>{if(!state.manual[id])state.manual[id]={rec:[],demo:1}});saveManual();}
+function stripDemo(){Object.keys(state.manual).forEach(k=>{const e=state.manual[k];if(e.demo&&(!e.rec||!e.rec.length))delete state.manual[k];else delete e.demo});saveManual()}
+const cur=m=>{const r=recs(m).at(-1);if(r)return r.v;return demoOn()?m.base:NaN};
+const AV=()=>M.filter(avail);
+function saveManual(){LS.set('balans2.manual',state.manual)}
+function fullLabel(period,i){
+  const n=PERIODS.find(p=>p[0]===period)[2];
+  if(period==='day')return `${String(i).padStart(2,'0')}:00–${String(i+1).padStart(2,'0')}:00`;
+  if(period==='week'||period==='month'){const d=new Date(2026,9,28-(n-1-i));return `${['вс','пн','вт','ср','чт','пт','сб'][d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`}
+  if(period==='6m'){const d=new Date(2026,9,28-(n-1-i)*7);return `неделя с ${d.getDate()} ${MON[d.getMonth()]}`}
+  if(period==='year'){const k=(10+i)%12;return `${MON[k]} ${k>=10?2025:2026}`}
+  const d=new Date(2024,10+i,1);return `${MON[d.getMonth()]} ${d.getFullYear()}`;
+}
+const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+
+/* ---------- charts (one visual language) ---------- */
+const W=340,H=170,PL=34,PR=8,PT=10,PB=24;
+function scale(vals,zero){let mn=Math.min(...vals),mx=Math.max(...vals);if(zero)mn=0;else{const pad=(mx-mn)*.25||1;mn-=pad;mx+=pad}if(mx===mn)mx=mn+1;return{mn,mx,y:v=>PT+(H-PT-PB)*(1-(v-mn)/(mx-mn))}}
+function axes(s,lb,m,n){
+  let g='';const ticks=[s.mn+(s.mx-s.mn)*.0,s.mn+(s.mx-s.mn)*.5,s.mx];
+  ticks.forEach(t=>{const y=s.y(t);g+=`<line x1="${PL}" x2="${W-PR}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${PL-6}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--faint)">${m.id==='sleep'?Math.round(t)+'ч':fmt(t,(s.mx-s.mn)<12?m.dec:0)}</text>`});
+  const step=(W-PL-PR)/n;lb.forEach((l,i)=>{if(l)g+=`<text x="${PL+step*i+step/2}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--faint)">${l}</text>`});
+  return g;
+}
+function chartBar(m,v,p,lb){
+  const s=scale(p?v.concat(p):v,true),n=v.length,step=(W-PL-PR)/n,bw=Math.max(3,step*(p?.38:.62));let g=axes(s,lb,m,n);
+  v.forEach((x,i)=>{const cx=PL+step*i+step/2;
+    if(p){const yp=s.y(p[i]);g+=`<rect x="${cx-bw-1}" y="${yp}" width="${bw}" height="${H-PB-yp}" rx="${Math.min(4,bw/2)}" fill="var(--surface3)"/>`}
+    const y=s.y(x);g+=`<rect x="${p?cx+1:cx-bw/2}" y="${y}" width="${bw}" height="${Math.max(1,H-PB-y)}" rx="${Math.min(4,bw/2)}" fill="${cv(m)}" opacity="${i===n-1?1:.75}"/>`});
+  return svg(g);
+}
+function path(v,s,n){const step=(W-PL-PR)/n;return v.map((x,i)=>`${i?'L':'M'}${(PL+step*i+step/2).toFixed(1)} ${s.y(x).toFixed(1)}`).join(' ')}
+function chartLine(m,v,p,lb){
+  const s=scale(p?v.concat(p):v,false),n=v.length;let g=axes(s,lb,m,n);const d=path(v,s,n);const step=(W-PL-PR)/n;
+  const gid='lg'+(sparkN++);g+=`<defs><linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${cv(m)}" stop-opacity=".38"/><stop offset="1" stop-color="${cv(m)}" stop-opacity="0"/></linearGradient></defs>`;
+  g+=`<path d="${d} L${PL+step*(n-1)+step/2} ${H-PB} L${PL+step/2} ${H-PB}Z" fill="url(#${gid})"/>`;
+  if(p)g+=`<path d="${path(p,s,n)}" fill="none" stroke="var(--faint)" stroke-width="1.6" stroke-dasharray="4 4"/>`;
+  g+=`<path d="${d}" fill="none" stroke="${cv(m)}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const lx=PL+step*(n-1)+step/2,ly=s.y(v[n-1]);g+=`<circle cx="${lx}" cy="${ly}" r="5" fill="var(--surface)" stroke="${cv(m)}" stroke-width="2.4"/>`;
+  return svg(g);
+}
+function chartRange(m,v,p,lb){
+  const lo=v.map(x=>x*.65),s=scale(v.concat(lo),false),n=v.length,step=(W-PL-PR)/n;let g=axes(s,lb,m,n);
+  v.forEach((x,i)=>{const cx=PL+step*i+step/2;g+=`<line x1="${cx}" x2="${cx}" y1="${s.y(x)}" y2="${s.y(lo[i])}" stroke="${cv(m)}" stroke-opacity=".35" stroke-width="${Math.max(3,step*.35)}" stroke-linecap="round"/><circle cx="${cx}" cy="${s.y(x)}" r="3.2" fill="${cv(m)}"/><circle cx="${cx}" cy="${s.y(lo[i])}" r="3.2" fill="var(--surface)" stroke="${cv(m)}" stroke-width="2"/>`});
+  return svg(g);
+}
+function chartSleep(m,v,p,lb){
+  const s=scale(v,true),n=v.length,step=(W-PL-PR)/n,bw=Math.max(3,step*.6);let g=axes(s,lb,m,n);
+  const ph=[['.95','глубокий',.18],['.6','лёгкий',.55],['.35','быстрый',.22],['.15','бодрств.',.05]];
+  v.forEach((x,i)=>{const cx=PL+step*i+step/2-bw/2;let acc=0;ph.forEach(([op,,f])=>{const y0=s.y(acc),y1=s.y(acc+x*f);g+=`<rect x="${cx}" y="${y1}" width="${bw}" height="${Math.max(0,y0-y1-1)}" rx="2" fill="${cv(m)}" opacity="${op}"/>`;acc+=x*f})});
+  return svg(g);
+}
+function chartRing(m){
+  const mac=[['Белки',22,'var(--c-food)'],['Углеводы',48,'var(--c-body)'],['Жиры',30,'var(--c-heart)']];
+  let g='',a=-Math.PI/2;const R=58,cx=95,cy=85,C=2*Math.PI*R;let off=0;
+  g+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--surface3)" stroke-width="16"/>`;
+  mac.forEach(([,p,c])=>{const len=C*p/100;g+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${c}" stroke-width="16" stroke-dasharray="${len-3} ${C-len+3}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`;off+=len});
+  g+=`<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="20" font-weight="800" fill="var(--text)">1 820</text><text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="11" fill="var(--muted)">ккал</text>`;
+  mac.forEach(([n,p,c],i)=>{const y=50+i*32;g+=`<rect x="190" y="${y-9}" width="10" height="10" rx="3" fill="${c}"/><text x="208" y="${y}" font-size="13" fill="var(--text)">${n}</text><text x="${W-PR}" y="${y}" text-anchor="end" font-size="13" font-weight="700" fill="var(--text)">${p}%</text>`});
+  return svg(g);
+}
+const svg=g=>`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="График">${g}</svg>`;
+function drawChart(m,period,cmp){
+  const v=series(m,period),p=cmp&&['bar','line'].includes(m.chart)?series(m,period,true):null,lb=labels(period);
+  return {svg:{bar:chartBar,line:chartLine,range:chartRange,sleep:chartSleep,ring:chartRing}[m.chart](m,v,p,lb),v,p};
+}
+let sparkN=0;
+function spark(m,w=150,h=44){
+  const v=series(m,'week');const isBar=m.chart==='bar'||m.chart==='sleep';const lo=isBar?0:Math.min(...v),hi=Math.max(...v)||1;
+  const y=x=>h-3-(h-8)*((x-lo)/((hi-lo)||1));const id='sg'+(sparkN++);const cls=w<80?'mini':'spark';
+  if(isBar){const bw=w/v.length;return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="${cls}"><defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${cv(m)}"/><stop offset="1" stop-color="${cv(m)}" stop-opacity=".35"/></linearGradient></defs>${v.map((x,i)=>`<rect x="${i*bw+bw*.16}" y="${y(x)}" width="${bw*.68}" height="${h-y(x)}" rx="3" fill="url(#${id})" opacity="${i===v.length-1?1:.55}"/>`).join('')}</svg>`}
+  const pts=v.map((x,i)=>[(i*(w-8)/(v.length-1)+4),y(x)]);
+  const d=pts.map((p,i)=>{if(!i)return `M${p[0].toFixed(1)} ${p[1].toFixed(1)}`;const q=pts[i-1],cx=(q[0]+p[0])/2;return `C${cx.toFixed(1)} ${q[1].toFixed(1)} ${cx.toFixed(1)} ${p[1].toFixed(1)} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`}).join(' ');
+  const last=pts.at(-1);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="${cls}"><defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${cv(m)}" stop-opacity=".45"/><stop offset="1" stop-color="${cv(m)}" stop-opacity="0"/></linearGradient></defs><path d="${d} L${last[0]} ${h} L4 ${h}Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${cv(m)}" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${cls==='spark'?`<circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="${cv(m)}"/>`:''}</svg>`;
+}
+function vsUsual(m){
+  const usual=avg(series(m,'month').slice(0,-1));const d=(m.base-usual)/usual*100;
+  if(Math.abs(d)<2)return 'как <b>обычно</b> для вас';
+  return `<b>${d>0?'выше':'ниже'} на ${fmt(Math.abs(d))}%</b> вашего обычного`;
+}
+
+/* ---------- overview ---------- */
+const ABOUT={
+ 'Активность':'Движение за день: шаги, дистанция и энергия. Данные приходят из часов или телефона через Health Connect.',
+ 'Сердце':'Показатели сердца и дыхания с часов, кольца или тонометра. Сравнение идёт с вашими же значениями, а не с нормами.',
+ 'Сон':'Длительность и фазы сна по данным часов или кольца. Фазы — оценка устройства, а не медицинское исследование.',
+ 'Состав тела':'Вес и состав тела с умных весов или ваших ручных записей.',
+ 'Питание':'Вода и питание из приложений учёта или ваших записей.',
+ 'Самочувствие':'Температура, глюкоза, практики осознанности — из устройств или вручную.',
+ 'Фитнес':'Спортивные показатели с часов и датчиков во время тренировок.'};
+function details(m,v){
+  const u=m.id==='sleep'?'':' '+m.unit,sh=x=>show(m,x)+u;
+  switch(m.id){
+   case 'steps':return [['Цель',fmt(GOAL.steps)+' шагов',cur(m)/GOAL.steps],['Дистанция','4,8 км'],['Активные калории','428 ккал'],['Самый активный час','18:00–19:00'],['Лучший день недели',sh(Math.max(...v))]];
+   case 'sleep':{const st=sleepStats(),T=st.reduce((a,b)=>a+b,0);return [3,2,1,0].map(l=>[`<span style="color:${PH[l][1]}">●</span> ${PH[l][0]}`,fmtSleep(st[l]/60),st[l]/T]).concat([['Отбой','23:40'],['Подъём','07:25']])}
+   case 'heart':return [['Покой','72%',.72],['Лёгкая нагрузка','18%',.18],['Кардио','8%',.08],['Пик','2%',.02],['Минимум за день','54 уд/мин'],['Максимум за день','128 уд/мин']];
+   case 'restingHeart':return [['Ваш обычный диапазон','58–64 уд/мин'],['Среднее за период',sh(avg(v))],['Самое низкое',sh(Math.min(...v))]];
+   case 'bp':{const lr=recs(m).at(-1);return [['Последнее измерение',lr?show(m,lr.v,lr.lo)+' · '+lr.d:'—'],['Среднее за период',show(m,avg(v))+u],['Измерений за период',String(v.length)]]}
+   case 'weight':{const ch=v.at(-1)-v[0];return [['Изменение за период',(ch>0?'+':'−')+fmt(Math.abs(ch),1)+' кг'],[`ИМТ (рост ${state.prof.height} см)`,fmt(cur(m)/(state.prof.height/100)**2,1)],['Минимум',sh(Math.min(...v))],['Максимум',sh(Math.max(...v))]]}
+   case 'water':return [['Цель',fmt(GOAL.water)+' мл',cur(m)/GOAL.water],['Стаканов по 250 мл','6 из 8'],['Последняя запись','15:20 · 250 мл']];
+   case 'spo2':return [['Ночью в среднем','96%'],['Минимум за период',sh(Math.min(...v))]];
+   case 'hrv':return [['Ваш обычный диапазон','36–48 мс'],['Измерено','ночью во время сна']];
+   default:return [['Среднее',sh(avg(v))],['Минимум',sh(Math.min(...v))],['Максимум',sh(Math.max(...v))],['Записей',String(v.length)]];
+  }
+}
+function renderWeek(){
+  if(!$('#week'))return;
+  const has=[1,1,0,1,1,1,1];
+  $('#week').innerHTML=WD.map((d,i)=>`<div class="day ${i===2?'on':''}"><span>${d}</span><b class="num">${26+i>31?26+i-31:26+i}</b><i class="dot ${has[(i+4)%7]?'':'off'}"></i></div>`).join('');
+}
+function ringSvg(p,col){const R=26,C=2*Math.PI*R;return `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--surface3)" stroke-width="7"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C*Math.min(p,1)} ${C}" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" fill="var(--text)">${Math.round(p*100)}%</text></svg>`}
+function renderToday(){
+  if(!$('#rings'))return;
+  const r=todayRings(true);
+  $('#rings').innerHTML=r.map(([n,s,p,c])=>`<div class="ring">${ringSvg(p,c)}<b>${n}</b><small class="num">${s}</small></div>`).join('');
+}
+function renderKpis(){}
+const WIDE=new Set(['steps','sleep','heart']);
+function deltaChip(m,w=true){
+  if(!hasHistory(m))return `<span class="chipd">${recs(m).length} ${recs(m).length===1?'запись':'записи'}</span>`;
+  const usual=avg(series(m,'month').slice(0,-1)),d=(cur(m)-usual)/usual*100;
+  if(Math.abs(d)<2)return `<span class="chipd">≈ обычно</span>`;
+  return `<span class="chipd">${d>0?'▲':'▼'} ${fmt(Math.abs(d))}%</span>${w?' к обычному':''}`;
+}
+function cardViz(m,wide){
+  if(!hasHistory(m)&&recs(m).length<1)return '';
+  if(!hasHistory(m))return `<div class="d" style="margin-top:auto">Добавьте ещё ${3-recs(m).length} — появится график</div>`;
+  return `<div class="vwrap">${vizMini(m,wide?320:150,wide?78:64)}</div>`;
+}
+function micro(m,w,h){if(!hasHistory(m))return `<span class="dd">${recs(m).length} зап.</span>`;return vizMini(m,w,h).replace(/<text[^>]*font-size="(9|10)"[^>]*>.*?<\/text>/g,'')}
+function shortDelta(m){const values=series(m,'month');if(values.length<2)return '';const u=avg(values.slice(0,-1));if(!u)return '';const d=(values.at(-1)-u)/u*100;return Math.abs(d)<2?'≈':(d>0?'▲':'▼')+fmt(Math.abs(d))+'%'}
+function tile(m,cls='tl'){return `<button class="${cls}" data-metric="${m.id}" style="--c:${cv(m)}"><div class="h"><span class="ic">${ic(mic(m))}</span>${esc(m.name)}</div><div class="row1"><span class="v num">${showCur(m)}${m.id!=='sleep'?`<small>${m.unit}</small>`:''}</span><span class="dd">${shortDelta(m)}</span></div><div class="vmicro">${micro(m,150,44)}</div></button>`}
+
+const G3DEF=new Set(['sleep','heart']);
+const g3size=id=>state.cardSize[id]||(G3DEF.has(id)?2:1);
+function g3order(av){if(!state.cardOrder||!state.cardOrder.length)return av;const o=new Map(state.cardOrder.map((id,i)=>[id,i]));return [...av].sort((a,b)=>(o.has(a.id)?o.get(a.id):1e3+av.indexOf(a))-(o.has(b.id)?o.get(b.id):1e3+av.indexOf(b)))}
+/* раскладка без дыр: если карточка не влезает в остаток ряда — она сужается до остатка; последний ряд добивается последней карточкой */
+function g3pack(av){const out=[];let acc=0;
+  for(const m of g3order(av)){let w=Math.min(3,Math.max(1,+g3size(m.id)||1));const rem=3-acc;if(w>rem){if(state.cardSize[m.id]&&out.length){out[out.length-1].w+=rem;acc=0}else w=rem}out.push({m,w});acc=(acc+w)%3}
+  if(acc&&out.length){out[out.length-1].w+=3-acc}
+  return out}
+function renderGrid3(av){const pk=document.body.classList.contains('pickmode');
+  return `<div class="g3">${g3pack(av).map(({m,w})=>{const on=pk&&state.pickSel&&state.pickSel.has(m.id);
+   return `<button class="t ${w===2?'w2':w===3?'w3':''} ${on?'pickOn':''}" data-metric="${m.id}" style="--c:${cv(m)}">${pk?`<span class="pickmark">${on?'✓':''}</span>`:''}<span class="ic">${ic(mic(m))}</span><span class="v num">${showCur(m)}${m.id!=='sleep'&&m.id!=='bp'?`<small>${m.unit}</small>`:''}</span><span class="n">${esc(m.name)}</span><span class="vmicro">${micro(m,w===3?340:w===2?220:100,w===1?34:36)}</span></button>`}).join('')}</div>`}
+function renderCompact(av){
+  const L=state.layout,cats=Object.keys(CATS).filter(c=>av.some(m=>m.cat===c));
+  if(L==='tiles')return `<div class="tiles">${av.map(m=>tile(m)).join('')}</div>`;
+  if(L==='carousel')return cats.map(c=>{const ms=av.filter(m=>m.cat===c);return `<div class="chd" style="--c:var(${CATS[c].c})">${ic(CATS[c].i)}${c}<span>${ms.length>2?'листайте →':''}</span></div><div class="crow">${ms.map(m=>tile(m)).join('')}</div>`}).join('');
+  if(L==='list')return `<div class="card lst">${cats.map(c=>`<div class="lcat" style="--c:var(${CATS[c].c})">${c}</div>`+av.filter(m=>m.cat===c).map(m=>`<button class="lr" data-metric="${m.id}" style="--c:${cv(m)}"><span class="ic">${ic(mic(m))}</span><span class="n">${esc(m.name)}<small>${metricCaption(m)}</small></span><span class="vmicro">${micro(m,120,40)}</span><span class="val num">${showCur(m)}<small>${m.id==='sleep'?'':m.unit}</small></span></button>`).join('')).join('')}</div>`;
+  if(L==='grid3')return renderGrid3(av);
+}
+function todayRings(full){const g0=m=>{const x=cur(m);return isFinite(x)?x:0};const st=g0(byId.steps),sl=g0(byId.sleep),wa=g0(byId.water),G=GOAL,hm=h=>`${Math.floor(h)}:${String(Math.round((h%1)*60)).padStart(2,'0')}`,L=x=>fmt(x/1000,x%1000?2:0).replace(/,?0+$/,'');
+  return [['Шаги',full?`${fmt(st)} из ${fmt(G.steps)}`:fmt(st),st/G.steps,'var(--c-act)'],['Сон',full?`${hm(sl)} из ${hm(G.sleep)}`:hm(sl),sl/G.sleep,'var(--c-sleep)'],['Вода',full?`${fmt(wa/1000,2)} из ${L(G.water)} л`:`${fmt(wa/1000,2)} л`,wa/G.water,'var(--c-food)']]}
+function renderTodayMini(){
+  if(!$('#todayMini'))return;
+  const r=todayRings(false);
+  $('#todayMini').innerHTML=r.map(([n,v,p,c])=>`<div class="tr">${ringSvg(p,c)}<div><b class="num">${v}</b><small>${n}</small></div></div>`).join('');
+}
+function repack(list){
+  // list: [{m, size}] → sizes s=1, m=2, l=2 (full). Auto-shrink next card to fill gap.
+  const out=[];let acc=0;
+  for(let i=0;i<list.length;i++){
+    let cur=list[i];
+    let want=cur.size==='l'?2:(cur.size==='m'?2:1);
+    if(cur.size==='l'){out.push({...cur,render:'full'});acc=0;continue}
+    if(acc===1&&want===2){
+      // gap of 1 column before this card; try to shrink this card to s
+      out.push({...cur,size:'s',render:'s'});acc=(acc+1)%2;continue;
+    }
+    if(want===2){out.push({...cur,render:'m'});acc=0;continue}
+    out.push({...cur,render:'s'});acc=(acc+1)%2;
+  }
+  return out;
+}
+function renderGroups(){
+  if(!['list','tiles','grid3'].includes(state.layout))state.layout='list';
+  document.body.dataset.layout=state.layout;
+  const _foldIds=foldIdsOf();
+  const _vis=AV().filter(m=>!_foldIds.includes(m.id));
+  if(state.layout!=='cards'){const counts={};AV().forEach(m=>{const n=sourceName(m);counts[n]=(counts[n]||0)+1});counts['Вручную']??=0;$('#countAll').innerHTML=Object.entries(counts).sort(([a],[b])=>Number(a==='Вручную')-Number(b==='Вручную')).map(([name,n])=>`<span><i style="background:${name==='Вручную'?'var(--c-fit)':'var(--c-well)'}"></i>${esc(name)} · ${n}</span>`).join('');$('#groups').innerHTML=renderCompact(_vis);renderPickbar();return}
+  const av=_vis,a=AV().filter(m=>m.has).length,b=AV().length-a;
+  $('#countAll').innerHTML=`<span><i style="background:var(--c-well)"></i>Samsung Health · ${a}</span><span><i style="background:var(--c-fit)"></i>Вручную · ${b}</span><span><i style="background:var(--faint)"></i>Ещё ${M.length-AV().length} можно добавить</span>`;
+  $('#groups').innerHTML=Object.keys(CATS).map(c=>{
+    let all=av.filter(m=>m.cat===c);if(!all.length)return '';
+    // apply user order
+    if(state.cardOrder&&state.cardOrder.length){
+      const ord=new Map(state.cardOrder.map((id,i)=>[id,i]));
+      const inCat=all.filter(m=>ord.has(m.id));
+      const rest=all.filter(m=>!ord.has(m.id));
+      all=[...inCat.sort((x,y)=>ord.get(x.id)-ord.get(y.id)),...rest];
+    }
+    const packed=repack(all.map(m=>({m,size:state.cardSize[m.id]||(WIDE.has(m.id)?'m':'s')})));
+    return `<div class="catlbl" style="--c:var(${CATS[c].c})">${ic(CATS[c].i)}${c}</div><div class="cards">${packed.map(({m,render:r})=>{const w=r!=='s';return `
+      <button class="mc ${r==='m'?'wide':r==='full'?'full':''} ${document.body.classList.contains('pickmode')&&state.pickSel?.has(m.id)?'pickOn':''}" data-metric="${m.id}" style="--c:${cv(m)}">
+        ${document.body.classList.contains('pickmode')?`<span class="pickmark">${state.pickSel?.has(m.id)?'✓':''}</span>`:''}
+        <div class="h"><span class="ic">${ic(mic(m))}</span>${esc(m.name)}${w?`<span class="src">${isManual(m)?'вручную':'сегодня'}</span>`:''}</div>
+        <div class="v num">${showCur(m)}${m.id!=='sleep'?`<small>${m.unit}</small>`:''}</div>
+        <div class="d">${deltaChip(m,w)}${!w&&isManual(m)?'<span class="tagm" style="margin:0">вручную</span>':''}</div>
+        ${cardViz(m,w)}
+      </button>`}).join('')}</div>`}).join('');renderPickbar();
+}
+function renderPickbar(){
+  let b=$('#pickbar');
+  if(document.body.classList.contains('pickmode')){
+    if(!b){b=document.createElement('div');b.id='pickbar';b.style.cssText='position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);display:flex;gap:8px;z-index:60';b.innerHTML=`<button class="btn ghost" data-y="pickCancel" style="flex:1">Отмена</button><button class="btn" data-y="pickFold" style="flex:1">Свернуть выбранные</button>`;document.body.appendChild(b);}
+    const n=state.pickSel?state.pickSel.size:0;
+    b.querySelector('[data-y=pickFold]').textContent=n?`Свернуть выбранные (${n})`:'Свернуть выбранные';
+  }else if(b)b.remove();
+}
+
+/* ---------- dynamics ---------- */
+const _mac=()=>{try{const c=bodyCalc();return [['Белки · норма',c.prot],['Углеводы · норма',c.carb],['Жиры · норма',c.fatg]].map(([k,v])=>[k,Number.isFinite(v)?fmt(v)+' г':'Нужны данные профиля'])}catch(e){return []}};
+function renderDynamics(){
+  $('#periods').innerHTML=PERIODS.map(([k,l])=>`<button data-period="${k}" class="${state.period===k?'on':''}">${l}</button>`).join('');
+  if(!avail(byId[state.metric])){if(!AV().length){$('#cats').innerHTML='';$('#dynCard').innerHTML='<div class="emptybox"><p style="margin:0">Показателей пока нет.</p><button class="btn" data-act="add">Добавить показатель</button></div>';$('#picker').innerHTML='<span class="ic">${ic("i-chart")}</span><span class="t"><small>Показатель</small><b>—</b></span>';return}state.metric=AV()[0].id}
+  const cs=Object.keys(CATS).filter(c=>AV().some(m=>m.cat===c));if(!cs.includes(state.cat))state.cat='Все';
+  $('#cats').innerHTML=['Все',...cs].map(c=>`<button class="chip ${state.cat===c?'on':''}" data-cat="${c}">${c}</button>`).join('');
+  const m=byId[state.metric];
+  $('#picker').style.setProperty('--c',cv(m));$('#dynCard').style.setProperty('--c',cv(m));
+  $('#picker').innerHTML=`<span class="ic">${ic(CATS[m.cat].i)}</span><span class="t"><small>Показатель · ${m.cat}</small><b>${esc(m.name)}</b></span>${ic('i-down','i chev')}`;
+  if(!hasHistory(m)){$('#dynCard').innerHTML=`<div style="font-size:var(--fs-s);color:var(--muted)">Ваши записи</div><div class="big num">${showCur(m)}<small>${m.unit}</small></div><div class="note">${ic('i-info')}<span>График появится с первым измерением.</span></div><div style="margin-top:12px"><button class="btn" data-addm="${m.id}">${ic('i-plus')}Добавить запись</button></div>`;return}
+  if(false){$('#dynCard').innerHTML=`<div class="emptybox"><div class="ic">${ic(CATS[m.cat].i)}</div><p style="margin:0 0 4px;color:var(--text);font-weight:600">Пока нет записей</p><p style="margin:0 0 14px">Здесь будут только данные из Health Connect или ручные записи.</p><button class="btn" data-go="sources">${ic('i-plug')}Подключить источник</button></div>`;return}
+  const canCmp=['bar','line'].includes(m.chart);
+  const useV=PAL[m.id]&&!(state.cmp&&canCmp);const _r=useV?vizBig(m,state.period):drawChart(m,state.period,state.cmp&&canCmp);const s=_r.svg,v=_r.v.length?_r.v:series(m,state.period),p=_r.p;
+  const pl=PERIODS.find(x=>x[0]===state.period)[1].toLowerCase();
+  const sum=m.chart==='bar'&&state.period==='day';
+  const big=sum?v.reduce((a,b)=>a+b,0):(m.chart==='bar'?avg(v):v[v.length-1]);
+  const st=metricSummary(m,state.period);
+  $('#dynCard').innerHTML=`
+    <div style="font-size:var(--fs-s);color:var(--muted)">${sum?'Всего за день':m.chart==='bar'?'В среднем за '+pl.replace('неделя','неделю'):'Последнее значение'}</div>
+    <div class="big num">${show(m,big,m.id==='bp'?metricRecords(m,state.period).at(-1)?.lo:undefined)}${m.id!=='sleep'?`<small>${m.unit}</small>`:''}</div>
+    <div class="delta" style="margin-top:6px">${vsUsual(m)}</div>
+    <div class="chart">${s}</div>
+    <div class="legend">${bigLegend(m)}</div>
+    <div class="stats">${st.map(([a,b])=>`<div class="stat"><small>${a}</small><b class="num">${b}</b></div>`).join('')}</div>
+    ${canCmp?`<button class="toggle" data-act="cmp" aria-pressed="${state.cmp}"><span>Сравнить с предыдущим периодом</span><span class="sw ${state.cmp?'on':''}"></span></button>`:''}
+    `;
+}
+let heatCache=null;
+function renderHeat(){
+ const el=$('#heat');if(!el)return;
+ const rows=M.map(m=>recs(m)),today=localDay();
+ if(heatCache?.day===today&&rows.every((r,i)=>r===heatCache.rows[i])){if(el.innerHTML!==heatCache.html)el.innerHTML=heatCache.html;return}
+ const dates=Array.from({length:28},(_,i)=>{const d=new Date();d.setDate(d.getDate()-27+i);return localDay(d)}),counts=new Map(dates.map(d=>[d,0]));
+ const since=new Date(dates[0]+'T00:00:00').getTime();
+ rows.forEach(records=>{
+  const seen=new Set();
+  for(const r of records){
+   const ts=recordTimestamp(r);if(ts<since||!Number.isFinite(ts))continue;
+   const day=r.day||localDay(ts);if(counts.has(day))seen.add(day);
+  }
+  seen.forEach(day=>counts.set(day,counts.get(day)+1));
+ });
+ const html=dates.map(day=>{const n=counts.get(day),p=n/M.length;return `<i class="${!n?'':p<.35?'l1':p<.75?'l2':'l3'}" title="${day}: ${n?'показателей с записями: '+n:'нет данных'}"></i>`}).join('');
+ heatCache={day:today,rows,html};el.innerHTML=html;
+}
+
+/* ---------- more ---------- */
+const MORE=[
+ ['Персонализация',[['themes','i-palette','Оформление','Темы, графики, значки и главный экран'],['remind','i-bell','Напоминания','Ваши заметки по расписанию']]],
+ ['Данные',[['sources','i-plug','Источники и разрешения','Health Connect · что разрешено'],['manual','i-plus','Ручные записи','Добавить показатель или значение'],['diary','i-book','Дневник','Заметки и события по датам'],['export','i-dl','Экспорт и резервная копия','Сохранить записи и настройки']]],
+ ['Отчёты и помощь',[['report','i-file','Отчёт о показателях','Сводка за выбранный период'],['privacy','i-shield','Конфиденциальность','Где хранятся данные'],['help','i-help','Справка','Ограничения и версия']]]
+];
+const GEN={manual:['Ручные записи','Список измерений, добавленных вручную. Каждая запись помечается как введённая вами.','Не выдаётся за данные датчиков.'],
+ diary:['Дневник','Личные заметки и события по датам — например, «болел», «перелёт», «новые кроссовки».','Помогает понять скачки на графиках.'],
+ export:['Экспорт','Сохранение локальной копии записей и настроек в файл.','Синхронизация не заменяет резервную копию.'],
+ remind:['Напоминания','Ваши напоминания: выпить воды, взвеситься, измерить давление.','Не медицинские советы. Срабатывание зависит от настроек Android.'],
+ report:['Отчёт','Сводка за период: источники, пропуски, средние значения. Можно сохранить в PDF или отправить врачу.','Только реально переданные данные.'],
+ privacy:['Конфиденциальность','Данные хранятся на устройстве. Здесь — управление разрешениями и удаление данных.','Вы решаете, что читает приложение.'],
+ help:['Справка','Откуда берутся данные, какие есть ограничения, версия приложения.','Баланс 1.16']};
+function renderMore(){
+  $('#moreList').innerHTML=MORE.map(([t,items])=>`<div class="lbl2">${t}</div><div class="card list">${items.map(([k,i,n,s,b])=>`<button class="item" data-go="${k}"><span class="ic">${ic(i)}</span><span class="t"><b>${n}</b><small>${s}</small></span>${(b=moreBadges()[k]||b)?`<span class="badge">${b}</span>`:''}${ic('i-right','i chev')}</button>`).join('')}</div>`).join('');
+}
+function renderSources(){
+  const F=['Все','Носимые устройства','Устройства','Приложения','Мосты','Другое'];
+  $('#srcF').innerHTML=F.map(f=>`<button class="chip ${state.srcF===f?'on':''}" data-srcf="${f}">${f}</button>`).join('');
+  $('#srcList').innerHTML=SOURCES.filter(s=>state.srcF==='Все'||s.group===state.srcF).map(s=>`
+   <details class="card src"><summary><span class="logo" style="background:${s.color}">${esc(s.name[0])}</span><span class="t"><b>${esc(s.name)}</b><small>${esc(s.group)} · ${esc(s.route)}</small></span>${ic('i-down','i chev')}</summary>
+   <div class="body"><p><b>Путь:</b> ${esc(s.path)}</p><p><b>Что передаётся:</b> ${esc(s.types)}</p><p><b>Ограничения:</b> ${esc(s.limit)}</p></div></details>`).join('');
+}
+function renderPin(){
+  const _f=foldIdsOf();
+  $('#pinList').innerHTML=AV().map(m=>{const on=!_f.includes(m.id);return `<button class="pinrow" data-vis="${m.id}" aria-pressed="${on}" style="--c:${cv(m)}"><span class="ic" style="width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--c);color:#0b0f15">${ic(CATS[m.cat].i)}</span><span class="n">${esc(m.name)}<small>${m.cat} · ${esc(sourceName(m))}</small></span><span class="sw ${on?'on':''}"></span></button>`}).join('');
+}
+const LAYS=[['list','Список','строки с графиком'],['tiles','Плитки','2 в ряд'],['grid3','Сетка','3 в ряд']];
+const LAYIC={list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',tiles:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>',grid3:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1.3"/><rect x="9.5" y="3" width="5" height="5" rx="1.3"/><rect x="16" y="3" width="5" height="5" rx="1.3"/><rect x="3" y="9.5" width="5" height="5" rx="1.3"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3"/><rect x="16" y="9.5" width="5" height="5" rx="1.3"/><rect x="3" y="16" width="5" height="5" rx="1.3"/><rect x="9.5" y="16" width="5" height="5" rx="1.3"/><rect x="16" y="16" width="5" height="5" rx="1.3"/></svg>'};
+function renderLaySw(){const el=document.getElementById('laySw');if(el)el.innerHTML=LAYS.map(([k,n])=>`<button data-lay="${k}" class="${state.layout===k?'on':''}" aria-label="${n}">${LAYIC[k]}${n}</button>`).join('')}
+const PALS={"dark": [["graphite", "Графит", "#0b0f15", "#222c39", "#6fd6ca"], ["midnight", "Полночь", "#070b1a", "#1f2850", "#7aa2ff"], ["amethyst", "Аметист", "#0e0a16", "#2a2040", "#c08cff"], ["emerald", "Изумруд", "#06110e", "#1b3029", "#4fe0a0"], ["black", "Чёрная", "#000000", "#1e1e22", "#ffb547"]], "light": [["morning", "Утро", "#eef1f5", "#ffffff", "#0f8f84"], ["sand", "Песок", "#f5efe6", "#ffffff", "#c0612b"], ["lavender", "Лаванда", "#f1eefa", "#ffffff", "#6b4fe0"], ["mint", "Мята", "#eaf5f0", "#ffffff", "#138a5e"], ["sky", "Небо", "#ecf3fc", "#ffffff", "#2370d8"]]};
+function renderPals(){[['dark','palDark'],['light','palLight']].forEach(([m,id])=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=PALS[m].map(([k,n,bg,c,a])=>`<button class="pal ${state.theme===m&&state.pal[m]===k?'on':''}" data-pal-set="${m}:${k}"><span class="psw" style="background:${bg}"><em style="background:${a}"></em><i style="background:${a};width:70%"></i><i style="background:${c}"></i><i style="background:${c};width:80%"></i></span>${n}</button>`).join('')})}
+function renderThemes(){renderPals();const lp=document.getElementById('layPick');if(lp)lp.innerHTML=LAYS.map(([k,n,d])=>`<button data-lay="${k}" class="${state.layout===k?'on':''}"><b>${n}</b><small>${d}</small></button>`).join('');
+  const tp=document.getElementById('topPick');if(tp)tp.innerHTML=[['heart','Сердце'],['tracks','Треки'],['orbit','Орбита'],['bloom','Лепестки'],['diamond','Кристалл'],['infinity','Петля'],['hex','Соты'],['sun','Солнце'],['none','Скрыт']].map(([k,n])=>`<button data-topset="${k}" aria-pressed="${state.top.style===k}" class="${state.top.style===k?'on':''}"><b>${n}</b></button>`).join('');
+  const asw=document.getElementById('animSw');if(asw)asw.classList.toggle('on',state.anim!==false);
+  const dsw=document.getElementById('demoSw');if(dsw)dsw.classList.toggle('on',state.demo!==false);
+  document.querySelectorAll('[data-theme-set]').forEach(b=>b.classList.toggle('on',b.dataset.themeSet===state.theme))}
+
+/* ---------- metric sheet ---------- */
+let sheetPeriod='week';
+let sheetSel=null;
+function openMetric(id){
+  const m=byId[id];sheetPeriod='week';sheetSel=null;const sh=$('#sheet');sh.classList.add('full');sh.style.setProperty('--c',cv(m));
+  const draw=()=>{
+    const head=`<div class="grab"></div><div class="hd"><span class="ic" style="background:var(--c);color:#0b0f15">${ic(mic(m))}</span><span class="t"><b>${esc(m.name)}</b><small>${m.cat} · ${esc(sourceName(m))}</small></span><button class="iconbtn" data-close aria-label="Закрыть">${ic('i-down')}</button></div>`;
+    const _foldIds=foldIdsOf();
+    const folded=_foldIds.includes(id);
+    const actions=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="btn" data-addm="${m.id}">${ic('i-plus')}Добавить</button><button class="btn ghost" data-dyn="${m.id}">${ic('i-chart')}Сравнить</button></div>`;
+    const rl=recs(m).length?`<div class="h4">Ваши записи</div><div class="card dl">${recs(m).slice().reverse().slice(0,5).map(r=>`<div class="drow"><span class="k">${esc(r.d)}</span><span class="val num">${show(m,r.v,r.lo)}${m.id==='sleep'?'':' '+m.unit}</span></div>`).join('')}</div>`:'';
+    const rm=state.manual[m.id]&&!(state.deviceData?.[m.id]?.length||state.bleData?.[m.id]?.length)?`<button class="btn ghost" style="width:100%;margin-top:12px" data-rm="${m.id}">Убрать ручной показатель</button>`:'';
+    const about=`<div class="h4">О показателе</div><div class="card about">${ABOUT[m.cat]}</div>`;
+    if(!hasHistory(m)){sh.innerHTML=head+`<div class="dhero"><div class="big num">${showCur(m)}<small>${m.unit}</small></div><div class="note">${ic('i-info')}<span>График появится с первым измерением.</span></div></div>`+actions+rl+about+rm;return}
+    const big=PAL[m.id]?vizBig(m,sheetPeriod):drawChart(m,sheetPeriod,false);const sv=big.svg,v=big.v,noSel=!!big.noSel;
+    const n=v.length,step=(W-PL-PR)/n;let svgS=sv;
+    if(sheetSel!=null&&m.chart!=='ring'&&!noSel){const x=PL+step*sheetSel+step/2;svgS=sv.replace(/<\/svg>$/,`<line x1="${x}" x2="${x}" y1="${PT}" y2="${H-PB}" stroke="var(--text)" stroke-opacity=".5" stroke-width="1.2" stroke-dasharray="3 3"/><rect x="${x-step/2}" y="${PT}" width="${step}" height="${H-PT-PB}" fill="var(--text)" opacity=".06"/></svg>`)}
+    const sel=sheetSel!=null?v[sheetSel]:null;
+    const sumDay=DAILY_METRICS.has(m.id)&&sheetPeriod==='day';
+    const heroV=v.length?(sumDay?v.reduce((a,b)=>a+b,0):avg(v)):NaN;
+    const PS=PERIODS.filter(x=>x[0]!=='all');
+    const det=details(m,v);
+    sh.innerHTML=head+`<div class="dhero">
+       <div style="font-size:var(--fs-s);color:var(--muted)">${sumDay?'Всего за день':'Среднее за выбранный период'}</div>
+       <div class="big num">${show(m,heroV,periodLower(m,sheetPeriod))}${m.id!=='sleep'?`<small>${m.unit}</small>`:''}</div>
+       <div class="d period-coverage" style="margin-top:8px;font-size:var(--fs-xs);color:var(--muted)">${esc(periodCoverage(m,sheetPeriod))}</div>
+       ${PAL[m.id]?`<div class="hero" data-selected-period="${sheetPeriod}">${renderRealVisual({...m,historicalView:true},320,m.id==='spo2'||m.id==='activeCalories'?120:100,metricChartRecords(m,sheetPeriod),true)}</div>`:''}
+       <div class="seg" style="grid-template-columns:repeat(${PS.length},1fr);margin:14px 0 0">${PS.map(([k,l])=>`<button data-sp="${k}" class="${sheetPeriod===k?'on':''}">${l}</button>`).join('')}</div>
+       <div class="h4" style="margin:16px 0 0">История</div><div class="chart tap" id="dchart">${svgS}</div>${bigLegend(m,sheetPeriod)?`<div class="legend">${bigLegend(m,sheetPeriod)}</div>`:''}
+       ${m.chart!=='ring'&&!noSel?`<div class="tip">${sel!=null?`<span>${fullLabel(sheetPeriod,sheetSel)}</span><b class="num">${show(m,sel)}${m.id==='sleep'?'':' '+m.unit}</b>`:'<span>Нажмите на график, чтобы увидеть значение</span>'}</div>`:''}
+       <div class="stats">${metricSummary(m,sheetPeriod).map(([a,b])=>`<div class="stat"><small>${a}</small><b class="num">${b}</b></div>`).join('')}</div>
+     </div>`+actions+
+     `<div class="h4">Подробности</div><div class="card dl">${det.map(([k,val,p])=>`<div class="drow"><span class="k">${k}</span>${p!=null?`<span class="pb"><i style="width:${Math.max(3,p*100)}%"></i></span>`:''}<span class="val num">${val}</span></div>`).join('')}</div>`+rl+about+rm+
+     `<div class="note">${ic('i-info')}<span>${demoOn()?'Значения демонстрационные.':'Показаны сохранённые фактические записи. Дата и источник указаны в подробностях.'}</span></div>`;
+    const ch=sh.querySelector('#dchart');
+    if(ch&&m.chart!=='ring'&&!noSel)ch.addEventListener('click',e=>{const r=ch.querySelector('svg').getBoundingClientRect();const x=(e.clientX-r.left)/r.width*W;const i=Math.floor((x-PL)/step);if(i>=0&&i<n){sheetSel=sheetSel===i?null:i;const st=sh.scrollTop;draw();sh.scrollTop=st}});
+  };
+  draw();sh._draw=draw;sh.scrollTop=0;sh.classList.add('on');$('#scrim').classList.add('on');scanAnim();
+}
+function openAdd(){
+  const sh=$('#sheet');sh.classList.remove('full');sh.style.removeProperty('--c');sh._draw=null;
+  const _foldIds=foldIdsOf();
+  const folded=AV().filter(m=>_foldIds.includes(m.id));
+  const rest=M.filter(m=>!avail(m));
+  sh.innerHTML=`<div class="grab"></div><div class="hd"><span class="t"><b>Добавить показатель</b><small>Свернутые карточки и новые показатели</small></span><button class="iconbtn" data-close aria-label="Закрыть">${ic('i-down')}</button></div>
+  ${folded.length?`<div class="optg">Свернутые · ${folded.length}</div>${folded.map(m=>{const has=recs(m).length>0||(m.has&&demoOn());return `<button class="opt" data-y="unfold" data-a="${m.id}" style="--c:${cv(m)}"><span class="dotc"></span><span class="n">${esc(m.name)}<br><small>${has?'данные есть · показать на экране':'данных пока нет'}</small></span><span style="font-weight:800;font-size:var(--fs-m)" class="num">${has?showCur(m):'—'}</span>${ic('i-right')}</button>`}).join('')}`:''}
+  <div class="optg">Новые показатели</div>
+  <div class="opts">${Object.keys(CATS).map(c=>{const ms=rest.filter(m=>m.cat===c);return ms.length?`<div class="optg" style="margin:8px 14px 4px">${c}</div>`+ms.map(m=>`<button class="opt" data-addm="${m.id}" style="--c:${cv(m)}"><span class="dotc"></span><span class="n">${esc(m.name)}<br><small>${m.unit}</small></span>${ic('i-plus')}</button>`).join(''):''}).join('')}</div>
+  ${folded.length?'<p class="foot">Нажмите на свернутый показатель — карточка вернётся на главный экран. Управление карточками доступно через три точки.</p>':''}`;
+  sh.classList.add('on');$('#scrim').classList.add('on');
+}
+function openForm(id){
+  const m=byId[id],sh=$('#sheet');sh.classList.remove('full');sh.style.setProperty('--c',cv(m));sh._draw=null;
+  const ph=m.id==='sleep'?'7,5':fmt(m.base,m.dec);
+  sh.innerHTML=`<div class="grab"></div><div class="hd"><span class="ic">${ic(CATS[m.cat].i)}</span><span class="t"><b>${esc(m.name)}</b><small>Новая запись · ${m.id==='sleep'?'часы':m.unit}</small></span><button class="iconbtn" data-close aria-label="Закрыть">${ic('i-down')}</button></div>
+  <form id="f" data-id="${m.id}">
+   <label class="field">${m.id==='bp'?'Верхнее (систолическое)':DAILY_METRICS.has(m.id)?'Итог за выбранный день':'Значение'}<input name="v" inputmode="decimal" placeholder="${m.id==='bp'?'120':ph}" required autocomplete="off"></label>
+   ${m.id==='bp'?'<label class="field">Нижнее (диастолическое)<input name="lo" inputmode="decimal" placeholder="80" required autocomplete="off"></label>':''}
+   <label class="field">Дата<input name="d" type="date" value="${localDay()}" max="${localDay()}"></label>
+   <button class="btn" style="width:100%;margin-top:16px" type="submit">Сохранить</button>
+   <div class="note">${ic('i-info')}<span>${DAILY_METRICS.has(m.id)?'Укажите суточный итог, не отдельную порцию. На графике за день показан последний сохранённый итог; записи разных источников не складываются повторно.':'Источник записи сохранится как «Вручную». История измерений устройств не удаляется.'}</span></div>
+  </form>`;
+  sh.classList.add('on');$('#scrim').classList.add('on');setTimeout(()=>sh.querySelector('input')?.focus(),300);
+}
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='f')return;e.preventDefault();const f=new FormData(e.target),id=e.target.dataset.id;
+  const error=message=>{let p=e.target.querySelector('.form-error');if(!p){p=document.createElement('p');p.className='form-error';p.setAttribute('role','alert');p.style.cssText='color:var(--c-heart);font-size:13px';e.target.append(p)}p.textContent=message};
+  const num=x=>{const s=String(x).replace(',','.').replace(/\s/g,'');return /^-?\d+(\.\d+)?$/.test(s)?Number(s):NaN};const v=num(f.get('v')),lo=f.get('lo')!=null?num(f.get('lo')):undefined;
+  if(!isFinite(v)||(id!=='skinTemperature'&&v<0)||(lo!==undefined&&(!isFinite(lo)||lo<=0||v<=lo)))return error(id==='bp'?'Укажите корректные значения: верхнее давление должно быть больше нижнего.':'Введите число без лишних символов. Отрицательное значение допустимо только для изменения температуры кожи.');
+  const dd=f.get('d')||localDay(),[y,mo,da]=dd.split('-'),dateTs=new Date(+y,+mo-1,+da).getTime(),ts=dd===localDay()?Date.now():dateTs;
+  if(!Number.isFinite(ts)||dd>localDay())return error('Проверьте дату измерения.');
+  (state.manual[id]??={rec:[]}).rec.push({id:'manual:'+Date.now(),v,lo,ts,dateOnly:dd!==localDay(),day:DAILY_METRICS.has(id)?dd:undefined,d:`${+da} ${MON[+mo-1]} ${y}`});delete state.manual[id].demo;saveManual();
+  // появились данные — карточка сама возвращается на экран
+  if(state.fold===null)state.fold=foldIdsOf();
+  state.fold=state.fold.filter(x=>x!==id);LS.set('balans2.fold',state.fold);
+  renderAll();openMetric(id);
+});
+function openPicker(){
+  const sh=$('#sheet');sh.classList.remove('full');sh.style.removeProperty('--c');
+  const list=AV().filter(m=>state.cat==='Все'||m.cat===state.cat);
+  sh.innerHTML=`<div class="grab"></div><div class="hd"><span class="t"><b>Выберите показатель</b><small>${state.cat==='Все'?'Все категории':state.cat}</small></span><button class="iconbtn" data-close aria-label="Закрыть">${ic('i-down')}</button></div>
+   <div class="opts">${list.map(m=>`<button class="opt ${m.id===state.metric?'on':''}" data-choose="${m.id}" style="--c:${cv(m)}"><span class="dotc"></span><span class="n">${esc(m.name)}<br><small>${m.cat}${isManual(m)?' · вручную':''}</small></span></button>`).join('')}</div>`;
+  sh._draw=null;sh.classList.add('on');$('#scrim').classList.add('on');
+}
+function closeSheet(){$('#sheet').classList.remove('full');$('#sheet').classList.remove('on');$('#sheet').style.transform='';$('#scrim').classList.remove('on')}
+
+/* ---------- navigation ---------- */
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+id));$('#screen').scrollTop=0}
+function setTab(t){state.tab=t;if(t==='goal')renderGoal();state.stack=[];document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));showView(t)}
+function go(k){
+  if(k==='back'){
+    const last=state.stack.at(-1);
+    if(state.stack.length>1){state.stack.pop();const prev=state.stack.at(-1);
+      if(prev){return go(prev)}
+    }
+    if(state.stack.length<=1){state.stack=[];return setTab(state.tab)}
+    state.stack=[];return setTab(state.tab);
+  }
+  if(k==='overview'||k==='dynamics'||k==='more'||k==='goal')return setTab(k);
+  const _P=(typeof MPAGES!=='undefined'&&MPAGES)||{};
+  const pt=(_P[k]&&_P[k].tab)||'more';if(state.tab!==pt){setTab(pt)}
+  state.stack.push(k);
+  if(k==='sources'){renderSources();renderHC();renderSrcList()}
+  if(k==='pin')renderPin();
+  if(k==='themes')renderThemes();
+  if(_P[k]){state.page=k;renderPage();return showView('page')}
+  if(GEN[k]){const [t,txt,n]=GEN[k];$('#gTitle').textContent=t;$('#gText').textContent=txt;$('#gNote').textContent=n;const it=MORE.flatMap(x=>x[1]).find(x=>x[0]===k);$('#gIcon').innerHTML=ic(it[1]);return showView('generic')}
+  showView(k);
+}
+function applyTheme(){const R=document.documentElement;R.dataset.theme=state.theme;R.dataset.pal=state.pal[state.theme];document.querySelector('meta[name=theme-color]').content=getComputedStyle(R).getPropertyValue('--bg').trim();LS.set('balans2.pal',state.pal);
+  document.querySelectorAll('[data-act=theme] use').forEach(u=>u.setAttribute('href',state.theme==='light'?'#i-moon2':'#i-sun'));LS.set('balans2.theme',state.theme);renderThemes()}
+function togglePin(id){
+  const i=state.pinned.indexOf(id);
+  if(i>=0){if(state.pinned.length<=1)return;state.pinned.splice(i,1)}else{if(state.pinned.length>=6)state.pinned.shift();state.pinned.push(id)}
+  LS.set('balans2.pinned',state.pinned);renderKpis();renderPin();
+}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-close]');if(!t)return;
+  if(t.closest('#scrim'))return closeSheet();
+  const d=t.dataset;
+  if(d.tab)return setTab(d.tab);
+  if(document.body.classList.contains('pickmode')){
+    if(d.metric){if(!state.pickSel)state.pickSel=new Set();state.pickSel.has(d.metric)?state.pickSel.delete(d.metric):state.pickSel.add(d.metric);renderGroups();return}
+    return;
+  }
+  if(d.metric)return openMetric(d.metric);
+  if(d.go){if(d.close!==undefined)closeSheet();return go(d.go)}
+  if(d.back!==undefined){state.stack.pop();const k=state.stack.pop();if(k)return go(k);return showView(state.tab)}
+  if(d.close!==undefined)return closeSheet();
+  if(d.act==='theme'){state.theme=state.theme==='dark'?'light':'dark';applyTheme();renderAll();return}
+  if(d.palSet){const [m,k]=d.palSet.split(':');state.theme=m;state.pal[m]=k;applyTheme();renderAll();renderThemes();return}
+  if(d.themeSet){state.theme=d.themeSet;applyTheme();renderAll();renderThemes();return}
+  if(d.lay){state.layout=d.lay;LS.set('balans2.layout',d.lay);renderThemes();renderGroups();return}
+  if(d.topset){state.top.style=d.topset==='none'?'heart':d.topset;state.top.showFigure=d.topset!=='none';if(d.topset==='none')state.top.showMetrics=false;saveTop();renderTopBlock();renderThemes();return}
+  if(d.topvisibility){state.top[d.topvisibility]=!state.top[d.topvisibility];saveTop();renderTopBlock();renderThemes();return}
+  if(t.id==='animSw'){state.anim=!(state.anim!==false);LS.set('balans2.anim',state.anim);applyAnim();renderThemes();return}
+  if(d.act==='add')return openAdd();
+  if(d.addm)return openForm(d.addm);
+  if(d.rm){delete state.manual[d.rm];saveManual();state.pinned=state.pinned.filter(x=>x!==d.rm);LS.set('balans2.pinned',state.pinned);closeSheet();return renderAll()}
+  if(d.act==='cmp'){state.cmp=!state.cmp;return renderDynamics()}
+  if(d.period){state.period=d.period;return renderDynamics()}
+  if(d.cat){state.cat=d.cat;const first=AV().find(m=>d.cat==='Все'||m.cat===d.cat)||M.find(m=>d.cat==='Все'||m.cat===d.cat);if(first&&d.cat!=='Все'&&byId[state.metric]?.cat!==d.cat)state.metric=first.id;return renderDynamics()}
+  if(t.id==='picker')return openPicker();
+  if(d.choose){state.metric=d.choose;closeSheet();return renderDynamics()}
+  if(d.dyn){state.metric=d.dyn;state.cat='Все';closeSheet();setTab('dynamics');return renderDynamics()}
+  if(d.vis){if(state.fold===null)state.fold=foldIdsOf();
+    const i=state.fold.indexOf(d.vis);i>=0?state.fold.splice(i,1):state.fold.push(d.vis);LS.set('balans2.fold',state.fold);renderPin();renderGroups();return}
+  if(d.pin){togglePin(d.pin);const sh=$('#sheet');if(sh.classList.contains('on')&&sh._draw)sh._draw();return}
+  if(d.sp){sheetPeriod=d.sp;sheetSel=null;const sh=$('#sheet'),st=sh.scrollTop;sh._draw();sh.scrollTop=st;return}
+  if(d.srcf){state.srcF=d.srcf;return renderSources()}
+});
+$('#scrim').addEventListener('click',closeSheet);
+
+(function(){
+  const scr=$('#screen'),bar=$('#tabbar');let lastY=scr.scrollTop,ticking=false;
+  // Keep the scrollable layout invariant when the floating navigation hides.
+  scr.style.paddingBottom='118px';
+  scr.addEventListener('scroll',()=>{if(ticking)return;ticking=true;requestAnimationFrame(()=>{ticking=false;const y=scr.scrollTop;if(y>140&&y>lastY+8)bar.classList.add('hide');else if(y<lastY-8||y<80)bar.classList.remove('hide');lastY=y})},{passive:true});
+})();
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+
+/*__VIZ__*/
+/*__MORE__*/
+/*__PLAN__*/
+/*__UI__*/
+/* ---- долгое нажатие на карточку: меню размера / перемещения / сворачивания / выбора ---- */
+let lpTimer=null,lpX=0,lpY=0;
+function cardMenuLegacy(id){
+  const m=byId[id];const cur=+g3size(id)||1;
+  sheet(sheetHd(m.name,'Действия с карточкой')+`
+  <div class="card" style="padding:4px 16px">
+    <div class="lbl2" style="margin-top:8px">Размер</div>
+    <div class="seg2">
+      <button data-y="csz" data-a="1" data-b="${id}" class="${cur===1?'on':''}">1 квадрат</button>
+      <button data-y="csz" data-a="2" data-b="${id}" class="${cur===2?'on':''}">2 квадрата</button>
+      <button data-y="csz" data-a="3" data-b="${id}" class="${cur===3?'on':''}">Вся ширина</button>
+    </div>
+    <div class="lbl2">Действия</div>
+    <div class="btnrow" style="flex-wrap:wrap">
+      <button class="btn" data-y="cmove" data-a="${id}">${ic('i-move')}Переместить</button>
+      <button class="btn ghost" data-y="cfold" data-a="${id}">${ic('i-down')}Свернуть</button>
+      <button class="btn ghost" data-y="cpick">${ic('i-check')}Выбрать</button>
+    </div>
+  </div>
+  <p class="foot">Настройки размера и порядок сохраняются на этом телефоне.</p>`);
+}
+let lpFired=false,dragOn=false;
+function grid3Cards(){return [...document.querySelectorAll('#groups .g3 .t')]}
+function startDrag(id){
+  const el=grid3Cards().find(c=>c.dataset.metric===id);if(!el)return;
+  dragOn=true;document.body.classList.add('dragmode');el.classList.add('dragging');
+  toast('Перемещение','ведите карточку пальцем и отпустите на нужном месте','i-move');
+  let ghost=null,overEl=null,moved=false;const scr=$('#screen');let raf=0,vy=0;
+  const auto=()=>{if(vy){if(scr)scr.scrollTop+=vy;window.scrollBy(0,vy);raf=requestAnimationFrame(auto)}else raf=0};
+  const pick=(x,y)=>{const t=document.elementFromPoint(x,y)?.closest('#groups .g3 .t');if(overEl&&overEl!==t)overEl.classList.remove('sel');overEl=t&&t!==el?t:null;if(overEl)overEl.classList.add('sel')};
+  const mv=ev=>{if(!dragOn)return;const e=ev.touches?ev.touches[0]:ev;if(ev.cancelable)ev.preventDefault();moved=true;
+    if(!ghost){const r=el.getBoundingClientRect();ghost=document.createElement('div');ghost.id='dragGhost';ghost.className='g3';const cl=el.cloneNode(true);cl.classList.remove('dragging','sel');cl.style.height='100%';ghost.appendChild(cl);ghost.style.width=r.width+'px';ghost.style.height=r.height+'px';document.body.appendChild(ghost);ghost._w=r.width/2;ghost._h=r.height/2}
+    ghost.style.left=(e.clientX-ghost._w)+'px';ghost.style.top=(e.clientY-ghost._h)+'px';pick(e.clientX,e.clientY);
+    const H=innerHeight;vy=e.clientY<70?-8:e.clientY>H-120?8:0;if(vy&&!raf)raf=requestAnimationFrame(auto)};
+  const pm=e=>{if(e.pointerType==='mouse')mv(e)},pu=e=>{if(e.pointerType==='mouse')end(e)};let lx=null,ly=null;const trk=e=>{const q=e.touches?e.touches[0]:e;if(q){lx=q.clientX;ly=q.clientY}};
+  const end=e=>{if(!dragOn)return;if(e.type==='pointercancel')return;
+    const x=e.changedTouches?.[0]?.clientX??e.clientX??lx,y=e.changedTouches?.[0]?.clientY??e.clientY??ly;if(x!=null)pick(x,y);
+    dragOn=false;vy=0;document.body.classList.remove('dragmode');el.classList.remove('dragging');ghost&&ghost.remove();
+    document.removeEventListener('pointermove',pm);document.removeEventListener('pointerup',pu);document.removeEventListener('touchmove',mv);document.removeEventListener('touchmove',trk);document.removeEventListener('touchend',end);
+    lpFired=true;setTimeout(()=>lpFired=false,350);
+    const toId=overEl?.dataset.metric;if(overEl)overEl.classList.remove('sel');
+    if(!toId)return toast('Перемещение отменено','карточка осталась на месте','i-info');
+    const vis=grid3Cards().map(c=>c.dataset.metric),rest=(state.cardOrder||[]).filter(x=>!vis.includes(x));
+    const ord=vis.filter(x=>x!==id);const from=vis.indexOf(id),to=vis.indexOf(toId);
+    ord.splice(ord.indexOf(toId)+(from<to?1:0),0,id);
+    state.cardOrder=[...ord,...rest];LS.set('balans2.cardOrder',state.cardOrder);renderGroups();
+    toast('Карточка перемещена','порядок сохранён','i-check')};
+  setTimeout(()=>{document.addEventListener('pointermove',pm,{passive:false});document.addEventListener('pointerup',pu);document.addEventListener('touchmove',trk,{passive:true});document.addEventListener('touchmove',mv,{passive:false});document.addEventListener('touchend',end)},50);
+}
+/* долгое нажатие — только в «Сетке» */
+document.addEventListener('pointerdown',()=>{if(!dragOn)lpFired=false},true);
+const lpOk=()=>state.layout==='grid3'&&!document.body.classList.contains('pickmode')&&!dragOn;
+function lpStart(t,x,y){lpX=x;lpY=y;clearTimeout(lpTimer);lpTimer=setTimeout(()=>{lpTimer=null;lpFired=true;if(navigator.vibrate)navigator.vibrate(12);cardMenu(t.dataset.metric,t)},500)}
+function lpCancel(){if(lpTimer){clearTimeout(lpTimer);lpTimer=null}}
+document.addEventListener('touchstart',e=>{if(!lpOk())return;const t=e.target.closest('#groups .g3 .t');if(!t)return;lpStart(t,e.touches[0].clientX,e.touches[0].clientY)},{passive:true});
+document.addEventListener('touchmove',e=>{if(lpTimer&&(Math.abs(e.touches[0].clientX-lpX)>8||Math.abs(e.touches[0].clientY-lpY)>8))lpCancel()},{passive:true});
+document.addEventListener('touchend',lpCancel,{passive:true});
+document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||!lpOk())return;const t=e.target.closest('#groups .g3 .t');if(t)lpStart(t,e.clientX,e.clientY)});
+document.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&lpTimer&&(Math.abs(e.clientX-lpX)>8||Math.abs(e.clientY-lpY)>8))lpCancel()});
+document.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')lpCancel()});
+/* после долгого нажатия не открывать карточку */
+document.addEventListener('click',e=>{if(lpFired){e.stopImmediatePropagation();e.preventDefault();lpFired=false}},true);
+document.addEventListener('contextmenu',e=>{if(e.target.closest('#groups .g3 .t'))e.preventDefault()});
+function renderAll(){renderProfileBits();renderWeek();renderToday();renderKpis();renderTopBlock();renderGroups();renderDynamics();renderHeat();renderMore();renderGoal();rerender();scanAnim()}
+ensureDemo();applyTheme();applyAnim();renderAll();if(state.priv.pin)showLock();
+</script>
+</body>
+</html>

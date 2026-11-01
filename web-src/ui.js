@@ -1,0 +1,556 @@
+/* ===== Главный экран: верхний блок, свернутые карточки, свайпы ===== */
+(function(){const st=document.createElement('style');st.textContent=`
+.topwrap{display:flex;align-items:center;gap:14px;margin:2px 0 12px}
+.topwrap .avatar{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:19px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--accent),var(--c-sleep));background-size:cover;background-position:center;overflow:hidden;flex:none}
+.topwrap .avatar img{width:100%;height:100%;object-fit:cover}
+.topwrap h2{margin:0;font-size:var(--fs-l)}.topwrap small{color:var(--muted)}
+.topwrap .config{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--muted);border:1px solid var(--line);flex:none}
+.tbstyles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.tbstyle{padding:10px 8px;border-radius:14px;border:2px solid var(--line);background:var(--surface2);text-align:center;font-size:var(--fs-xs);font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:5px}
+.tbstyle.on{border-color:var(--accent);color:var(--text);background:color-mix(in srgb,var(--accent) 12%,var(--surface2))}
+.tbstyle .im{width:100%;height:30px;border-radius:8px;background:var(--surface3);display:grid;place-items:center}
+.tbstyle .im i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--muted);margin:0 2px}
+.tbstyle.rings .im i{width:22px;height:22px;border:3px solid var(--accent);background:none}
+.tbstyle.line .im{display:flex;align-items:center;justify-content:center;gap:4px}.tbstyle.line .im i{width:16px;height:6px;border-radius:3px}
+.tbstyle.mini .im{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;padding:5px}.tbstyle.mini .im i{width:14px;height:9px;border-radius:3px;margin:0}
+.tbstyle.none .im i{width:26px;height:6px;border-radius:3px}
+.tbpick{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tbpick button{padding:7px 11px;border-radius:99px;font-size:var(--fs-xs);font-weight:700;border:1px solid var(--line);color:var(--muted);background:var(--surface2)}
+.tbpick button.on{color:#0b0f15;background:var(--tc);border-color:var(--tc)}
+/* кольца */
+.tbold{display:flex;gap:8px;align-items:center;padding:4px 6px}
+.tbold .rings{display:flex;gap:4px;flex:1;min-width:0;justify-content:space-between}
+.tbold .tr{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+.tbold .tr div{min-width:0}
+.tbold .tr b{font-size:var(--fs-m);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbold .tr small{color:var(--muted);font-size:var(--fs-xs);white-space:nowrap}
+.tbold.c4 .tr{gap:5px}
+.tbold.c4 .tr b{font-size:12.5px}.tbold.c4 .tr small{font-size:9px}
+.tbold.c4 svg{width:40px;height:40px}
+.tbold svg{width:48px;height:48px;flex:none}
+/* полоса */
+.tbline{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 2px}
+.tbline .l{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0}
+.tbline .l i{display:block;width:100%;max-width:44px;height:6px;border-radius:3px;background:var(--surface3);position:relative;overflow:visible;margin-top:4px}
+.tbline .l i span{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--tc)}
+.tbline .l b{font-size:var(--fs-s);font-variant-numeric:tabular-nums;white-space:nowrap}.tbline .l small{color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* мини */
+.tbmini{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.tbmini .m{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--tc) 14%,var(--surface2));border:1px solid color-mix(in srgb,var(--tc) 25%,transparent)}
+.tbmini .m .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--tc) 22%,transparent);color:var(--tc);flex:none}
+.tbmini .m .ic svg{width:16px;height:16px}.tbmini .m b{display:block;font-size:var(--fs-m)}.tbmini .m small{color:var(--muted);font-size:11px}
+/* свернутые */
+.fold-head{display:flex;align-items:center;gap:8px;margin:18px 4px 8px;font-size:var(--fs-xs);font-weight:700;color:var(--muted)}
+.fold-head .n{flex:1}.fold-head .cnt{font-variant-numeric:tabular-nums;color:var(--faint)}
+.fold{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:11px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);margin-bottom:8px;--c:var(--c-act);opacity:.75}
+.fold .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);flex:none}
+.fold .ic svg{width:18px;height:18px}
+.fold .b{flex:1;min-width:0}.fold .b b{display:block;font-size:var(--fs-s);font-weight:600}.fold .b small{color:var(--muted);font-size:var(--fs-xs)}
+.fold .num{font-weight:800;font-size:var(--fs-m);font-variant-numeric:tabular-nums;text-align:right}
+.fold .num small{font-weight:600;color:var(--muted);font-size:11px}
+.avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.avp{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--muted)}
+.avp svg{width:100%;height:auto;border-radius:14px;border:2px solid var(--line);display:block}
+.avp.on svg{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.avp.on{color:var(--text)}
+.fold .up{width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c);display:grid;place-items:center;flex:none;font-size:16px;line-height:1}
+.screen{padding-top:16px}
+.activity-head{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:var(--fs-s);font-weight:600;padding:0 2px}
+.dots{width:40px;height:36px;display:grid;place-items:center;border-radius:12px;font-size:16px;letter-spacing:2px;color:var(--muted);flex:none}
+.dots:hover,.dots:focus-visible{background:var(--surface2);color:var(--text)}
+.activity-main{width:100%;display:flex;flex-direction:column;align-items:center;padding:0 0 20px;text-align:center}
+.activity-glyph{width:252px;height:252px;display:block;max-width:100%;filter:drop-shadow(0 8px 18px color-mix(in srgb,var(--c-act) 8%,transparent))}
+.activity-caption{font-weight:650;font-size:var(--fs-l);letter-spacing:-.025em}
+.activity-hint{font-size:var(--fs-xs);color:var(--muted);margin-top:5px;display:flex;gap:3px;align-items:center}
+.activity-hint svg{width:14px;height:14px}
+.activity-metrics{display:grid;grid-template-columns:repeat(var(--metric-count),minmax(0,1fr));gap:6px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.activity-metrics button{min-width:0;display:flex;align-items:center;flex-direction:column;text-align:center;padding:8px 2px}
+.metric-dot{width:6px;height:6px;border-radius:50%;background:var(--tc);margin-bottom:7px}
+.activity-metrics b{font-size:var(--fs-xl);letter-spacing:-.045em;white-space:nowrap}
+.activity-metrics span:not(.metric-dot){font-size:var(--fs-xs);margin-top:2px;color:var(--muted)}
+.activity-metrics small{font-size:var(--fs-xs);color:var(--faint)}
+.srcline{align-items:center;gap:8px!important;flex-wrap:wrap}
+.srcline .dots{margin-left:auto;height:32px;width:34px;font-size:14px}
+.dashboard-popover{position:absolute;z-index:45;width:min(310px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:var(--surface2);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 48px #0005;padding:12px;text-align:left}
+.dashboard-popover.compact{width:min(260px,calc(100% - 24px));padding:8px;border-radius:14px}
+.compact .pop-action{min-height:36px;padding:7px 9px}
+.card-menu-selector{display:flex;align-items:center;gap:5px;padding:0 0 6px}
+.card-menu-selector .pop-select{min-width:0;flex:1;padding:8px}
+.card-menu-selector>button{width:30px;height:34px;flex:none;font-size:21px;color:var(--muted)}
+.card-layout-options{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:3px 1px 7px}
+.card-layout-options button{font-size:12px;min-height:32px;border:1px solid var(--line);border-radius:8px}
+.card-layout-options .on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.pop-action:disabled,.pop-sizes button:disabled{opacity:.35;cursor:default}
+.pick-all-circle{width:25px;height:25px;border:2px solid var(--muted);border-radius:50%;display:grid;place-items:center;flex:none;font-size:14px;font-weight:800;line-height:1}
+.pick-all-circle[aria-checked=true],.pick-all-circle[aria-checked=mixed]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.dashboard-pick-count{margin-right:auto;color:var(--muted);font-size:12px}
+.dashboard-pick-done{color:var(--accent);font-size:12px;padding:6px 8px;border-radius:8px;min-height:32px}
+body.pickmode #groups [data-metric]{position:relative}
+body.pickmode #groups .pickmark{position:absolute;top:7px;right:7px;width:21px;height:21px;border-radius:50%;background:var(--surface);border:2px solid var(--muted);color:var(--accent-ink);display:grid;place-items:center;font-size:12px;font-weight:750}
+body.pickmode #groups .pickOn{outline:2px solid var(--accent);outline-offset:-1px}
+body.pickmode #groups .pickOn .pickmark{background:var(--accent);border-color:var(--accent)}
+body.pickmode #groups .lr{padding-right:35px}
+body.pickmode #groups .lr .pickmark{top:50%;transform:translateY(-50%);right:7px}
+.compact .pop-sizes{padding:0 4px 7px}
+.pop-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 4px 10px;font-size:var(--fs-m)}
+.pop-heading>button{min-width:32px;min-height:32px;color:var(--muted);font-size:22px}
+.pop-label{font-size:var(--fs-xs);color:var(--muted);margin:12px 4px 7px;font-weight:600}
+.hero-style-options{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.hero-style-options button{border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;font-size:12px;padding:4px 0 7px}
+.hero-style-options .activity-glyph{width:56px;height:56px;filter:none}
+.hero-style-options button{min-width:0;font-size:10px;overflow:hidden}
+.hero-palette-options{display:flex;gap:6px;margin:9px 0}
+.hero-palette-options button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-height:35px;border:1px solid var(--line);border-radius:10px;font-size:11px}
+.hero-palette-options button.on{border-color:var(--accent);background:var(--surface3)}
+.hero-palette-options i{width:9px;height:18px;border-radius:6px;display:inline-block;margin-right:2px}
+.activity-glyph .hero-badge-icon{overflow:visible;color:#10151b}
+.activity-metrics .metric-semantic{display:grid;width:26px;height:26px;place-items:center;flex:none;color:var(--tc)!important;margin:0 0 4px}
+.metric-semantic svg{width:25px;height:25px}
+.activity-metrics .metric-ring em{color:var(--tc)}
+.activity-metrics .metric-ring em svg{width:22px;height:22px}
+.activity-metrics[data-layout=inline] .metric-ring{width:calc(36px * var(--ms));height:calc(36px * var(--ms))}
+.activity-metrics[data-layout=inline][data-count="4"] .metric-ring em svg{width:18px;height:18px}
+.activity-metrics[data-layout=mini] .metric-semantic{width:28px;height:28px;margin-bottom:5px}
+.activity-metrics[data-layout=capsules] .metric-semantic{width:26px;height:26px}
+.activity-metrics[data-layout=numbers] .metric-semantic{width:25px;height:25px;margin-bottom:5px}
+.activity-metrics[data-layout=classic] .metric-semantic{margin-bottom:5px}
+.activity-metrics[data-layout=inline] button{overflow:hidden}
+.activity-metrics[data-count="4"][data-layout=inline] .metric-copy>span{max-width:43px}
+.activity-metrics .metric-copy{max-width:100%;overflow:hidden}
+.activity-metrics .metric-copy>span,.activity-metrics .metric-copy>small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-theme=light] .activity-metrics .metric-semantic,[data-theme=light] .activity-metrics .metric-ring em{color:color-mix(in srgb,var(--tc) 55%,var(--text))!important}
+[data-theme=light] .activity-metrics[data-layout=numbers] b{color:color-mix(in srgb,var(--tc) 40%,var(--text))}
+.hero-style-options .on,.hero-metric-options .on{background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:var(--accent);color:var(--accent)}
+.hero-metric-options{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.hero-metric-options button{display:flex;align-items:center;justify-content:space-between;gap:4px;border:1px solid var(--line);padding:7px 8px;min-height:36px;border-radius:9px;font-size:12px}
+.pop-action{display:flex;align-items:center;gap:9px;width:100%;text-align:left;min-height:40px;padding:8px;border-radius:9px;font-size:var(--fs-s)}
+.pop-action:hover{background:var(--surface3)}
+.pop-action svg{width:18px;height:18px}
+.pop-foot{font-size:12px;color:var(--muted);line-height:1.45;margin:10px 4px 2px}
+.pop-select{width:100%;padding:10px 8px;border-radius:9px;background:var(--surface);color:var(--text);border:1px solid var(--line);font:inherit;font-size:var(--fs-s)}
+.pop-sizes{display:flex;gap:5px}.pop-sizes button{flex:1;min-height:36px;border:1px solid var(--line);border-radius:9px;font-size:12px}
+.pop-sizes .on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.activity-detail-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.activity-detail-row small{font-size:12px;color:var(--muted)}
+.activity-history{margin-top:12px}
+.activity-history svg{width:100%;height:auto;display:block}
+.toast{display:none!important}
+.contrast-control{display:block;padding:16px}
+.contrast-control .contrast-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-size:var(--fs-m)}
+.contrast-control output{color:var(--accent);font-size:var(--fs-s);font-variant-numeric:tabular-nums}
+.contrast-control input{width:100%;height:32px;accent-color:var(--accent)}
+.contrast-ends{display:flex;justify-content:space-between;font-size:var(--fs-xs);color:var(--muted)}
+.activity-head{justify-content:flex-end;height:30px}
+.activity-main{padding:0 0 12px}
+.activity-main>.activity-glyph{width:var(--hero-size,190px);height:var(--hero-size,190px);filter:none}
+#v-overview>#countAll{justify-content:flex-end;min-height:32px;margin:8px 0 4px}
+#countAll>span:not(.dashboard-pick-count),#v-overview>.sec:has(h3){display:none!important}
+.activity-metrics{--ms:1;border:0;gap:8px;padding-bottom:4px}
+.activity-metrics button{font-size:calc(12px * var(--ms));padding:calc(8px * var(--ms)) 3px;border-radius:14px}
+.activity-metrics b{font-size:calc(21px * var(--ms))}
+.activity-metrics span:not(.metric-dot),.activity-metrics small{font-size:calc(11px * var(--ms));line-height:1.3}
+.activity-metrics .metric-copy{min-width:0;display:flex;flex-direction:column;align-items:center}
+.metric-ring{position:relative;display:block!important;width:calc(38px * var(--ms));height:calc(38px * var(--ms));flex:none}
+.metric-ring svg{width:100%;height:100%}
+.metric-ring em{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:calc(9px * var(--ms));font-weight:750;color:var(--text)}
+.metric-ring em svg{width:16px;height:16px;color:var(--tc)}
+.activity-metrics[data-layout=inline]{display:flex;align-items:stretch;background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:9px 5px;gap:3px}
+.activity-metrics[data-layout=inline] button{flex:1;display:flex;flex-direction:row;gap:6px;text-align:left;padding:3px 0;min-width:0}
+.activity-metrics[data-layout=inline] .metric-copy{align-items:flex-start}
+.activity-metrics[data-layout=inline] b{font-size:calc(14px * var(--ms))}
+.activity-metrics[data-layout=inline] .metric-copy>span{font-size:calc(9px * var(--ms));max-width:65px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.activity-metrics[data-layout=inline] small{display:none}
+.activity-metrics[data-layout=inline] .metric-ring{width:calc(35px * var(--ms));height:calc(35px * var(--ms))}
+.activity-metrics[data-layout=inline][data-count="4"] .metric-ring{width:calc(28px * var(--ms));height:calc(28px * var(--ms))}
+.activity-metrics[data-layout=inline][data-count="4"] b{font-size:calc(12px * var(--ms))}
+.activity-metrics[data-layout=mini] button{background:var(--surface);border:1px solid var(--line);align-items:flex-start;text-align:left;padding:calc(11px * var(--ms)) 9px}
+.activity-metrics[data-layout=mini] .metric-copy{align-items:flex-start}
+.activity-metrics[data-layout=mini] .metric-dot{width:20px;height:4px;border-radius:4px}
+.activity-metrics[data-layout=tiles]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.activity-metrics[data-layout=tiles] button{flex-direction:row;gap:11px;justify-content:flex-start;background:color-mix(in srgb,var(--tc) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--tc) 20%,var(--line));padding:12px}
+.activity-metrics[data-layout=tiles] .metric-copy{align-items:flex-start;text-align:left}
+.activity-metrics[data-layout=capsules] button{border-radius:24px;background:color-mix(in srgb,var(--tc) 18%,var(--surface));border:1px solid color-mix(in srgb,var(--tc) 30%,transparent);padding:13px 5px}
+.activity-metrics[data-layout=capsules] .metric-dot{width:18px;height:4px;border-radius:3px}
+.activity-metrics[data-layout=numbers] .metric-dot{display:none}
+.activity-metrics[data-layout=numbers] b{color:var(--tc);font-size:calc(25px * var(--ms));font-weight:650}
+.hero-layout-options{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.hero-layout-options button{font-size:12px;padding:8px;border:1px solid var(--line);border-radius:9px;text-align:left}
+.hero-layout-options .on{color:var(--accent);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.pop-range{display:grid;gap:4px;margin:11px 3px;font-size:12px;color:var(--muted)}
+.pop-range>span{display:flex;justify-content:space-between;gap:8px}
+.pop-range input{width:100%;height:26px;accent-color:var(--accent)}
+.metric-order-row{display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 4px}
+.metric-order-row>span{flex:1}
+.metric-order-row button{width:29px;height:29px;border-radius:7px;border:1px solid var(--line)}
+.metric-order-row button:disabled{opacity:.3}
+.appearance-reset{width:100%;margin:8px 0;padding:12px;border:1px solid var(--line);border-radius:12px;color:var(--accent);font-weight:600}
+body.anim .animrun{animation:uiChartAppear .22s ease-out both}
+body.anim .animrun svg rect,body.anim .ecg,.wave{animation:none!important}
+@keyframes uiChartAppear{from{opacity:.7;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media(max-width:380px){.activity-metrics[data-layout=inline]{gap:1px;padding:8px 4px}.activity-metrics[data-layout=inline] button{gap:4px}}
+`;document.head.appendChild(st)})();
+
+Object.assign(state,{
+  top:LS.get('balans2.top',{style:'heart',items:['activeCalories','steps','exercise']}),avatar:LS.get('balans2.avatar',null),
+  fold:LS.get('balans2.fold',null)  // null = авто (важные видимы); массив id свернутых
+});
+const saveTop=()=>{LS.set('balans2.top',state.top);LS.set('balans2.fold',state.fold)};
+
+/* --- верхний блок --- */
+const TOPM=()=>M.filter(m=>['steps','distance','activeCalories','exercise','heart','restingHeart','spo2','hrv','sleep','water','weight','bp','glucose','temp'].includes(m.id));
+function ringSvg2(p,c){const L=18,len=2*Math.PI*L,off=len*(1-p);
+  return `<svg viewBox="0 0 54 54"><circle cx="27" cy="27" r="${L}" fill="none" stroke="var(--surface3)" stroke-width="5"/><circle cx="27" cy="27" r="${L}" fill="none" stroke="${c}" opacity="${p>0?1:0}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${len}" stroke-dashoffset="${off}" transform="rotate(-90 27 27)"/></svg>`}
+function topVal(m){const v=cur(m);const G=GOAL;
+  const goal=({steps:G.steps,sleep:G.sleep,water:G.water,exercise:60,activeCalories:G.active})[m.id],p=Number.isFinite(v)&&goal>0?v/goal:0;
+  let val=showCur(m);
+  if(m.id==='sleep'&&isFinite(v)){const mn=Math.round(v*60);val=`${Math.floor(mn/60)}:${String(mn%60).padStart(2,'0')}`}
+  if(m.id==='bp'&&isFinite(v))val=String(Math.round(v));
+  if(m.id==='temp'&&isFinite(v))val=fmt(v,1);
+  if(m.id==='spo2'&&isFinite(v))val=String(Math.round(v));
+  return {v:val,p:isFinite(v)?Math.max(0,Math.min(1,p)):0}}
+const HERO_STYLES=[['heart','Сердце'],['tracks','Треки'],['orbit','Орбита'],['bloom','Лепестки'],['diamond','Кристалл'],['infinity','Петля'],['hex','Призма'],['sun','Солнце']];
+const HERO_LAYOUTS=[['inline','Кольца в строку'],['mini','Мини-карточки'],['tiles','Плитки с кольцами'],['capsules','Цветные капсулы'],['numbers','Минимализм'],['classic','Значки и числа']];
+const HERO_PALETTES=[['energy','Энергия',['#ff5a0a','#8cff00','#20d9ff']],['neon','Неон',['#ff6095','#2ee6c5','#47a9ff']]];
+Object.assign(state.top,{size:Number(state.top.size)||220,metricSize:Number(state.top.metricSize)||100,palette:HERO_PALETTES.some(x=>x[0]===state.top.palette)?state.top.palette:'energy',layout:HERO_LAYOUTS.some(x=>x[0]===state.top.layout)?state.top.layout:'inline'});
+// Migrate older compact presentations without losing metric selections.
+if(![...HERO_STYLES.map(x=>x[0]),'none'].includes(state.top.style))state.top.style=({rings:'heart',line:'tracks',mini:'orbit'})[state.top.style]||'heart';
+// Figure and metric strip are independent. Migrate the old combined hide once.
+if(typeof state.top.showFigure!=='boolean')state.top.showFigure=state.top.style!=='none';
+if(typeof state.top.showMetrics!=='boolean')state.top.showMetrics=state.top.style!=='none';
+if(state.top.style==='none')state.top.style='heart';
+const dashboardToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+function dashboardCurrent(m){const r=recs(m).at(-1);return !avail(m)||r?.day&&r.day!==dashboardToday()?NaN:cur(m)}
+function dashboardMetricCaption(m){
+ const r=recs(m).at(-1);if(!Number.isFinite(dashboardCurrent(m)))return r?.day?'нет данных за сегодня':'нет данных';
+ const unit=m.id==='sleep'?'ч:мин':m.unit;
+ if(r?.ts&&!r.day){const d=new Date(r.ts),day=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(day!==dashboardToday())return `${unit} · посл. ${d.toLocaleDateString('ru-RU',{day:'numeric',month:'numeric'})}`}
+ return unit;
+}
+const dashboardMetricLabel=m=>({activeCalories:'Калории',exercise:'Акт. минуты'})[m.id]||m.name;
+const ACTIVITY=()=>[['activeCalories',GOAL.active],['steps',GOAL.steps],['exercise',60]].map(([id,goal],i)=>{const m=byId[id],value=dashboardCurrent(m);return {m,goal,value,p:Number.isFinite(value)&&goal>0?Math.max(0,Math.min(1,value/goal)):0,c:(HERO_PALETTES.find(x=>x[0]===state.top.palette)||HERO_PALETTES[0])[2][i]}});
+function dashboardGoalGlyph(m){
+ const name=({activeCalories:'flame',steps:'shoe',exercise:'clock'})[m.id];
+ return name&&typeof semanticGlyph==='function'?semanticGlyph(name):mic(m);
+}
+function dashboardGoalBadge(x,px,py,small){
+ if(small)return '';
+ return `<g class="hero-goal-badge" data-goal="${x.m.id}" style="--glyph-cut:${x.c}" transform="translate(${px} ${py})"><circle r="13" fill="${x.c}" stroke="var(--bg)" stroke-width="2"/><svg class="hero-badge-icon" x="-9" y="-9" width="18" height="18" viewBox="0 0 24 24"><use href="#${dashboardGoalGlyph(x.m)}"/></svg></g>`;
+}
+function activityGlyph(style,small=false,a=ACTIVITY()){
+ // Previews are decorative full-color shape swatches, never synthetic recorded values.
+ const stroke=(d,x,w=24,extra='')=>`<path data-part="track-outline" d="${d}" fill="none" stroke="var(--text)" opacity=".2" stroke-width="${w+2}" stroke-linecap="round" stroke-linejoin="round" ${extra}/><path data-part="track" d="${d}" fill="none" stroke="${x.c}" opacity="${small?1:.44}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${extra}/><path data-part="progress" data-goal="${x.m.id}" d="${d}" fill="none" stroke="${x.c}" opacity="${x.p>0&&!small?1:0}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" pathLength="100" stroke-dasharray="${x.p*100} 100" ${extra}/>`;
+ const point=(r,deg)=>[140+r*Math.cos(deg*Math.PI/180),140+r*Math.sin(deg*Math.PI/180)];
+ let s='',badges='';
+ if(style==='heart')a.forEach((x,i)=>{const z=1-i*.255;s+=`<g transform="translate(${140*(1-z)} ${140*(1-z)}) scale(${z})">${stroke('M140 246 C111 222 25 164 25 96 C25 35 96 19 140 68 C184 19 255 35 255 96 C255 164 169 222 140 246',x,24/z)}</g>`;badges+=dashboardGoalBadge(x,140,140+106*z,small)});
+ if(style==='tracks')a.forEach((x,i)=>{const r=107-i*29,[sx,sy]=point(r,-140),[ex,ey]=point(r,130);s+=stroke(`M${sx} ${sy} A${r} ${r} 0 1 1 ${ex} ${ey}`,x,25);badges+=dashboardGoalBadge(x,sx,sy,small)});
+ if(style==='orbit')a.forEach((x,i)=>{const angle=i*60;s+=`<g transform="rotate(${angle} 140 140)">${stroke('M249 140 A109 48 0 1 1 31 140 A109 48 0 1 1 249 140',x,21)}</g>`;const[p,q]=point(109,angle+180);badges+=dashboardGoalBadge(x,p,q,small)});
+ if(style==='bloom')a.forEach((x,i)=>{const angle=i*120;s+=`<g transform="rotate(${angle} 140 140)">${stroke('M140 128 C113 108 77 86 89 55 C102 18 151 20 165 53 C179 87 156 112 140 128 Z',x,24)}</g>`;const[p,q]=point(98,angle-90);badges+=dashboardGoalBadge(x,p,q,small)});
+ if(style==='diamond')a.forEach((x,i)=>{const z=1-i*.255;s+=`<g transform="translate(${140*(1-z)} ${140*(1-z)}) scale(${z})">${stroke('M140 26 Q148 26 155 34 L246 125 Q261 140 246 155 L155 246 Q140 261 125 246 L34 155 Q19 140 34 125 L125 34 Q132 26 140 26 Z',x,23/z)}</g>`;badges+=dashboardGoalBadge(x,140,140-114*z,small)});
+ if(style==='infinity')a.forEach((x,i)=>{const dy=(i-1)*29;s+=`<g transform="translate(0 ${dy})">${stroke('M140 140 C109 102 77 76 50 105 C16 142 60 197 101 169 L179 111 C220 83 264 138 230 175 C203 204 171 178 140 140 Z',x,21)}</g>`;badges+=dashboardGoalBadge(x,140,140+dy,small)});
+ if(style==='hex')a.forEach((x,i)=>{const z=1-i*.255;s+=`<g transform="translate(${140*(1-z)} ${140*(1-z)}) scale(${z})">${stroke('M140 25 Q150 25 161 32 L229 71 Q242 79 242 94 L242 186 Q242 201 229 209 L161 248 Q140 260 119 248 L51 209 Q38 201 38 186 L38 94 Q38 79 51 71 L119 32 Q130 25 140 25 Z',x,23/z)}</g>`;badges+=dashboardGoalBadge(x,140,140-115*z,small)});
+ if(style==='sun'){for(let i=0;i<16;i++){const[p,q]=point(112,i*22.5),[u,v]=point(125,i*22.5);s+=`<path d="M${p} ${q} L${u} ${v}" stroke="${a[0].c}" opacity="${small?1:.7}" stroke-width="8" stroke-linecap="round"/>`}a.forEach((x,i)=>{const r=89-i*29,[sx,sy]=point(r,-90);s+=stroke(`M${sx} ${sy} A${r} ${r} 0 1 1 ${sx-.01} ${sy}`,x,22);badges+=dashboardGoalBadge(x,sx,sy,small)})}
+ return `<svg class="activity-glyph ${small?'small':''}" data-hero-style="${style}" viewBox="0 0 280 280" aria-hidden="true">${s}${badges}</svg>`;
+}
+function renderTopBlock(){
+ const T=state.top;
+ const ms=T.items.map(id=>byId[id]).filter(Boolean),activity=ACTIVITY();
+ $('#topBlock').innerHTML=`<div class="activity-head"><button class="dots" data-dashboard="top" aria-label="Настроить верхний блок" aria-haspopup="dialog">•••</button></div>
+  ${T.showFigure?`<button class="activity-main" style="--hero-size:${T.size}px" data-dashboard="details" aria-label="Открыть подробности активности">${activityGlyph(T.style,false,activity)}</button>`:''}
+  ${T.showMetrics?`<div class="activity-metrics" data-layout="${T.layout}" data-count="${ms.length}" style="--metric-count:${Math.min(ms.length,4)};--ms:${T.metricSize/100}">${ms.map(m=>{const v=dashboardCurrent(m),goal=({steps:GOAL.steps,exercise:60,activeCalories:GOAL.active,sleep:GOAL.sleep,water:GOAL.water})[m.id],p=Number.isFinite(v)&&goal>0?Math.max(0,Math.min(1,v/goal)):0,c=activity.find(x=>x.m.id===m.id)?.c||cv(m),rings=['inline','tiles'].includes(T.layout),glyph=dashboardGoalGlyph(m);return `<button data-metric="${m.id}" style="--tc:${c}" aria-label="${esc(m.name)}: ${Number.isFinite(v)?esc(topVal(m).v):'нет данных'} ${esc(dashboardMetricCaption(m))}">${rings?`<span class="metric-ring">${ringSvg2(p,c)}<em data-semantic-metric="${m.id}">${ic(glyph)}</em></span>`:`<span class="metric-semantic" data-semantic-metric="${m.id}">${ic(glyph)}</span>`}<span class="metric-copy"><b class="num">${Number.isFinite(v)?topVal(m).v:'—'}</b><span>${esc(dashboardMetricLabel(m))}</span><small>${esc(dashboardMetricCaption(m))}</small></span></button>`}).join('')}</div>`:''}`;
+}
+let dashboardAnchor=null,dashboardScroll=0;
+function closeDashboardPopover(){const p=$('#dashboardPopover');if(p)p.remove()}
+function dashboardPopover(html,anchor,label){
+ closeDashboardPopover();dashboardAnchor=anchor||dashboardAnchor;dashboardScroll=$('#screen').scrollTop;
+ const p=document.createElement('div');p.id='dashboardPopover';p.className='dashboard-popover'+(['Действия с карточками','Переместить карточку'].includes(label)?' compact':'');p.setAttribute('role','dialog');p.setAttribute('aria-label',label);p.innerHTML=html;
+ $('#phone').appendChild(p);const frame=$('#phone').getBoundingClientRect(),r=dashboardAnchor?.getBoundingClientRect()||frame;
+ p.style.right=Math.max(12,Math.min(frame.width-p.offsetWidth-12,frame.right-r.right))+'px';
+ const top=Math.max(8,r.bottom-frame.top+6);
+ p.style.top=(top+$('#phone').scrollTop)+'px';p.style.maxHeight=Math.max(0,frame.height-top-12)+'px';
+}
+function topCfgSheet(anchor){const T=state.top;
+ dashboardPopover(`<div class="pop-heading"><b>Верхний блок</b><button data-dashboard="close" aria-label="Закрыть меню">×</button></div>
+ <div class="hero-style-options">${HERO_STYLES.map(([k,n])=>`<button data-dashboard="style" data-value="${k}" class="${T.style===k?'on':''}" aria-pressed="${T.style===k}">${activityGlyph(k,true)}<span>${n}</span></button>`).join('')}</div>
+ <div class="hero-palette-options">${HERO_PALETTES.map(([id,label,colors])=>`<button data-dashboard="palette" data-value="${id}" class="${T.palette===id?'on':''}" aria-pressed="${T.palette===id}"><span>${colors.map(c=>`<i style="background:${c}"></i>`).join('')}</span>${label}</button>`).join('')}</div>
+ <label class="pop-range"><span>Размер фигуры <output id="heroSizeValue">${T.size}px</output></span><input id="heroSizeRange" type="range" min="140" max="280" step="5" value="${T.size}" aria-label="Размер фигуры"></label>
+ <button class="pop-action" data-dashboard="visibility" data-value="showFigure" aria-pressed="${T.showFigure}">${T.showFigure?'Скрыть':'Показать'} большую фигуру</button>
+ <button class="pop-action" data-dashboard="visibility" data-value="showMetrics" aria-pressed="${T.showMetrics}">${T.showMetrics?'Скрыть':'Показать'} блок показателей</button>
+ <div class="pop-label">Вид показателей</div><div class="hero-layout-options">${HERO_LAYOUTS.map(([id,label])=>`<button data-dashboard="metric-layout" data-value="${id}" class="${T.layout===id?'on':''}">${label}</button>`).join('')}</div>
+ <label class="pop-range"><span>Размер показателей <output id="metricSizeValue">${T.metricSize}%</output></span><input id="metricSizeRange" type="range" min="75" max="125" step="5" value="${T.metricSize}" aria-label="Размер показателей"></label>
+ <div class="pop-label">Показатели под фигурой · ${T.items.length}/4</div>
+ <div class="hero-metric-options">${TOPM().map(m=>`<button data-dashboard="metric" data-value="${m.id}" aria-pressed="${T.items.includes(m.id)}" class="${T.items.includes(m.id)?'on':''}">${esc(m.name)}<span>${T.items.includes(m.id)?'✓':'+'}</span></button>`).join('')}</div>
+ <div class="pop-label">Порядок показателей</div>${T.items.map((id,i)=>`<div class="metric-order-row"><span>${esc(byId[id]?.name||id)}</span><button data-dashboard="metric-up" data-value="${id}" aria-label="${esc(byId[id]?.name||id)} выше" ${i===0?'disabled':''}>↑</button><button data-dashboard="metric-down" data-value="${id}" aria-label="${esc(byId[id]?.name||id)} ниже" ${i===T.items.length-1?'disabled':''}>↓</button></div>`).join('')}
+ <button class="pop-action" data-dashboard="appearance">${ic('i-palette')}Все настройки оформления →</button>`,anchor||$('#topBlock .dots'),'Настройки верхнего блока');
+}
+function topSet(k,v){if(k==='style'){if(v==='none'){state.top.showFigure=false;state.top.showMetrics=false}else{state.top.style=v;state.top.showFigure=true}}if(k==='visibility'&&['showFigure','showMetrics'].includes(v))state.top[v]=!state.top[v];if(k==='palette'&&HERO_PALETTES.some(x=>x[0]===v))state.top.palette=v;if(k==='layout'){state.top.layout=v;state.top.showMetrics=true}if(k==='item'){const i=state.top.items.indexOf(v);if(i>=0&&state.top.items.length>1)state.top.items.splice(i,1);else if(i<0&&state.top.items.length<4)state.top.items.push(v);else if(i<0)toast('Максимум 4 показателя','Сначала уберите один из выбранных')}
+ if(k==='up'||k==='down'){const i=state.top.items.indexOf(v),j=i+(k==='up'?-1:1);if(i>=0&&j>=0&&j<state.top.items.length)[state.top.items[i],state.top.items[j]]=[state.top.items[j],state.top.items[i]]}
+ saveTop();renderTopBlock();topCfgSheet($('#topBlock .dots'))}
+
+/* --- свернутые карточки: список открывается через «Добавить показатель» --- */
+const FOLD_DEF=['steps','sleep','water','heart','exercise','activeCalories','weight','bp','glucose','temp'];
+const foldIdsOf=()=>state.fold===null?AV().filter(m=>!m.has&&!recs(m).length).map(m=>m.id):state.fold;
+
+/* --- свайпы: только назад от правого края (перелистывание вкладок убрано) --- */
+(function(){
+  const scr=$('#screen');let x0=0,y0=0,t0=0;
+  scr.addEventListener('touchstart',e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
+  scr.addEventListener('touchend',e=>{
+    const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0,dt=Date.now()-t0;
+    if(dt>500||Math.abs(dx)<50||Math.abs(dy)>60)return;
+    const W=window.innerWidth;if(x0>W-30&&dx<-50){if(state.stack.length){go('back');return}if($('#sheet').classList.contains('on')){closeSheet();return}}
+  },{passive:true});
+})();
+
+/* --- аватарки --- */
+const AVATARS=[
+  {id:'a1',name:'Здоровье',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#3fe0c5"/><path d="M14 26h5l3-8 5 12 3-6h6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'},
+  {id:'a2',name:'Пульс',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#ff6f91"/><path d="M24 12c-6 0-10 4-10 8 0 6 10 16 10 16s10-10 10-16c0-4-4-8-10-8z" fill="#fff"/></svg>'},
+  {id:'a3',name:'Сон',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#9d8cff"/><path d="M32 14c-4 0-6 2-6 5s2 5 6 5c1 0 2-.3 2-1h-2c-1 0-2-1-2-2s1-2 2-2h2c0-2-1-5-2-5zM18 28c-4 0-6 2-6 5s2 5 6 5c1 0 2-.3 2-1h-2c-1 0-2-1-2-2s1-2 2-2h2c0-2-1-5-2-5z" fill="#fff"/></svg>'},
+  {id:'a4',name:'Вода',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#5aa9ff"/><path d="M24 10c0 0 12 12 12 20a12 12 0 1 1-24 0c0-8 12-20 12-20z" fill="#fff" opacity=".9"/></svg>'},
+  {id:'a5',name:'Спорт',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#ff8a4c"/><path d="M12 24h6l3-8 4 16 3-8h8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'},
+  {id:'a6',name:'Вес',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#5fd97a"/><circle cx="24" cy="20" r="8" fill="none" stroke="#fff" stroke-width="3"/><path d="M12 38h24" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>'},
+  {id:'a7',name:'Огонь',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#ffd23f"/><path d="M24 10c2 8-8 12-8 20a8 8 0 0 0 16 0c0-6 4-8 4-14-3 2-5 4-6 8-1-4-6-6-6-14z" fill="#fff"/></svg>'},
+  {id:'a8',name:'Земля',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#6fd6ca"/><circle cx="24" cy="24" r="10" fill="none" stroke="#fff" stroke-width="3"/><path d="M18 20h12M18 28h12M24 14v20" stroke="#fff" stroke-width="2" opacity=".7"/></svg>'},
+  {id:'a9',name:'Медитация',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#ffb84d"/><circle cx="24" cy="16" r="5" fill="#fff"/><path d="M12 38c0-6 6-10 12-10s12 4 12 10" fill="#fff"/></svg>'},
+  {id:'a10',name:'Мозг',svg:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#c13dff"/><path d="M18 12c-6 0-10 4-10 10s4 10 10 10v6M30 12c6 0 10 4 10 10s-4 10-10 10v6M24 12v22" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>'},
+];
+function avatarSheet(){sheet(sheetHd('Аватарка','Выберите готовую или загрузите свою')+`
+ <div class="avgrid">${AVATARS.map(a=>`<button class="avp ${state.avatar===a.id?'on':''}" data-y="avset" data-a="${a.id}">${a.svg}<span>${a.name}</span></button>`).join('')}</div>
+ <div class="lbl2">Своя картинка</div>
+ <button class="btn ghost wide" data-y="avfile">${ic('i-plus')}Выбрать из галереи</button>
+ <input type="file" id="avIn" accept="image/*" hidden>
+ ${state.avatar&&String(state.avatar).startsWith('data:')?`<button class="btn ghost wide" style="color:var(--muted)" data-y="avclear">Убрать свою картинку</button>`:''}
+ <p class="foot">Аватарка видна на главном экране и в разделе «Ещё». Если не выбрана — показываем первую букву имени.</p>`)}
+document.addEventListener('change',e=>{if(e.target.id!=='avIn')return;const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const cv2=document.createElement('canvas');const s=160;cv2.width=s;cv2.height=s;const c2=cv2.getContext('2d');const mn=Math.min(img.width,img.height);
+  c2.drawImage(img,(img.width-mn)/2,(img.height-mn)/2,mn,mn,0,0,s,s);state.avatar=cv2.toDataURL('image/jpeg',.85);LS.set('balans2.avatar',state.avatar);closeSheet();renderTopBlock();renderProfileBits();rerender();toast('Аватарка обновлена')};img.src=rd.result};rd.readAsDataURL(f);e.target.value=''},true);
+
+/* --- обработчики --- */
+document.addEventListener('click',e=>{const t=e.target.closest('[data-y]');if(!t)return;e.stopPropagation();
+  switch(t.dataset.y){
+   case 'avpick':return avatarSheet();
+   case 'topcfg':return topCfgSheet(t);
+   case 'tbstyle':return topSet('style',t.dataset.a);
+   case 'tbitem':return topSet('item',t.dataset.a);
+   case 'avset':{state.avatar=t.dataset.a;LS.set('balans2.avatar',state.avatar);closeSheet();renderTopBlock();renderProfileBits();rerender();return toast('Аватарка обновлена')}
+   case 'avfile':return $('#avIn').click();
+   case 'avclear':{state.avatar=null;LS.set('balans2.avatar',null);closeSheet();renderTopBlock();renderProfileBits();rerender();return toast('Свой рисунок убран')}
+   case 'unfold':{
+     if(state.fold===null)state.fold=foldIdsOf();
+     state.fold=state.fold.filter(x=>x!==t.dataset.a);saveTop();renderGroups();
+     const sh=$('#sheet');if(sh.classList.contains('on')){const st=sh.scrollTop;openAdd();sh.scrollTop=st}
+     return toast('Показатель на экране',byId[t.dataset.a].name)}
+   case 'unfoldm':{
+     if(state.fold===null)state.fold=foldIdsOf();
+     state.fold=state.fold.filter(x=>x!==t.dataset.a);saveTop();closeSheet();renderGroups();
+     return toast('Показатель на экране',byId[t.dataset.a].name)}
+   case 'foldm':{
+     if(state.fold===null)state.fold=foldIdsOf();
+     if(!state.fold.includes(t.dataset.a))state.fold.push(t.dataset.a);saveTop();closeSheet();renderGroups();
+     return toast('Карточка свернута','вернуть: «Добавить показатель»')}
+   case 'csz':{state.cardSize[t.dataset.b]=t.dataset.a;LS.set('balans2.cardSize',state.cardSize);closeSheet();renderGroups();return}
+   case 'cmove':{closeSheet();startDrag(t.dataset.a);return}
+   case 'cfold':{closeSheet();if(state.fold===null)state.fold=foldIdsOf();if(!state.fold.includes(t.dataset.a))state.fold.push(t.dataset.a);LS.set('balans2.fold',state.fold);renderPin();renderGroups();return toast('Карточка свёрнута','вернуть — из списка «Свернутые» на экране','i-down')}
+   case 'cpick':{closeSheet();state.pickSel=new Set();document.body.classList.add('pickmode');renderGroups();return toast('Выбор карточек','нажимайте на карточки, потом «Свернуть выбранные»','i-check')}
+   case 'pickCancel':{document.body.classList.remove('pickmode');state.pickSel=null;renderGroups();return}
+   case 'pickFold':{if(!state.pickSel||!state.pickSel.size)return toast('Ничего не выбрано','нажмите на карточки, чтобы выделить','i-info');
+     if(state.fold===null)state.fold=foldIdsOf();
+     state.fold=[...new Set([...state.fold,...state.pickSel])];LS.set('balans2.fold',state.fold);
+     document.body.classList.remove('pickmode');state.pickSel=null;renderPin();renderGroups();
+     return toast('Свернуто: '+state.fold.length,'показатели вернутся из списка «Свернутые»','i-down')}
+  }},true);
+
+/* --- анимации графиков: включение/выключение и запуск при появлении на экране --- */
+const renderDashboardGroups=renderGroups;
+const renderDashboardCompact=renderCompact;
+renderCompact=function(av){return renderDashboardCompact(g3order(av))};
+renderPickbar=function(){const bar=$('#pickbar');if(bar)bar.remove()};
+renderGroups=function(){disconnectUIAnimation();renderDashboardGroups();const heading=$('#v-overview>.sec');if(heading)heading.remove();renderDashboardSelection()};
+let dashboardCard=null;
+function dashboardCards(){const f=foldIdsOf();return g3order(AV().filter(m=>!f.includes(m.id)))}
+function dashboardTargets(){const available=new Set(AV().map(m=>m.id));return [...(state.pickSel||[])].filter(id=>available.has(id))}
+function renderDashboardSelection(){
+ const picking=document.body.classList.contains('pickmode'),all=AV(),selected=dashboardTargets(),n=selected.length,total=all.length;
+ if(picking)state.pickSel=new Set(selected);
+ const allSelected=total>0&&n===total;
+ const count=$('#countAll');if(count)count.innerHTML=`${picking?`<span class="dashboard-pick-count">Выбрано ${n} из ${total}</span><button class="pick-all-circle" data-dashboard="select-all" role="checkbox" aria-checked="${n===0?'false':allSelected?'true':'mixed'}" aria-label="${allSelected?'Снять выбор всех карточек':'Выбрать все карточки, включая свёрнутые'}" title="Все доступные карточки, включая свёрнутые" ${total?'':'disabled'}>${allSelected?'✓':n?'−':''}</button><button class="dashboard-pick-done" data-dashboard="pick-done">Готово</button>`:''}<button class="dots" data-dashboard="cards" aria-label="Действия с карточками" aria-haspopup="dialog">•••</button>`;
+ document.querySelectorAll('#groups [data-metric]').forEach(card=>{const on=picking&&state.pickSel.has(card.dataset.metric);card.classList.toggle('pickOn',on);let mark=card.querySelector('.pickmark');if(picking){if(!mark){mark=document.createElement('span');mark.className='pickmark';card.appendChild(mark)}mark.textContent=on?'✓':'';card.setAttribute('aria-pressed',String(on))}else{if(mark)mark.remove();card.removeAttribute('aria-pressed')}});
+ renderPickbar();
+}
+function finishDashboardPick(){closeDashboardPopover();document.body.classList.remove('pickmode');state.pickSel=null;renderDashboardSelection()}
+function cardMenu(id,anchor,sizeOpen=false){
+ const individual=!!id&&AV().some(m=>m.id===id),wasPicking=document.body.classList.contains('pickmode'),onCard=!!anchor?.closest('#groups');
+ if(!wasPicking){document.body.classList.add('pickmode');state.pickSel=new Set(individual?[id]:[])}
+ else if(individual)state.pickSel=new Set([id]);
+ if(individual)dashboardCard=id;
+ renderDashboardSelection();
+ if(onCard)anchor=document.querySelector(`#groups [data-metric="${id}"]`);else anchor=$('#countAll .dots');
+ const selected=dashboardTargets(),disabled=selected.length?'':'disabled',single=selected.length===1?byId[selected[0]]:null;
+ if(anchor?.closest('#groups')){const f=$('#phone').getBoundingClientRect();if(anchor.getBoundingClientRect().bottom>f.bottom-240){const scr=$('#screen');scr.scrollTop+=anchor.getBoundingClientRect().top-scr.getBoundingClientRect().top-16}}
+ dashboardPopover(`<div class="pop-heading"><b>${single?esc(single.name):'Выбрано: '+selected.length}</b><button data-dashboard="close" aria-label="Закрыть меню">×</button></div>
+ <div class="card-layout-options">${[['grid3','Сетка'],['list','Список'],['tiles','Плитки']].map(([key,name])=>`<button data-dashboard="card-layout" data-value="${key}" class="${state.layout===key?'on':''}">${name}</button>`).join('')}</div>
+ ${state.layout==='grid3'?`<button class="pop-action" data-dashboard="mixed-sizes">${ic('i-layout')}${LS.get('balans2.mixedSizes',false)?'Перемешать размеры':'Разные размеры'}</button>`:''}
+ <button class="pop-action" data-dashboard="move" ${disabled}>${ic('i-move')}Переместить${selected.length>1?' · '+selected.length:''}</button>
+ <button class="pop-action" data-dashboard="fold" ${disabled}>${ic('i-down')}Свернуть${selected.length>1?' · '+selected.length:''}</button>
+ <button class="pop-action" data-dashboard="size-menu" ${disabled} aria-expanded="${sizeOpen}">${ic('i-layout')}Размер<span style="margin-left:auto">${sizeOpen?'−':'+'}</span></button>
+ ${sizeOpen?`<div class="pop-sizes">${[1,2,3].map(n=>`<button data-dashboard="size" data-value="${n}" ${disabled} class="${single&&+g3size(single.id)===n?'on':''}">${n===3?'Вся ширина':n+' / 3'}</button>`).join('')}</div>`:''}
+ <button class="pop-action" data-dashboard="appearance">${ic('i-palette')}Оформление</button><button class="pop-action" data-dashboard="pick-done">${ic('i-check')}Готово</button>`,anchor||$('#countAll .dots'),'Действия с карточками');
+}
+function dashboardMoveMenu(){
+ const selected=dashboardTargets();if(!selected.length)return;
+ dashboardPopover(`<div class="pop-heading"><b>Переместить · ${selected.length}</b><button data-dashboard="close" aria-label="Закрыть меню">×</button></div>
+ <button class="pop-action" data-dashboard="shift" data-value="-1">↑ На одну позицию выше</button>
+ <button class="pop-action" data-dashboard="shift" data-value="1">↓ На одну позицию ниже</button>
+ <button class="pop-action" data-dashboard="shift" data-value="start">В начало</button><button class="pop-action" data-dashboard="shift" data-value="end">В конец</button>
+ ${selected.length===1?`<button class="pop-action" data-dashboard="drag">${ic('i-move')}Перетащить пальцем</button>`:''}`,dashboardAnchor,'Переместить карточку');
+}
+function dashboardMixedSizes(){
+ const cards=dashboardCards(),patterns=[[1,2],[2,1],[3],[1,1,1]];let pool=[],index=0;
+ while(index<cards.length){if(!pool.length)pool=patterns.slice().sort(()=>Math.random()-.5);let p=pool.pop(),remaining=cards.length-index;if(p.length>remaining)p=remaining===1?[3]:[1,2];p.forEach(n=>{if(index<cards.length)state.cardSize[cards[index++].id]=n})}
+ const visible=new Set(cards.map(m=>m.id));AV().filter(m=>!visible.has(m.id)).forEach((m,i)=>state.cardSize[m.id]=i%3+1);
+ LS.set('balans2.cardSize',state.cardSize);LS.set('balans2.mixedSizes',true);renderGroups();cardMenu(null,$('#countAll .dots'));
+}
+function activityHistoryChart(m){
+ if(demoOn()&&!recs(m).length)return drawChart(m,'week',false).svg;
+ const records=recs(m).slice(-7),max=Math.max(...records.map(r=>r.v),1),step=320/records.length;
+ return `<svg viewBox="0 0 340 160" role="img" aria-label="Последние записи: ${esc(m.name)}">${records.map((r,i)=>{const x=10+i*step,h=r.v/max*100,label=r.ts?new Date(r.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'numeric'}):/^\d{4}-\d{2}-\d{2}/.test(r.d)?String(r.d).slice(8,10)+'.'+String(r.d).slice(5,7):String(r.d).split('.').slice(0,2).join('.');return `<rect x="${x+step*.18}" y="${120-h}" width="${step*.64}" height="${Math.max(1,h)}" rx="5" fill="var(--c)"/><text x="${x+step/2}" y="${Math.max(12,112-h)}" text-anchor="middle" fill="var(--text)" font-size="12">${esc(show(m,r.v))}</text><text x="${x+step/2}" y="145" text-anchor="middle" fill="var(--muted)" font-size="12">${esc(label)}</text>`}).join('')}</svg>`;
+}
+function activityDetails(){
+ closeDashboardPopover();
+ const a=ACTIVITY();
+ sheet(sheetHd('Активность','История по доступным записям')+`
+ <p class="pg-intro">${demoOn()?'Демо-режим: пример истории, не ваши реальные измерения.':'Показаны сохранённые записи. Пропуски не заменяются вымышленными значениями.'}</p>
+ ${a.map(x=>{const m=x.m,available=avail(m),has=available&&(recs(m).length?recs(m).length>=3:demoOn()&&hasHistory(m));return `<div class="card" style="margin-top:10px;--c:${x.c}">
+ <div class="activity-detail-row"><b>${esc(m.name)}</b><b class="num">${Number.isFinite(x.value)?showCur(m):'—'} <small>${esc(m.unit)}</small></b></div>
+ ${available&&!Number.isFinite(x.value)?'<p class="pop-foot">Нет данных за сегодня. История прошлых дней сохранена ниже.</p>':''}
+ <div class="pop-foot">Цель: ${fmt(x.goal)} ${esc(m.unit)}${Number.isFinite(x.value)?' · '+Math.round(x.p*100)+'%':''}</div>
+ ${has?`<div class="activity-history">${activityHistoryChart(m)}</div><p class="pop-foot">${recs(m).length?'Последние записи · даты измерений':'Последние 7 дней · демонстрация'}</p>`:`<p class="pg-intro" style="margin-top:12px">${available?'Недостаточно записей для истории.':'Записей пока нет.'} График появится после 3 измерений.</p>`}
+ <button class="mini-btn" data-metric="${m.id}">Подробный график →</button></div>`}).join('')}`);
+}
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-dashboard]');
+ if(!t){
+  if(typeof lpFired!=='undefined'&&lpFired)return;
+  if($('#dashboardPopover')&&!e.target.closest('#dashboardPopover'))closeDashboardPopover();
+  if(document.body.classList.contains('pickmode')){
+   const card=e.target.closest('#groups [data-metric]');
+   if(card){e.preventDefault();e.stopPropagation();const id=card.dataset.metric;state.pickSel??=new Set();state.pickSel.has(id)?state.pickSel.delete(id):state.pickSel.add(id);renderDashboardSelection();return}
+   if(e.target.closest('button,[data-go],[data-tab],[data-back]')&&!e.target.closest('#dashboardPopover'))finishDashboardPick();
+  }return;
+ }
+ e.preventDefault();e.stopPropagation();
+ const action=t.dataset.dashboard;
+ if(action==='close')return closeDashboardPopover();
+ if(action==='top'){if(document.body.classList.contains('pickmode'))finishDashboardPick();return topCfgSheet(t)}
+ if(action==='details'){if(document.body.classList.contains('pickmode'))finishDashboardPick();return activityDetails()}
+ if(action==='style')return topSet('style',t.dataset.value);
+ if(action==='visibility')return topSet('visibility',t.dataset.value);
+ if(action==='palette')return topSet('palette',t.dataset.value);
+ if(action==='metric')return topSet('item',t.dataset.value);
+ if(action==='metric-layout')return topSet('layout',t.dataset.value);
+ if(action==='metric-up')return topSet('up',t.dataset.value);
+ if(action==='metric-down')return topSet('down',t.dataset.value);
+ if(action==='appearance'){finishDashboardPick();return go('themes')}
+ if(action==='appearance-reset'){state.contrast=50;state.brightness=50;LS.set('balans2.contrast',50);LS.set('balans2.brightness',50);return applyContrast()}
+ if(action==='appearance-step'){const key=t.dataset.key;state[key]=Math.max(0,Math.min(100,state[key]+Number(t.dataset.value)));LS.set('balans2.'+key,state[key]);return applyContrast()}
+ if(action==='cards')return cardMenu(null,t);
+ if(action==='pick-done')return finishDashboardPick();
+ if(action==='select-all'){state.pickSel=dashboardTargets().length===AV().length?new Set():new Set(AV().map(m=>m.id));renderDashboardSelection();if($('#dashboardPopover'))cardMenu(null,$('#countAll .dots'));return}
+ if(action==='card-layout'){state.layout=t.dataset.value;LS.set('balans2.layout',state.layout);renderGroups();return cardMenu(null,$('#countAll .dots'))}
+ if(action==='mixed-sizes')return dashboardMixedSizes();
+ if(action==='size-menu'){if(!dashboardTargets().length)return;return cardMenu(null,dashboardAnchor,t.getAttribute('aria-expanded')!=='true')}
+ if(action==='move')return dashboardMoveMenu();
+ if(action==='shift'){
+  const selected=new Set(dashboardTargets());if(!selected.size)return;
+  let order=g3order(AV()).map(m=>m.id),direction=t.dataset.value;
+  if(direction==='start')order=[...order.filter(id=>selected.has(id)),...order.filter(id=>!selected.has(id))];
+  else if(direction==='end')order=[...order.filter(id=>!selected.has(id)),...order.filter(id=>selected.has(id))];
+  else if(direction==='-1'){for(let i=1;i<order.length;i++)if(selected.has(order[i])&&!selected.has(order[i-1]))[order[i-1],order[i]]=[order[i],order[i-1]]}
+  else{for(let i=order.length-2;i>=0;i--)if(selected.has(order[i])&&!selected.has(order[i+1]))[order[i+1],order[i]]=[order[i],order[i+1]]}
+  state.cardOrder=[...order,...(state.cardOrder||[]).filter(id=>!order.includes(id))];LS.set('balans2.cardOrder',state.cardOrder);
+  renderGroups();cardMenu(null,$('#countAll .dots'));return;
+ }
+ if(action==='size'){const targets=dashboardTargets();if(!targets.length)return;targets.forEach(id=>state.cardSize[id]=Number(t.dataset.value));LS.set('balans2.cardSize',state.cardSize);state.layout='grid3';LS.set('balans2.layout',state.layout);renderGroups();return cardMenu(null,$('#countAll .dots'),true)}
+ if(action==='fold'){const targets=dashboardTargets();if(!targets.length)return;if(state.fold===null)state.fold=foldIdsOf();state.fold=[...new Set([...state.fold,...targets])];state.pickSel=new Set();saveTop();closeDashboardPopover();renderPin();renderGroups();return}
+ if(action==='drag'){const targets=dashboardTargets();if(targets.length!==1)return;const id=targets[0];finishDashboardPick();state.layout='grid3';LS.set('balans2.layout',state.layout);renderGroups();startDrag(id)}
+},true);
+// The source gesture listeners call this binding. A hold only grabs a card; settings stay on •••.
+lpStart=function(t,x,y){lpX=x;lpY=y;clearTimeout(lpTimer);lpTimer=setTimeout(()=>{lpTimer=null;lpFired=true;if(navigator.vibrate)navigator.vibrate(12);closeDashboardPopover();startDrag(t.dataset.metric)},450)};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDashboardPopover();if(document.body.classList.contains('pickmode'))finishDashboardPick()}});
+$('#screen').addEventListener('scroll',()=>{if($('#dashboardPopover')&&Math.abs($('#screen').scrollTop-dashboardScroll)>4)closeDashboardPopover()},{passive:true});
+window.addEventListener('resize',closeDashboardPopover);
+
+state.contrast=Math.max(0,Math.min(100,Number(LS.get('balans2.contrast',50))||0));
+state.brightness=Math.max(0,Math.min(100,Number(LS.get('balans2.brightness',50))||0));
+const appearanceTokens=['--bg','--surface','--surface2','--surface3','--text','--muted','--faint','--line'];
+function applyContrast(){
+ const root=document.documentElement;
+ appearanceTokens.forEach(k=>root.style.removeProperty(k));
+ const css=getComputedStyle(root),base=Object.fromEntries(appearanceTokens.map(k=>[k,css.getPropertyValue(k).trim()])),high=state.theme==='light'?'#05090e':'#ffffff',contrast=(state.contrast-50)/50,brightness=(state.brightness-50)/50;
+ const mix=(a,b,n)=>`color-mix(in srgb,${a} ${100-n}%,${b})`;
+ ['--bg','--surface','--surface2','--surface3'].forEach(k=>{if(brightness)root.style.setProperty(k,mix(base[k],brightness>0?'#ffffff':'#000000',Math.abs(brightness)*(brightness>0?(state.theme==='light'?18:12):35)))});
+ if(contrast){root.style.setProperty('--text',mix(base['--text'],contrast>0?high:base['--bg'],Math.abs(contrast)*(contrast>0?28:12)));
+  ['--muted','--faint','--line'].forEach(k=>root.style.setProperty(k,mix(base[k],contrast>0?base['--text']:base['--bg'],Math.abs(contrast)*(contrast>0?38:12))))}
+ root.style.setProperty('--visual-brightness',String(1+brightness*.25));root.style.setProperty('--visual-contrast',String(1+contrast*.2));
+ root.style.setProperty('--visual-filter',brightness?'brightness('+(1+brightness*.25)+')':'none');
+ for(const key of ['contrast','brightness']){const input=$('#'+key+'Range');if(input)input.value=state[key];const output=$('#'+key+'Value');if(output){const delta=state[key]-50;output.textContent=state[key]+'%'+(delta?' ('+(delta>0?'+':'')+delta+')':' · по умолчанию')}}
+}
+function renderVisualControls(){
+ const contrast=$('#contrastRange');if(!contrast)return;
+ if(!$('#brightnessRange'))contrast.closest('.contrast-control').insertAdjacentHTML('afterend',`<label class="card contrast-control" for="brightnessRange" style="margin-top:10px"><span class="contrast-label"><span>Яркость интерфейса</span><output id="brightnessValue" for="brightnessRange"></output></span><input id="brightnessRange" type="range" min="0" max="100" value="${state.brightness}" aria-label="Яркость интерфейса"><span class="contrast-ends"><span>− Темнее</span><span>Светлее +</span></span></label><button class="appearance-reset" data-dashboard="appearance-reset">Сбросить яркость и контраст · 50%</button>`);
+ for(const key of ['contrast','brightness']){const control=$('#'+key+'Range')?.closest('.contrast-control');if(control&&!control.querySelector('.appearance-step-controls'))control.insertAdjacentHTML('beforeend',`<span class="appearance-step-controls" style="display:flex;gap:8px;margin-top:8px"><button style="flex:1;border:1px solid var(--line);border-radius:8px;padding:5px" data-dashboard="appearance-step" data-key="${key}" data-value="-5" aria-label="${key==='contrast'?'Контраст':'Яркость'} −5">−</button><button style="flex:1;border:1px solid var(--line);border-radius:8px;padding:5px" data-dashboard="appearance-step" data-key="${key}" data-value="5" aria-label="${key==='contrast'?'Контраст':'Яркость'} +5">+</button></span>`)}
+ applyContrast();
+ const picker=$('#topPick');if(picker)picker.innerHTML=HERO_STYLES.map(([id,name])=>`<button data-topset="${id}" class="${state.top.showFigure&&state.top.style===id?'on':''}"><b>${name}</b></button>`).join('')+`<button data-topvisibility="showFigure" aria-pressed="${state.top.showFigure}"><b>${state.top.showFigure?'Скрыть':'Показать'} фигуру</b></button><button data-topvisibility="showMetrics" aria-pressed="${state.top.showMetrics}"><b>${state.top.showMetrics?'Скрыть':'Показать'} показатели</b></button>`;
+}
+const renderThemesBeforeVisual=renderThemes;
+renderThemes=function(){renderThemesBeforeVisual();renderVisualControls()};
+const applyThemeBeforeContrast=applyTheme;
+applyTheme=function(){applyThemeBeforeContrast();applyContrast()};
+document.addEventListener('input',e=>{
+ const id=e.target.id;if(id==='contrastRange'||id==='brightnessRange'){const key=id==='contrastRange'?'contrast':'brightness';state[key]=Number(e.target.value);LS.set('balans2.'+key,state[key]);return applyContrast()}
+ if(id==='heroSizeRange'){state.top.size=Number(e.target.value);saveTop();const hero=$('.activity-main');if(hero)hero.style.setProperty('--hero-size',state.top.size+'px');$('#heroSizeValue').textContent=state.top.size+'px'}
+ if(id==='metricSizeRange'){state.top.metricSize=Number(e.target.value);saveTop();const metrics=$('.activity-metrics');if(metrics)metrics.style.setProperty('--ms',state.top.metricSize/100);$('#metricSizeValue').textContent=state.top.metricSize+'%'}
+});
+
+function applyAnim(){document.body.classList.toggle('anim',state.anim!==false)}
+let _animIO=null,_animRoot=null;
+function scanAnim(){
+  if(!('IntersectionObserver' in window)||!$('#screen'))return;
+  if(_animIO)_animIO.disconnect();
+  const scope=$('#sheet.on')||document.querySelector('.view.on');if(!scope)return;
+  const root=scope.id==='sheet'?scope:$('#screen');
+  if(!_animIO||_animRoot!==root){_animRoot=root;_animIO=new IntersectionObserver(es=>es.forEach(x=>{
+    if(!x.isIntersecting)return;const el=x.target;_animIO.unobserve(el);
+    if(el.dataset.uiAnimated||!el.isConnected||!($('#sheet.on')||document.querySelector('.view.on'))?.contains(el))return;
+    el.dataset.uiAnimated='1';if(document.body.classList.contains('anim'))el.classList.add('animrun');
+  }),{root,rootMargin:'40px'})}
+  scope.querySelectorAll('.vmicro,.vwrap,.chart,.hero').forEach(el=>{if(!el.dataset.uiAnimated)_animIO.observe(el)});
+}
+function disconnectUIAnimation(){if(_animIO)_animIO.disconnect()}
+const openMetricBeforeUIAnimation=openMetric;
+openMetric=function(...args){disconnectUIAnimation();return openMetricBeforeUIAnimation(...args)};
+const sheetBeforeUIAnimation=sheet;
+sheet=function(...args){disconnectUIAnimation();return sheetBeforeUIAnimation(...args)};
+const closeSheetBeforeUIAnimation=closeSheet;
+closeSheet=function(...args){disconnectUIAnimation();return closeSheetBeforeUIAnimation(...args)};
+const renderAllBeforeUIAnimation=renderAll;
+renderAll=function(...args){disconnectUIAnimation();return renderAllBeforeUIAnimation(...args)};
+document.addEventListener('click',e=>{if(e.target.closest('#sheet [data-sp],#sheet #dchart')){disconnectUIAnimation();queueMicrotask(scanAnim)}},true);
+
+/* --- жест вниз: закрыть выдвижное окно --- */
+(function(){
+  const sh=$('#sheet');let sy=0,dY=0,on=false;
+  sh.addEventListener('touchstart',e=>{
+    if(!sh.classList.contains('on'))return;
+    if(e.target.closest('input,textarea,select'))return;
+    const ok=e.target.closest('.grab,.hd')||sh.scrollTop<=0;
+    if(!ok)return;on=true;sy=e.touches[0].clientY;dY=0;
+  },{passive:true});
+  sh.addEventListener('touchmove',e=>{
+    if(!on)return;const y=e.touches[0].clientY-sy;
+    if(y>0){e.preventDefault();dY=y;sh.style.transition='none';sh.style.transform=`translateY(${Math.min(y,sh.offsetHeight*.85)}px)`}
+    else dY=0;
+  },{passive:false});
+  const end=()=>{if(!on)return;on=false;sh.style.transition='';sh.style.transform='';if(dY>100)closeSheet();dY=0};
+  sh.addEventListener('touchend',end);sh.addEventListener('touchcancel',end);
+})();

@@ -1,0 +1,4 @@
+s=open('src.html').read()
+s=s.replace('__SOURCES__',open('../sources.js').read()).replace('/*__VIZ__*/',open('viz.js').read()).replace('/*__VIZ2__*/',open('viz2.js').read()).replace('/*__MORE__*/',open('more.js').read()).replace('/*__PLAN__*/',open('plan.js').read()).replace('/*__UI__*/',open('ui.js').read())
+s=s.replace("ensureDemo();applyTheme();",open('integrations.js').read()+"\n"+open('real-viz.js').read()+"\n"+open('glyphs.js').read()+"\n"+open('signature-viz.js').read()+"\n"+open('metric-designs.js').read()+"\n"+open('original-viz.js').read()+"\n"+open('appearance.js').read().replace('__APP_IDENTITIES__',open('app-identity.json').read())+"\n"+open('reminders.js').read()+"\n"+open('analysis116.js').read()+"\n"+open('health-cache.js').read()+"\nensureDemo();applyTheme();")
+open('index.html','w').write(s)
