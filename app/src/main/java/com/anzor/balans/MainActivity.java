@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);          // localStorage: цели, настройки, записи
+        s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         s.setTextZoom(100);
@@ -64,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
         webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         webView.setBackgroundColor(0xFF0B0F15);
 
-        // Выбор файла: своя аватарка (картинка) или резервная копия (json)
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
@@ -82,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Мост для сохранения файлов (резервная копия, CSV, отчёт)
         webView.addJavascriptInterface(new SaveBridge(), "BalansSave");
         healthBridge = new HealthBridge(this, webView);
         webView.addJavascriptInterface(healthBridge, "BalansHealth");
@@ -92,7 +90,6 @@ public class MainActivity extends AppCompatActivity {
         reminderBridge = new ReminderBridge(this,webView);
         webView.addJavascriptInterface(reminderBridge,"BalansReminders");
 
-        // Восстановление состояния после поворота/сворачивания
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
         } else {
@@ -126,9 +123,11 @@ public class MainActivity extends AppCompatActivity {
             webView.evaluateJavascript("window.BalansHealth&&window.onHealthEvent&&window.BalansHealth.status()", null);
             webView.evaluateJavascript("window.onAppForeground&&window.onAppForeground()", null);
         }
+        if (healthBridge != null) {
+            healthBridge.syncRange(7);
+        }
     }
 
-    /** Экспорт в Downloads/Balans (Android 10+) и системное меню отправки. */
     private class SaveBridge {
         @JavascriptInterface
         public void shareText(String text) {
@@ -194,7 +193,6 @@ public class MainActivity extends AppCompatActivity {
                 "window.onNativeStatus&&window.onNativeStatus(" + org.json.JSONObject.quote(message) + ")", null));
     }
 
-    /** Результат выбора файла (аватарка или копия для восстановления). */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == FILE_CHOOSER_CODE && fileChooseCallback != null) {
@@ -212,10 +210,6 @@ public class MainActivity extends AppCompatActivity {
         webView.saveState(outState);
     }
 
-    /**
-     * Кнопка «Назад»: сначала закрываем шторку, потом выходим из подстраницы,
-     * и только потом сворачиваем приложение.
-     */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && webView != null) {
@@ -234,10 +228,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    /**
-     * Health Connect: если система открывает приложение по запросу
-     * разрешений — просто показываем главный экран.
-     */
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
