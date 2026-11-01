@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Gradle wrapper. Если Android Studio попросит «Update Gradle wrapper» — соглашайтесь.
+# Gradle wrapper. Если Android Studio попросит «fix Gradle wrapper» — соглашайтесь.
 
 APP_HOME=$(cd "$(dirname "$0")" && pwd)
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
