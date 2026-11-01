@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Balans.Base" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:statusBarColor">#0B0F15</item>
+        <item name="android:navigationBarColor">#0B0F15</item>
+    </style>
+    <style name="Theme.Balans" parent="Theme.Balans.Base" />
+</resources>

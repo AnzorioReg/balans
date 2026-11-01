@@ -5,44 +5,46 @@ plugins {
 
 android {
     namespace 'com.anzor.balans'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.anzor.balans"
         minSdk 26
-        targetSdk 35
-        versionCode 116
+        targetSdk 34
+        versionCode 16
         versionName "1.16"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
+            // Для публикации в RuStore соберите подписанный APK/AAB:
+            // Build > Generate Signed Bundle / APK в Android Studio.
+            // Локальный WebView-интерфейс и нативные JS-мосты используют стабильные имена.
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = '1.8'
     }
+
+    // Приложение будет собрано под телефоны и планшеты.
     buildFeatures {
         viewBinding true
     }
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.15.0'
+    // Keep transitive Kotlin libraries aligned to avoid duplicate JDK7/JDK8 classes.
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:2.1.20')
     implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.android.material:material:1.12.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
-    implementation 'androidx.webkit:webkit:1.12.1'
-    implementation 'androidx.health.connect:connect-client:1.1.0-alpha10'
+    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.health.connect:connect-client:1.1.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }

@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.Balans" parent="Theme.Balans.Base">
+        <item name="android:windowLayoutInDisplayCutoutMode">default</item>
+    </style>
+</resources>
