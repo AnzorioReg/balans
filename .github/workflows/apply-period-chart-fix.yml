@@ -12,7 +12,7 @@ concurrency:
 jobs:
   apply:
     runs-on: ubuntu-latest
-    if: github.event.head_commit.message != 'Исправить графики и периоды'
+    if: github.event.head_commit.message != 'Исправить графики и периоды' && github.event.head_commit.message != 'Добавить лог исправления'
     permissions:
       contents: write
     steps:
@@ -22,7 +22,10 @@ jobs:
           fetch-depth: 0
 
       - name: Apply chart alignment fix
+        id: fix
+        continue-on-error: true
         run: |
+          set -x
           FILE=app/src/main/assets/index.html
           if grep -q 'BALANS_PERIOD_CHART_FIX_V1' "$FILE"; then
             echo 'Fix already applied'
@@ -60,4 +63,25 @@ EOF
           git config user.email 'AnzorioReg@users.noreply.github.com'
           git add "$FILE"
           git commit -m 'Исправить графики и периоды'
+          git push origin sync-auto-refresh
+
+      - name: Save execution log
+        if: always()
+        run: |
+          mkdir -p debug
+          {
+            echo '=== Apply period chart fix log ==='
+            echo "Commit: $GITHUB_SHA"
+            echo "Event: $GITHUB_EVENT_NAME"
+            echo "Fix step outcome: ${{ steps.fix.outcome }}"
+            echo '=== Repository state ==='
+            git status --short
+            git log -3 --oneline
+            echo '=== Marker check ==='
+            grep -n 'BALANS_PERIOD_CHART_FIX_V1' app/src/main/assets/index.html || true
+          } > debug/apply-log.txt
+          git config user.name 'AnzorioReg'
+          git config user.email 'AnzorioReg@users.noreply.github.com'
+          git add debug/apply-log.txt
+          git diff --cached --quiet || git commit -m 'Добавить лог исправления'
           git push origin sync-auto-refresh
