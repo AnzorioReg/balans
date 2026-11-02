@@ -4,4 +4,6 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/stable-apk.yml
+    with:
+      appearance: true
     secrets: inherit
