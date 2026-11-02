@@ -1,18 +1,31 @@
-/* BALANS_REVIEW_TAB_V1 */
+/* BALANS_REVIEW_TAB_V5 */
 try{(function(){
-  const KEY='balans.reviewMode';
-  const on=()=>{try{return localStorage.getItem(KEY)==='1'}catch(e){return false}};
-  const set=v=>{try{localStorage.setItem(KEY,v?'1':'0')}catch(e){}};
-  const kindOf=m=>{const s=((m.id||'')+' '+(m.name||'')).toLowerCase();if(/давл|blood pressure|\bbp\b/.test(s))return 'bp';if(/сон|sleep/.test(s))return 'sleep';if(/шаг|steps|калор|calor|вода|water|трениров|workout|актив|activity/.test(s))return 'bar';return 'line'};
+  const K={diag:'balans.review.diag',empty:'balans.review.empty',periods:'balans.review.periods',event:'balans.review.healthEvent'};
+  const get=k=>{try{return localStorage.getItem(k)==='1'}catch(e){return false}};
+  const set=(k,v)=>{try{localStorage.setItem(k,v?'1':'0')}catch(e){}};
+  const saveEvent=e=>{try{localStorage.setItem(K.event,JSON.stringify({...e,at:Date.now()}))}catch(e2){}};
+  const oldHandler=window.onHealthEvent;
+  window.onHealthEvent=e=>{try{saveEvent(e)}catch(e2){}if(typeof oldHandler==='function')return oldHandler(e)};
   const recordsFor=(m,p)=>{try{const r=metricRecords(m,p);if(Array.isArray(r)&&r.length)return r}catch(e){}if(p==='all'){for(const alt of ['year','6m','month','week','day']){try{const r=metricRecords(m,alt);if(Array.isArray(r)&&r.length)return r}catch(e){}}}return []};
-  const down=(a,n)=>{if(a.length<=n)return a;const o=[],s=(a.length-1)/(n-1);for(let i=0;i<n;i++)o.push(a[Math.round(i*s)]);return o};
+  if(typeof window.drawChart==='function'){const old=window.drawChart;window.drawChart=function(m,p,c){try{if(get(K.periods)&&p==='all'&&!recordsFor(m,p).length){const r=recordsFor(m,'year');if(r.length)return old(m,'year',c)}return old(m,p,c)}catch(e){return old(m,p,c)}}}
+  if(typeof window.vizBig==='function'){window.vizBig=function(m,p){try{if(get(K.periods)&&p==='all'&&!recordsFor(m,p).length){const r=recordsFor(m,'year');if(r.length)return window.drawChart(m,'year')}return window.drawChart(m,p)}catch(e){return window.drawChart(m,p)}}}
+  const improveEmpty=()=>{if(!get(K.empty))return;document.querySelectorAll('.emptybox').forEach(x=>{if(x.dataset.reviewEmpty==='1')return;x.dataset.reviewEmpty='1';const b=x.querySelector('b'),s=x.querySelector('small');if(b&&!b.textContent.trim())b.textContent='Нет данных за этот период';if(s&&!s.textContent.trim())s.textContent='Подключи источник или добавь запись — здесь появится динамика.'})};
+  new MutationObserver(improveEmpty).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',improveEmpty);window.addEventListener('load',improveEmpty);
   const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-  const empty=()=>'<div class="emptybox"><b>Нет данных за период</b><small>Добавь запись или подключи источник.</small></div>';
-  const line=(v,c)=>{if(!v.length)return empty();v=down(v,140);const w=340,h=130,p=8,mn=Math.min(...v),mx=Math.max(...v),sp=(mx-mn)||1;const d=v.map((x,i)=>(i?'L':'M')+(p+i*(w-2*p)/Math.max(v.length-1,1)).toFixed(1)+' '+(h-p-(x-mn)/sp*(h-2*p)).toFixed(1)).join(' ');return '<svg viewBox="0 0 '+w+' '+h+'"><path d="'+d+'" fill="none" stroke="'+c+'" stroke-width="2.5"/></svg>'};
-  const bars=(v,c)=>{if(!v.length)return empty();v=down(v,40);const w=340,h=130,p=8,mx=Math.max(...v,1),bw=(w-2*p)/v.length;return '<svg viewBox="0 0 '+w+' '+h+'">'+v.map((x,i)=>{const hh=Math.max(2,x/mx*(h-2*p));return '<rect x="'+(p+i*bw+bw*.12).toFixed(1)+'" y="'+(h-p-hh).toFixed(1)+'" width="'+(bw*.76).toFixed(1)+'" height="'+hh.toFixed(1)+'" rx="3" fill="'+c+'"/>'}).join('')+'</svg>'};
-  const render=(m,p)=>{const rows=recordsFor(m,p);if(!rows.length)return{svg:empty(),v:[],p:null,noSel:true};const vals=rows.map(r=>Number(r.v)).filter(Number.isFinite),k=kindOf(m);const inner=k==='bp'?line(rows.map(r=>Number(r.sys??r.hi??r.v)).filter(Number.isFinite),'#ff6f91'):k==='sleep'?bars(vals,'#9d8cff'):k==='bar'?bars(vals,'var(--accent)'):line(vals,'var(--accent)');return{svg:'<div data-review="1"><div class="chart">'+inner+'</div></div>',v:vals,p:null,noSel:true}};
-  if(typeof window.drawChart==='function'){const old=window.drawChart;window.drawChart=function(m,p,c){try{return on()?render(m,p):old(m,p,c)}catch(e){return old(m,p,c)}}}
-  if(typeof window.vizBig==='function'){window.vizBig=function(m,p){try{return render(m,p)}catch(e){return window.drawChart(m,p)}}}
-  const tab=()=>{const bar=document.querySelector('#tabbar');if(!bar||document.querySelector('#reviewTab'))return;const b=document.createElement('button');b.id='reviewTab';b.type='button';b.innerHTML='<span>🧪</span><span>На рассмотрении</span>';b.style.cssText='font-size:10px';b.onclick=()=>{document.querySelectorAll('#tabbar button').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));let v=document.querySelector('#reviewView');if(!v){v=document.createElement('section');v.id='reviewView';v.className='view';v.innerHTML='<div class="top"><h2>На рассмотрении</h2></div><div class="card"><b>Новые графики и периоды</b><p class="foot">Проверь все карточки. Старые графики не изменяются и остаются доступными при выключенном режиме.</p><button class="btn" id="reviewToggle" style="width:100%"></button></div>';document.querySelector('.screen').append(v)}v.classList.add('on');const t=document.querySelector('#reviewToggle');t.textContent=on()?'Выключить новые графики':'Включить новые графики';t.onclick=()=>{set(!on());location.reload()}};bar.append(b)};
+  const diagHTML=()=>{let e=null;try{e=JSON.parse(localStorage.getItem(K.event)||'null')}catch(x){}
+    if(!e)return '<p class="foot">Синхронизация ещё не запускалась.</p>';
+    const time=new Date(e.at||Date.now()).toLocaleString('ru-RU');
+    const warnings=(e.warnings||[]).slice(0,5);
+    const ok=e.type==='synced';
+    return '<p class="foot">Последнее событие: <b>'+esc(e.type||'—')+'</b><br>Время: '+esc(time)+'<br>Сообщение: '+esc(e.message||'—')+'</p>'+(warnings.length?'<p class="foot"><b>Предупреждения:</b><br>'+warnings.map(w=>'• '+esc(w)).join('<br>')+'</p>':'')+'<p class="foot">'+(ok?'Данные получены.':'Если ошибка повторяется, открой Health Connect и проверь разрешения.')+'</p>'};
+  const tab=()=>{const bar=document.querySelector('#tabbar');if(!bar||document.querySelector('#reviewTab'))return;const b=document.createElement('button');b.id='reviewTab';b.type='button';b.innerHTML='<span>🧪</span><span>На рассмотрении</span>';b.style.cssText='font-size:10px';
+    b.onclick=()=>{document.querySelectorAll('#tabbar button').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));let v=document.querySelector('#reviewView');if(!v){v=document.createElement('section');v.id='reviewView';v.className='view';document.querySelector('.screen').append(v)}
+      const row=(k,title,desc)=>'<div class="card" style="margin-bottom:10px"><b>'+title+'</b><p class="foot">'+desc+'</p><button class="btn" data-review-toggle="'+k+'" style="width:100%">'+(get(k)?'Выключить':'Включить')+'</button></div>';
+      v.innerHTML='<div class="top"><h2>На рассмотрении</h2></div>'+row(K.diag,'Диагностика источников','Показывает статус последней синхронизации, предупреждения и ошибки.')+'<div class="card" id="reviewDiag" style="margin-bottom:10px"><b>Последняя синхронизация</b>'+diagHTML()+'</div>'+row(K.empty,'Честные пустые состояния','Заменяет пустые графики понятным объяснением, почему данных нет.')+row(K.periods,'Единая логика периодов','Если за «Все данные» нет прямой истории, использует доступную историю за год.')+'<button class="btn ghost" id="reviewRefresh" style="width:100%">Обновить диагностику</button>';
+      v.classList.add('on');
+      v.querySelectorAll('[data-review-toggle]').forEach(btn=>btn.onclick=()=>{const k=btn.dataset.reviewToggle;set(k,!get(k));location.reload()});
+      const rf=document.querySelector('#reviewRefresh');if(rf)rf.onclick=()=>{document.querySelector('#reviewDiag').innerHTML='<b>Последняя синхронизация</b>'+diagHTML()}};
+    bar.append(b)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tab);else tab();
 })();}catch(e){console.error('Review tab disabled',e)}
