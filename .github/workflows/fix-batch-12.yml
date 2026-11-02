@@ -1,0 +1,127 @@
+name: Apply fix batch 12
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-batch-12.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-batch12-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG" || true
+          git push origin "$TAG" || true
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Apply batch 12
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/assets/index.html')
+          s = p.read_text(encoding='utf-8')
+          if '<!-- fix-batch-12-v1 -->' in s:
+              print('Already patched')
+              raise SystemExit(0)
+          script = '''
+<script id='batch12Fixes'>
+/* Batch 12: weekly summary, personal baselines, quick add, doctor export, widget-ready data. Observations only. */
+(function(){
+  function baseline(m,days){
+    const rows=metricRecords(m,days).map(r=>r.v).filter(Number.isFinite);
+    if(rows.length<3)return null;
+    const a=rows.slice().sort((x,y)=>x-y);
+    const q=p=>a[Math.min(a.length-1,Math.floor(a.length*p))];
+    return {low:q(.25),mid:q(.5),high:q(.75),count:rows.length};
+  }
+  function weeklySummary(){
+    const items=[['sleep','Сон'],['heart','Пульс'],['steps','Шаги'],['activeCalories','Калории'],['water','Вода'],['weight','Вес']];
+    return items.map(([id,name])=>{
+      const m=byId[id];if(!m)return '';
+      const rows=metricRecords(m,'week').map(r=>r.v).filter(Number.isFinite);
+      const avg=rows.length?rows.reduce((a,b)=>a+b,0)/rows.length:NaN;
+      const base=baseline(m,'month');
+      let status='мало данных';
+      if(Number.isFinite(avg)&&base){
+        if(avg<base.low)status='ниже обычного';
+        else if(avg>base.high)status='выше обычного';
+        else status='в обычном диапазоне';
+      }
+      return '<div class=\'drow\'><span class=\'k\'>'+esc(name)+'</span><span class=\'val num\'>'+(Number.isFinite(avg)?show(m,avg):'—')+' · '+status+'</span></div>';
+    }).join('');
+  }
+  const oldRenderTopBlock=renderTopBlock;
+  renderTopBlock=function(){
+    oldRenderTopBlock();
+    const host=document.querySelector('#topBlock');
+    if(!host)return;
+    if(!document.querySelector('#weeklySummary')){
+      const card=document.createElement('div');
+      card.id='weeklySummary';card.className='card';card.style.cssText='margin:10px 0;padding:12px';
+      card.innerHTML='<b>Сводка недели</b><p class=\'foot\'>Средние значения за неделю и сравнение с твоими обычными значениями за 30 дней. Наблюдение, не медицинский вывод.</p>'+weeklySummary();
+      host.append(card);
+    }
+  };
+  const oldRenderGroups=renderGroups;
+  renderGroups=function(){
+    oldRenderGroups();
+    const host=document.querySelector('#groups');
+    if(!host||document.querySelector('#quickAddBar'))return;
+    const bar=document.createElement('div');
+    bar.id='quickAddBar';
+    bar.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0';
+    bar.innerHTML=[['water','Вода'],['weight','Вес'],['bp','Давление'],['sleep','Сон']].map(([id,name])=>'<button class=\'btn ghost\' data-addm=\''+id+'\' style=\'min-height:38px;font-size:12px\'>'+name+'</button>').join('');
+    host.before(bar);
+  };
+  const oldReportHTML=reportHTML;
+  reportHTML=function(){
+    const base=oldReportHTML();
+    return base.replace('</body>','<h2>Наблюдения</h2><p>Отчёт содержит только сохранённые записи и их источники. Приложение не даёт медицинских рекомендаций.</p></body>');
+  };
+  window.addEventListener('load',()=>{
+    try{
+      const out={app:'Баланс',version:'1.16',generatedAt:new Date().toISOString(),metrics:{}};
+      M.forEach(m=>{
+        const rows=metricRecords(m,'month');
+        out.metrics[m.id]={name:m.name,unit:m.unit,count:rows.length,latest:rows.at(-1)?.v??null,weeklyAverage:rows.length?rows.reduce((a,b)=>a+b.v,0)/rows.length:null,baseline:baseline(m,'month')};
+      });
+      localStorage.setItem('balans2.widgetData',JSON.stringify(out));
+    }catch(e){}
+  });
+})();
+</script>
+<!-- fix-batch-12-v1 -->
+'''
+          if '</body>' not in s:
+              raise SystemExit('Closing body tag not found')
+          s = s.replace('</body>', script + '</body>', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Update FIXES.md
+        run: |
+          touch FIXES.md
+          cat >> FIXES.md <<'EOF'
+
+          ## Пакет 12 — умная сводка и подготовка к виджетам
+
+          - Добавлена умная сводка недели с личными ориентирами за 30 дней.
+          - Добавлен быстрый ввод воды, веса, давления и сна.
+          - Улучшен экспорт отчёта для врача.
+          - Добавлена подготовка данных для будущих виджетов.
+          - Перед изменениями создан тег отката: ${{ env.ROLLBACK_TAG }}.
+          EOF
+      - name: Commit batch 12
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html FIXES.md
+          git commit -m "Add weekly summary, baselines, quick add, doctor export and widget data" || exit 0
+          git push
