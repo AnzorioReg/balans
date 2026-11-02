@@ -1,13 +1,13 @@
 {
-  "source_sha": "9d69f47015d4aa4e18cab49ed2889bd8173c98aa",
-  "result": "success",
-  "run_id": "41502007512",
-  "run_url": "https://github.com/AnzorioReg/balans/actions/runs/41502007512",
-  "generated_at": "2026-11-02T18:37:38.460480+00:00",
+  "source_sha": "4bc2e9042a0440580bc31da3541f65e71ca99188",
+  "result": "failure",
+  "run_id": "41510735347",
+  "run_url": "https://github.com/AnzorioReg/balans/actions/runs/41510735347",
+  "generated_at": "2026-11-02T19:32:11.590496+00:00",
   "jobs": [
     {
       "name": "build / build",
-      "conclusion": "success",
+      "conclusion": "failure",
       "steps": [
         {
           "name": "Set up job",
@@ -35,7 +35,7 @@
         },
         {
           "name": "Test actual browser interface",
-          "conclusion": "success"
+          "conclusion": "failure"
         },
         {
           "name": "Upload interface test evidence",
@@ -43,27 +43,27 @@
         },
         {
           "name": "Restore existing signing key",
-          "conclusion": "success"
+          "conclusion": "skipped"
         },
         {
           "name": "Use backed-up key when configured",
-          "conclusion": "success"
+          "conclusion": "skipped"
         },
         {
           "name": "Set increasing build version",
-          "conclusion": "success"
+          "conclusion": "skipped"
         },
         {
           "name": "Build and run native unit tests with persistent key",
-          "conclusion": "success"
+          "conclusion": "skipped"
         },
         {
           "name": "Record certificate and APK checksum",
-          "conclusion": "success"
+          "conclusion": "skipped"
         },
         {
           "name": "Run actions/upload-artifact@v4",
-          "conclusion": "success"
+          "conclusion": "skipped"
         },
         {
           "name": "Post Run actions/setup-java@v5",
@@ -106,83 +106,11 @@
     "checks": [
       {
         "name": "Exactly six icon sets",
-        "passed": true
-      },
-      {
-        "name": "Only requested icon sets exist",
-        "passed": true
-      },
-      {
-        "name": "Exactly sixteen launcher choices",
-        "passed": true
-      },
-      {
-        "name": "Card skin picker removed",
-        "passed": true
-      },
-      {
-        "name": "Sections initially collapsed",
-        "passed": true
-      },
-      {
-        "name": "Brightness and contrast folded",
-        "passed": true
-      },
-      {
-        "name": "Chart section is last",
-        "passed": true
-      },
-      {
-        "name": "Repeated rendering has no duplicate sections",
-        "passed": true
-      },
-      {
-        "name": "Emoji selection applied",
-        "passed": true
-      },
-      {
-        "name": "New icon set survives restart",
-        "passed": true
-      },
-      {
-        "name": "Chart selection signature",
-        "passed": true
-      },
-      {
-        "name": "Chart selection points",
-        "passed": true
-      },
-      {
-        "name": "Manual settings entry removed",
-        "passed": true
-      },
-      {
-        "name": "CSV button removed",
-        "passed": true
-      },
-      {
-        "name": "Privacy access entry removed",
-        "passed": true
-      },
-      {
-        "name": "Separate history button removed",
-        "passed": true
-      },
-      {
-        "name": "Source app catalogue removed",
-        "passed": true
-      },
-      {
-        "name": "Device catalogue removed",
-        "passed": true
-      },
-      {
-        "name": "No JavaScript runtime errors",
-        "passed": true
+        "passed": false
       }
     ],
     "errors": [],
-    "failure": null
+    "failure": "Exactly six icon sets"
   },
   "report_errors": []
 }
