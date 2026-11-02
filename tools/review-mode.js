@@ -1,4 +1,4 @@
-/* BALANS_REVIEW_MODE_V1 */
+/* BALANS_REVIEW_MODE_V2 */
 (function(){
   const KEY='balans.reviewMode';
   const on=()=>{try{return localStorage.getItem(KEY)==='1'}catch(e){return false}};
@@ -32,6 +32,21 @@
   const oldDraw=window.drawChart;
   window.drawChart=function(m,period,cmp){if(!on())return oldDraw?oldDraw(m,period,cmp):'';return render(m,period)};
   window.vizBig=function(m,period){return render(m,period)};
-  const mk=()=>{const b=document.createElement('button');b.textContent='Рассмотрение';b.style.cssText='position:fixed;left:12px;bottom:86px;z-index:60;padding:9px 13px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--text);font-size:12px;font-weight:700;box-shadow:0 8px 24px #0006';b.onclick=()=>{const p=document.createElement('div');p.style.cssText='position:fixed;inset:auto 12px 130px 12px;z-index:61;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 18px 50px #0008';p.innerHTML='<b>Режим «Рассмотрение»</b><p class="foot">Новые графики и периоды для всех карточек. Старые графики не изменяются и остаются доступными при выключенном режиме.</p><button class="btn" style="width:100%">'+(on()?'Выключить новые графики':'Включить новые графики')+'</button>';p.querySelector('button').onclick=()=>{set(!on());p.remove();location.reload()};const x=document.createElement('button');x.textContent='Закрыть';x.style.cssText='width:100%;margin-top:8px;min-height:40px;border-radius:12px;background:var(--surface2);color:var(--text)';x.onclick=()=>p.remove();p.append(x);document.body.append(p)};document.body.append(b)};
+  const openPanel=()=>{
+    document.querySelectorAll('.balans-review-panel').forEach(x=>x.remove());
+    const p=document.createElement('div');p.className='balans-review-panel';
+    p.style.cssText='position:fixed;top:76px;right:12px;left:12px;z-index:9999;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 18px 50px #0008';
+    p.innerHTML='<b>Режим «Рассмотрение»</b><p class="foot">Новые графики и периоды для всех карточек. Старые графики не изменяются и остаются доступными при выключенном режиме.</p>';
+    const main=document.createElement('button');main.className='btn';main.style.cssText='width:100%';main.textContent=on()?'Выключить новые графики':'Включить новые графики';
+    main.onclick=()=>{set(!on());p.remove();location.reload()};
+    const close=document.createElement('button');close.textContent='Закрыть';close.style.cssText='width:100%;margin-top:8px;min-height:40px;border-radius:12px;background:var(--surface2);color:var(--text)';close.onclick=()=>p.remove();
+    p.append(main,close);document.body.append(p);
+  };
+  const mk=()=>{
+    document.querySelectorAll('.balans-review-fab').forEach(x=>x.remove());
+    const b=document.createElement('button');b.className='balans-review-fab';b.type='button';b.textContent='Рассмотрение';
+    b.style.cssText='position:fixed;top:64px;right:12px;z-index:9998;padding:8px 12px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--text);font-size:12px;font-weight:700;box-shadow:0 8px 24px #0006';
+    b.addEventListener('click',openPanel);document.body.append(b);
+  };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mk);else mk();
 })();

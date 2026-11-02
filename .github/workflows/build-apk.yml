@@ -22,11 +22,19 @@ jobs:
       - name: Grant execute permission to Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Apply chart fixes
+      - name: Apply chart fixes safely
+        shell: python
         run: |
-          FILE=app/src/main/assets/index.html
-          grep -q 'BALANS_PERIOD_CHART_FIX_V1' "$FILE" || cat tools/period-chart-fix.js >> "$FILE"
-          grep -q 'BALANS_REVIEW_MODE_V1' "$FILE" || cat tools/review-mode.js >> "$FILE"
+          from pathlib import Path
+          html = Path('app/src/main/assets/index.html')
+          text = html.read_text(encoding='utf-8')
+          marker = '</html>'
+          if marker in text:
+              text = text.split(marker, 1)[0] + marker
+          period = Path('tools/period-chart-fix.js').read_text(encoding='utf-8')
+          review = Path('tools/review-mode.js').read_text(encoding='utf-8')
+          text += '\n<script>\n' + period + '\n' + review + '\n</script>\n'
+          html.write_text(text, encoding='utf-8')
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
