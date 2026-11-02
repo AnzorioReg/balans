@@ -1,0 +1,42 @@
+name: Extract code diagnostics
+
+on:
+  push:
+    branches:
+      - sync-auto-refresh
+
+concurrency:
+  group: debug-extract
+  cancel-in-progress: true
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    if: github.event.head_commit.message != 'Добавить диагностическую выгрузку кода'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: sync-auto-refresh
+          fetch-depth: 0
+
+      - name: Extract chart and period functions
+        run: |
+          mkdir -p debug
+          {
+            echo '=== series / labels / avg ==='
+            grep -n -A45 -E '^(function series|const series|function labels|function avg)' app/src/main/assets/index.html || true
+            echo '=== metricRecords ==='
+            grep -n -A35 'function metricRecords' app/src/main/assets/index.html || true
+            echo '=== drawChart ==='
+            grep -n -A20 'function drawChart' app/src/main/assets/index.html || true
+          } > debug/code-extract.txt
+
+      - name: Commit diagnostics
+        run: |
+          git config user.name 'AnzorioReg'
+          git config user.email 'AnzorioReg@users.noreply.github.com'
+          git add debug/code-extract.txt
+          git commit -m 'Добавить диагностическую выгрузку кода' || exit 0
+          git push origin sync-auto-refresh
