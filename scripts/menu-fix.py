@@ -1,42 +1,38 @@
 import subprocess
 from pathlib import Path
+import re
 
-base=subprocess.run(['git','show','13fa3fdcc12678343a897d36bae32d182701875c:scripts/menu-fix.py'],check=True,capture_output=True,text=True).stdout
-exec(compile(base,'menu-fix-v8.py','exec'),{})
-heart=r'''
-/* PARALLEL_HEART_V9 */
-(function(){
- const previous=activityGlyph;
- let serial=0;
- const d='M140 246 C111 222 25 164 25 96 C25 35 96 19 140 68 C184 19 255 35 255 96 C255 164 169 222 140 246 Z';
- activityGlyph=function(style,small=false,a=ACTIVITY()){
-  if(style!=='heart')return previous(style,small,a);
-  const id='parallel-heart-'+(++serial),width=18,gap=.65;
-  let defs='',body='',badges='';
-  const path=(fill,extra='')=>'<path d="'+d+'" fill="'+fill+'" '+extra+'/>';
-  const maskStart=name=>'<mask id="'+name+'" maskUnits="userSpaceOnUse" x="0" y="0" width="280" height="280" style="mask-type:luminance">';
-  for(let k=0;k<6;k++){
-   const inset=Math.floor(k/2)*(width+gap)+(k%2?width:0);
-   defs+=maskStart(id+'-inset-'+k)+path('white',inset?'stroke="black" stroke-width="'+(2*inset)+'" stroke-linejoin="round"':'')+'</mask>';
-  }
-  a.slice(0,3).forEach((x,i)=>{
-   const band=id+'-band-'+i;
-   defs+=maskStart(band)+'<g mask="url(#'+id+'-inset-'+(2*i)+')">'+path('white')+'</g><g mask="url(#'+id+'-inset-'+(2*i+1)+')">'+path('black')+'</g></mask>';
-   const p=Number.isFinite(x.p)?Math.max(0,Math.min(1,x.p)):0;
-   body+='<g mask="url(#'+band+')">'+path(x.c,'opacity="'+(small?1:.44)+'"');
-   if(!small&&p>0)body+=path('none','stroke="'+x.c+'" style="stroke-width:140!important" stroke-linejoin="round" stroke-linecap="butt" pathLength="100" stroke-dasharray="'+(p*100)+' 100" data-goal="'+x.m.id+'"');
-   body+='</g>';
-   if(!small)badges+=dashboardGoalBadge(x,140,246-(i*(width+gap)+width/2),false);
-  });
-  return '<svg class="activity-glyph '+(small?'small':'')+'" data-hero-style="heart" data-heart-version="9" viewBox="0 0 280 280" aria-hidden="true"><defs>'+defs+'</defs>'+body+badges+'</svg>';
- };
-})();
-'''
+base=subprocess.run(['git','show','7d2079f18d80eaa0e474db1618e497f4dcce1f62:scripts/menu-fix.py'],check=True,capture_output=True,text=True).stdout
+assert 'width=18,gap=.65' in base
+base=base.replace('width=18,gap=.65','width=22,gap=.65',1)
+exec(compile(base,'heart-v9-base.py','exec'),{})
+pattern=r'\.activity-glyph\[data-hero-style=heart\] path(?:\[data-part=track-outline\])?\{[^}]*\}'
 for name in ['app/src/main/assets/index.html','web-src/index.html']:
  p=Path(name)
  text=p.read_text(encoding='utf-8')
- marker='ensureDemo();applyTheme();'
- assert text.count(marker)==1
- text=text.replace(marker,heart+chr(10)+marker,1)
- assert 'PARALLEL_HEART_V9' in text
+ text,count=re.subn(pattern,'',text)
+ assert count>=2, 'Expected legacy heart CSS overrides'
+ assert not re.search(pattern,text)
+ assert 'width=22,gap=.65' in text
  p.write_text(text,encoding='utf-8')
+check=Path('scripts/menu-check.cjs')
+text=check.read_text(encoding='utf-8')
+anchor="   await page.waitForSelector('#topBlock .dots[data-dashboard=top]');"
+extra=r'''
+   await page.evaluate(()=>{
+    state.top.style='heart';state.top.showFigure=true;renderTopBlock();
+    const svg=document.querySelector('#topBlock svg[data-heart-version="9"]');
+    if(!svg)throw new Error('New heart missing');
+    const masks=[...svg.querySelectorAll('mask path[stroke="black"]')];
+    if(masks.length!==5)throw new Error('Expected five inset stroke boundaries');
+    for(const p of masks){
+     const intended=Number(p.getAttribute('stroke-width'));
+     const actual=parseFloat(getComputedStyle(p).strokeWidth);
+     if(Math.abs(intended-actual)>.01)throw new Error('Heart mask width overridden: '+actual+' instead of '+intended);
+    }
+    if(svg.querySelectorAll('g[mask]>path[opacity]').length!==3)throw new Error('Three colored heart bands required');
+   });
+   await page.screenshot({path:'ui-report/heart-fixed-'+width+'.png'});
+'''
+assert text.count(anchor)==1
+check.write_text(text.replace(anchor,anchor+extra,1),encoding='utf-8')
