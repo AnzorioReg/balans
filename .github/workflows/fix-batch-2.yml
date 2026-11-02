@@ -1,0 +1,104 @@
+name: Apply fix batch 2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-batch-2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-batch2-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Apply batch 2 fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/assets/index.html')
+          s = p.read_text(encoding='utf-8')
+          if '<!-- fix-batch-2-v1 -->' in s:
+              print('Already patched')
+              raise SystemExit(0)
+          script = '''
+<script id="batch2Fixes">
+/* Batch 2: visible sync diagnostics. No synthetic data, no background reads. */
+(function(){
+  const previous=window.onHealthEvent;
+  window.onHealthEvent=function(ev){
+    try{
+      if(ev?.type==='synced'){
+        const failed=ev.failedMetricIds||[];
+        const warnings=ev.range?.warnings||[];
+        if(failed.length){
+          const names=failed.map(id=>window.byId?.[id]?.name||id).join(', ');
+          toast('Часть данных не загружена','Не удалось прочитать: '+names+'. Подробности в «Источниках».','i-info');
+        }else if(ev.range?.historyLimited){
+          toast('История ограничена','Health Connect разрешил чтение не всей запрошенной истории. Открой «Источники» для деталей.','i-info');
+        }else if(warnings.length){
+          toast('Синхронизация с замечаниями','Health Connect вернул предупреждения. Подробности в «Источниках».','i-info');
+        }
+      }
+    }catch(e){}
+    return previous?.(ev);
+  };
+})();
+</script>
+<!-- fix-batch-2-v1 -->
+'''
+          if '</body>' not in s:
+              raise SystemExit('Closing body tag not found')
+          s = s.replace('</body>', script + '</body>', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Create FIXES.md
+        run: |
+          cat > FIXES.md <<'EOF'
+          # Журнал исправлений
+
+          ## Пакет 1 — периоды и карточки
+
+          - Подробные карточки открываются на периоде «День».
+          - Для редких показателей показывается последнее сохранённое значение, если сегодня измерения нет.
+          - Уточнена подпись о фактическом охвате данных.
+
+          ## Пакет 2 — диагностика синхронизации
+
+          - Добавлены уведомления, если Health Connect не смог прочитать отдельные показатели.
+          - Добавлено уведомление, если доступна не вся запрошенная история.
+          - Добавлено уведомление при предупреждениях синхронизации.
+          - Перед изменениями создан тег отката: ${{ env.ROLLBACK_TAG }}.
+
+          ## Оставшиеся задачи
+
+          - Выбор периода для мини-графиков на главной.
+          - Улучшенное отображение сна за неделю и месяц.
+          - Более подробный экран «Источники» с охватом истории по показателям.
+          - Дополнительная диагностика Bluetooth-устройств.
+
+          ## Как откатить пакет 2
+
+          ```bash
+          git checkout backup/pre-batch2-*
+          ```
+
+          Или в Android Studio: Git → Branches → Tags → выбрать тег `backup/pre-batch2-*` → Checkout.
+          EOF
+      - name: Commit batch 2
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html FIXES.md
+          git commit -m "Add sync diagnostics and rollback point" || exit 0
+          git push
