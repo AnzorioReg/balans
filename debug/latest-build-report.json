@@ -1,9 +1,9 @@
 {
-  "source_sha": "29a3fa42cead17c48d28af96fc587b47efd16e65",
+  "source_sha": "9d69f47015d4aa4e18cab49ed2889bd8173c98aa",
   "result": "success",
-  "run_id": "41493739535",
-  "run_url": "https://github.com/AnzorioReg/balans/actions/runs/41493739535",
-  "generated_at": "2026-11-02T17:45:05.808249+00:00",
+  "run_id": "41502007512",
+  "run_url": "https://github.com/AnzorioReg/balans/actions/runs/41502007512",
+  "generated_at": "2026-11-02T18:37:38.460480+00:00",
   "jobs": [
     {
       "name": "build / build",
@@ -105,7 +105,7 @@
   "ui": {
     "checks": [
       {
-        "name": "Exactly four icon sets",
+        "name": "Exactly six icon sets",
         "passed": true
       },
       {
@@ -113,7 +113,7 @@
         "passed": true
       },
       {
-        "name": "Exactly five launcher choices",
+        "name": "Exactly sixteen launcher choices",
         "passed": true
       },
       {
@@ -150,6 +150,30 @@
       },
       {
         "name": "Chart selection points",
+        "passed": true
+      },
+      {
+        "name": "Manual settings entry removed",
+        "passed": true
+      },
+      {
+        "name": "CSV button removed",
+        "passed": true
+      },
+      {
+        "name": "Privacy access entry removed",
+        "passed": true
+      },
+      {
+        "name": "Separate history button removed",
+        "passed": true
+      },
+      {
+        "name": "Source app catalogue removed",
+        "passed": true
+      },
+      {
+        "name": "Device catalogue removed",
         "passed": true
       },
       {
