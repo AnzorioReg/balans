@@ -22,21 +22,40 @@ jobs:
       - name: Grant execute permission to Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Apply chart fixes safely
+      - name: Create stable debug keystore
+        run: |
+          if [ ! -f keystore/balans-debug.jks ]; then
+            mkdir -p keystore
+            keytool -genkeypair -v -keystore keystore/balans-debug.jks -alias balans -keyalg RSA -keysize 2048 -validity 10000 -storepass balans123 -keypass balans123 -dname "CN=Balans Debug,O=Balans,C=RU"
+          fi
+
+      - name: Commit stable keystore
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add keystore/balans-debug.jks
+          git diff --cached --quiet || git commit -m "Добавить стабильный debug-keystore"
+          git push
+
+      - name: Apply review tab safely
         shell: python
         run: |
           from pathlib import Path
-          html = Path('app/src/main/assets/index.html')
-          text = html.read_text(encoding='utf-8')
-          marker = '</html>'
-          if marker in text:
-              text = text.split(marker, 1)[0] + marker
-          period = Path('tools/period-chart-fix.js').read_text(encoding='utf-8')
-          review = Path('tools/review-mode.js').read_text(encoding='utf-8')
-          text += '\n<script>\n' + period + '\n' + review + '\n</script>\n'
-          html.write_text(text, encoding='utf-8')
+          html=Path('app/src/main/assets/index.html');text=html.read_text(encoding='utf-8')
+          end=text.rfind('</html>')
+          if end!=-1:text=text[:end]
+          body=text.rfind('</body>')
+          js=Path('tools/review-mode.js').read_text(encoding='utf-8')
+          inject='<script>\n'+js+'\n</script>\n'
+          text=(text[:body]+inject+text[body:]) if body!=-1 else text+inject+'</body>\n'
+          html.write_text(text+'</html>\n',encoding='utf-8')
 
-      - name: Build debug APK
+      - name: Build signed debug APK
+        env:
+          BALANS_STORE_FILE: keystore/balans-debug.jks
+          BALANS_STORE_PASSWORD: balans123
+          BALANS_KEY_ALIAS: balans
+          BALANS_KEY_PASSWORD: balans123
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload debug APK
