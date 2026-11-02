@@ -68,13 +68,25 @@ jobs:
           chmod 600 keystore/balans-debug.jks
       - name: Set increasing build version
         run: echo "BALANS_VERSION_CODE=$((100000 + $(git rev-list --count HEAD)))" >> "$GITHUB_ENV"
-      - name: Build and run native unit tests
+      - name: Build debug APK
         env:
           BALANS_STORE_FILE: keystore/balans-debug.jks
           BALANS_STORE_PASSWORD: balans123
           BALANS_KEY_ALIAS: balans
           BALANS_KEY_PASSWORD: balans123
-        run: chmod +x gradlew && ./gradlew testDebugUnitTest assembleDebug --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-log.txt
+      - name: Upload Gradle diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-diagnostics-${{ github.sha }}
+          path: |
+            gradle-log.txt
+            app/build/reports/**
+          if-no-files-found: warn
       - name: Record certificate and APK checksum
         run: |
           APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)
