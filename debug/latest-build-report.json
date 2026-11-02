@@ -1,0 +1,164 @@
+{
+  "source_sha": "a686552b03a256e8de8adf9cc0d52be06911ad7a",
+  "result": "success",
+  "run_id": "41488972953",
+  "run_url": "https://github.com/AnzorioReg/balans/actions/runs/41488972953",
+  "generated_at": "2026-11-02T17:15:02.897519+00:00",
+  "jobs": [
+    {
+      "name": "build / build",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-java@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Apply approved appearance patch",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check icon JavaScript syntax",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install browser test dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Test actual browser interface",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload interface test evidence",
+          "conclusion": "success"
+        },
+        {
+          "name": "Restore existing signing key",
+          "conclusion": "success"
+        },
+        {
+          "name": "Use backed-up key when configured",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set increasing build version",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build and run native unit tests with persistent key",
+          "conclusion": "success"
+        },
+        {
+          "name": "Record certificate and APK checksum",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-java@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Publish build report",
+      "conclusion": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Publish result for connector access",
+          "conclusion": null
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "conclusion": null
+        }
+      ]
+    }
+  ],
+  "ui": {
+    "checks": [
+      {
+        "name": "Exactly ten icon sets",
+        "passed": true
+      },
+      {
+        "name": "All five emoji variants exist",
+        "passed": true
+      },
+      {
+        "name": "Exactly five launcher choices",
+        "passed": true
+      },
+      {
+        "name": "Card skin picker removed",
+        "passed": true
+      },
+      {
+        "name": "Sections initially collapsed",
+        "passed": true
+      },
+      {
+        "name": "Brightness and contrast folded",
+        "passed": true
+      },
+      {
+        "name": "Chart section is last",
+        "passed": true
+      },
+      {
+        "name": "Repeated rendering has no duplicate sections",
+        "passed": true
+      },
+      {
+        "name": "Emoji selection applied",
+        "passed": true
+      },
+      {
+        "name": "New icon set survives restart",
+        "passed": true
+      },
+      {
+        "name": "Chart selection signature",
+        "passed": true
+      },
+      {
+        "name": "Chart selection points",
+        "passed": true
+      },
+      {
+        "name": "No JavaScript runtime errors",
+        "passed": true
+      }
+    ],
+    "errors": [],
+    "failure": null
+  },
+  "report_errors": []
+}
