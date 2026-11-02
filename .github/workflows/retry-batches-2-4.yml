@@ -1,0 +1,178 @@
+name: Retry fix batches 2-4
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/retry-batches-2-4.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-retry-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG" || true
+          git push origin "$TAG" || true
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Apply batches 2-4
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/assets/index.html')
+          s = p.read_text(encoding='utf-8')
+          def add_before_body(marker, script):
+              global s
+              if marker in s:
+                  print('skip', marker)
+                  return
+              if '</body>' not in s:
+                  raise SystemExit('No closing body tag')
+              s = s.replace('</body>', script + '</body>', 1)
+              print('applied', marker)
+          b2 = """
+<script id='batch2Fixes'>
+(function(){
+  const previous=window.onHealthEvent;
+  window.onHealthEvent=function(ev){
+    try{
+      if(ev&&ev.type==='synced'){
+        const failed=ev.failedMetricIds||[];
+        const warnings=(ev.range&&ev.range.warnings)||[];
+        if(failed.length){
+          const names=failed.map(id=>(window.byId&&window.byId[id]?window.byId[id].name:id)).join(', ');
+          toast('Часть данных не загружена','Не удалось прочитать: '+names+'. Подробности в Источниках.','i-info');
+        }else if(ev.range&&ev.range.historyLimited){
+          toast('История ограничена','Health Connect разрешил чтение не всей запрошенной истории.','i-info');
+        }else if(warnings.length){
+          toast('Синхронизация с замечаниями','Health Connect вернул предупреждения. Подробности в Источниках.','i-info');
+        }
+      }
+    }catch(e){}
+    return previous?previous(ev):undefined;
+  };
+})();
+</script>
+<!-- fix-batch-2-v1 -->
+"""
+          b3 = """
+<script id='batch3Fixes'>
+(function(){
+  state.overviewPeriod=state.overviewPeriod||'week';
+  const oldRenderTopBlock=renderTopBlock;
+  renderTopBlock=function(){
+    oldRenderTopBlock();
+    const holder=document.querySelector('#topBlock .activity-head');
+    if(!holder)return;
+    if(document.querySelector('.overview-periods'))return;
+    const bar=document.createElement('div');
+    bar.className='seg overview-periods';
+    bar.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:8px 0 0';
+    bar.innerHTML=PERIODS.filter(x=>x[0]!=='all').map(([k,l])=>'<button data-op=\''+k+'\' class=\''+(state.overviewPeriod===k?'on':'')+'\' style=\'min-height:32px;font-size:12px\'>'+l+'</button>').join('');
+    holder.before(bar);
+  };
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-op]');
+    if(!b)return;
+    state.overviewPeriod=b.dataset.op;
+    visualCache.clear();
+    renderTopBlock();
+  },true);
+  const oldMetricCaption=metricCaption;
+  metricCaption=function(m){
+    const r=recs(m).at(-1);
+    if(!r)return 'Нет измерений';
+    if(DAILY_METRICS.has(m.id)&&!Number.isFinite(actualLatest(m))){
+      const day=r.day||localDay(recordTimestamp(r));
+      if(day!==localDay())return 'последние данные: '+new Date(day+'T12:00:00').toLocaleDateString('ru-RU');
+    }
+    return oldMetricCaption(m);
+  };
+  const oldRenderHC=renderHC;
+  renderHC=function(){
+    oldRenderHC();
+    const info=state.healthInfo||{},range=info.range||{};
+    if(!range.requestedDays)return;
+    const host=document.querySelector('#srcCard')||document.querySelector('#v-sources');
+    if(!host)return;
+    let note=document.getElementById('hcCoverageNote');
+    if(!note){note=document.createElement('p');note.id='hcCoverageNote';note.className='foot';host.append(note)}
+    const queried=range.queriedDays!=null?range.queriedDays:range.requestedDays;
+    note.textContent='Доступная история: '+queried+' из '+range.requestedDays+' дней.'+(range.historyLimited?' Health Connect ограничил чтение старых записей.':'');
+  };
+})();
+</script>
+<!-- fix-batch-3-v1 -->
+"""
+          b4 = """
+<script id='batch4Fixes'>
+(function(){
+  const oldBigLegend=bigLegend;
+  bigLegend=function(m,p){
+    const base=oldBigLegend(m,p);
+    if(m.id==='sleep'&&p&&p!=='day'){
+      const rows=metricRecords(m,p);
+      if(rows.length>1)return (base?base+' ':'')+'<span>Показаны отдельные сессии сна; усреднение фаз не выполняется.</span>';
+    }
+    return base;
+  };
+  const oldRenderHC=renderHC;
+  renderHC=function(){
+    oldRenderHC();
+    const info=state.healthInfo||{},range=info.range||{};
+    const host=document.querySelector('#srcCard')||document.querySelector('#v-sources');
+    if(!host)return;
+    let box=document.getElementById('hcCoverageBox');
+    if(!box){box=document.createElement('div');box.id='hcCoverageBox';box.className='card';box.style.cssText='margin-top:12px;padding:12px';host.append(box)}
+    const per=range.perMetricRange||{};
+    const rows=Object.entries(per).map(([id,x])=>{
+      const m=window.byId&&window.byId[id];if(!m)return '';
+      return '<div class=\'drow\'><span class=\'k\'>'+esc(m.name)+'</span><span class=\'val num\'>'+(x.count||0)+' зап.</span></div>';
+    }).join('');
+    box.innerHTML='<b>Охват истории</b><p class=\'foot\'>Доступно '+((range.queriedDays!=null?range.queriedDays:range.requestedDays)||0)+' из '+(range.requestedDays||0)+' дней.'+(range.historyLimited?' Health Connect ограничил чтение старых записей.':'')+'</p>'+rows;
+  };
+  const oldTryBleAuto=window.tryBleAuto;
+  window.tryBleAuto=function(){
+    try{
+      if(!navigator.bluetooth){toast('Bluetooth недоступен','Эта версия Android или оболочка не поддерживает Web Bluetooth.','i-info');return}
+    }catch(e){}
+    return oldTryBleAuto?oldTryBleAuto():undefined;
+  };
+})();
+</script>
+<!-- fix-batch-4-v1 -->
+"""
+          add_before_body('<!-- fix-batch-2-v1 -->', b2)
+          add_before_body('<!-- fix-batch-3-v1 -->', b3)
+          add_before_body('<!-- fix-batch-4-v1 -->', b4)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Update FIXES.md
+        run: |
+          touch FIXES.md
+          cat >> FIXES.md <<'EOF'
+
+          ## Объединённый повтор пакетов 2–4
+
+          - Диагностика синхронизации Health Connect.
+          - Переключатель периода на «Обзоре».
+          - Последний доступный день для дневных показателей.
+          - Охват истории в «Источниках».
+          - Уточнённые подписи для сна.
+          - Диагностика Bluetooth.
+          - Тег отката: ${{ env.ROLLBACK_TAG }}.
+          EOF
+      - name: Commit retry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html FIXES.md
+          git commit -m "Apply sync diagnostics, overview periods and source coverage" || exit 0
+          git push
