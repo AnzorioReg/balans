@@ -82,3 +82,15 @@ document.addEventListener('click',e=>{const d=e.target.closest('.dots[data-dashb
 const SAFE=new Set(['balance','heart','pulse','ecg','run']);
 document.addEventListener('click',e=>{const b=e.target.closest('.avp[data-id],.avp[data-icon],[data-launcher-id]');if(!b)return;const id=b.dataset.id||b.dataset.icon||b.dataset.launcherId;if(id&&!SAFE.has(id)){e.preventDefault();e.stopPropagation();const t=document.createElement('div');t.textContent='Этот вариант значка пока недоступен: выберите один из базовых пяти.';t.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222c39;color:#fff;padding:10px 14px;border-radius:12px;z-index:99;font-size:13px';document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}},true);
 })();
+
+/* V7: restore dashboard menu, broaden launcher guard, thicken heart strokes. */
+(function(){
+document.head.appendChild(Object.assign(document.createElement('style'),{textContent:`
+.activity-glyph[data-hero-style=heart] path{stroke-width:18!important}
+.activity-glyph[data-hero-style=heart] path[data-part=track-outline]{stroke-width:20!important;opacity:.12!important}
+`}));
+setInterval(()=>{document.querySelectorAll('.dashboard-popover').forEach(p=>p.removeAttribute('data-trigger'))},50);
+const SAFE=new Set(['balance','heart','pulse','ecg','run']);
+const pickId=b=>b.dataset.appIcon||b.dataset.identity||b.dataset.iconId||b.dataset.launcher||b.dataset.id||b.dataset.icon;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-app-icon],[data-identity],[data-icon-id],[data-launcher],.avp');if(!b)return;const id=pickId(b);if(id&&!SAFE.has(id)){e.preventDefault();e.stopPropagation();if(typeof toast==='function')toast('Значок недоступен','Этот вариант требует обновления Android-части','i-info');}},true);
+})();
