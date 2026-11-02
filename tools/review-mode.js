@@ -1,6 +1,8 @@
-/* BALANS_REVIEW_TAB_V6 */
+/* BALANS_REVIEW_TAB_V7 */
 try{(function(){
-  const K={event:'balans.review.healthEvent'};
+  const K={event:'balans.review.healthEvent',mood:'balans.review.mood',ready:'balans.review.ready',search:'balans.review.search',goals:'balans.review.goals'};
+  const get=k=>{try{return localStorage.getItem(k)==='1'}catch(e){return false}};
+  const set=(k,v)=>{try{localStorage.setItem(k,v?'1':'0')}catch(e){}};
   const saveEvent=e=>{try{localStorage.setItem(K.event,JSON.stringify({...e,at:Date.now()}))}catch(e2){}};
   const oldHandler=window.onHealthEvent;
   window.onHealthEvent=e=>{try{saveEvent(e)}catch(e2){}if(typeof oldHandler==='function')return oldHandler(e)};
@@ -17,11 +19,27 @@ try{(function(){
     const warnings=(e.warnings||[]).slice(0,5);
     const ok=e.type==='synced';
     return '<p class="foot">Последнее событие: <b>'+esc(e.type||'—')+'</b><br>Время: '+esc(time)+'<br>Сообщение: '+esc(e.message||'—')+'</p>'+(warnings.length?'<p class="foot"><b>Предупреждения:</b><br>'+warnings.map(w=>'• '+esc(w)).join('<br>')+'</p>':'')+'<p class="foot">'+(ok?'Данные получены.':'Если ошибка повторяется, открой Health Connect и проверь разрешения.')+'</p>'};
+  const moodHTML=()=>{let d={};try{d=JSON.parse(localStorage.getItem(K.mood)||'{}')}catch(e){}
+    const today=new Date().toISOString().slice(0,10);const cur=d[today]||{};
+    return '<div class="card" style="margin-bottom:10px"><b>Дневник самочувствия</b><p class="foot">Как ты себя чувствуешь сегодня? Данные остаются на телефоне.</p><div style="display:flex;gap:8px;margin:10px 0">'+['😀 Хорошо','😐 Нормально','😕 Плохо'].map((x,i)=>'<button class="btn ghost" data-mood="'+i+'" style="flex:1;'+(cur.mood===i?'background:var(--accent);color:var(--accent-ink)':'')+'">'+x+'</button>').join('')+'</div><input id="moodNote" placeholder="Заметка о дне" value="'+esc(cur.note||'')+'" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);color:var(--text)"><button class="btn" id="moodSave" style="width:100%;margin-top:8px">Сохранить</button></div>'};
+  const readyHTML=()=>{const sleep=byId.sleep?recordsFor(byId.sleep,'day').at(-1)?.v:NaN;const heart=byId.heart?recordsFor(byId.heart,'day').at(-1)?.v:NaN;const steps=byId.steps?recordsFor(byId.steps,'day').at(-1)?.v:NaN;
+    let score=null,parts=[];if(Number.isFinite(sleep))parts.push(Math.min(1,sleep/8));if(Number.isFinite(steps))parts.push(Math.min(1,steps/10000));if(Number.isFinite(heart))parts.push(heart>40&&heart<100?1:0.6);
+    if(parts.length)score=Math.round(100*parts.reduce((a,b)=>a+b,0)/parts.length);
+    const label=score==null?'Мало данных для оценки':score>=70?'Хороший день':score>=40?'Обычный день':'Сниженный день';
+    return '<div class="card" style="margin-bottom:10px"><b>Готовность к дню</b><p class="foot">Наблюдение на основе доступных данных. Не медицинский вывод.</p><div style="font-size:34px;font-weight:800">'+(score==null?'—':score+'%')+'</div><p class="foot">'+esc(label)+'</p></div>'};
+  const searchHTML=()=>{return '<div class="card" style="margin-bottom:10px"><b>Умный поиск</b><input id="metricSearch" placeholder="Найти показатель..." style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);color:var(--text)"><div id="searchResults" style="margin-top:10px"></div></div>'};
+  const goalsHTML=()=>{const items=[['steps',10000],['water',2000],['sleep',8]].map(([id,goal])=>{const m=byId[id];if(!m)return '';const v=recordsFor(m,'day').at(-1)?.v;const p=Number.isFinite(v)?Math.min(1,v/goal):0;return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><span>'+esc(m.name)+'</span><b>'+(Number.isFinite(v)?show(m,v):'—')+'</b></div><div style="height:8px;border-radius:4px;background:var(--surface3);margin-top:4px"><div style="width:'+(p*100).toFixed(0)+'%;height:100%;border-radius:4px;background:var(--accent)"></div></div></div>'}).join('');
+    return '<div class="card" style="margin-bottom:10px"><b>Быстрые цели</b><p class="foot">Прогресс за сегодня по доступным данным.</p>'+items+'</div>'};
   const tab=()=>{const bar=document.querySelector('#tabbar');if(!bar||document.querySelector('#reviewTab'))return;const b=document.createElement('button');b.id='reviewTab';b.type='button';b.innerHTML='<span>🧪</span><span>На рассмотрении</span>';b.style.cssText='font-size:10px';
     b.onclick=()=>{document.querySelectorAll('#tabbar button').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));let v=document.querySelector('#reviewView');if(!v){v=document.createElement('section');v.id='reviewView';v.className='view';document.querySelector('.screen').append(v)}
-      v.innerHTML='<div class="top"><h2>На рассмотрении</h2></div><div class="card"><b>Диагностика источников</b><p class="foot">Служебный экран: показывает статус последней синхронизации, предупреждения и ошибки.</p></div><div class="card" id="reviewDiag" style="margin-bottom:10px"><b>Последняя синхронизация</b>'+diagHTML()+'</div><button class="btn ghost" id="reviewRefresh" style="width:100%">Обновить диагностику</button>';
+      const row=(k,title,desc)=>'<div class="card" style="margin-bottom:10px"><b>'+title+'</b><p class="foot">'+desc+'</p><button class="btn" data-review-toggle="'+k+'" style="width:100%">'+(get(k)?'Выключить':'Включить')+'</button></div>';
+      v.innerHTML='<div class="top"><h2>На рассмотрении</h2></div>'+(get(K.ready)?readyHTML():'')+(get(K.goals)?goalsHTML():'')+(get(K.search)?searchHTML():'')+(get(K.mood)?moodHTML():'')+row(K.ready,'Готовность к дню','Простая оценка дня по доступным данным сна, пульса и шагов.')+row(K.goals,'Быстрые цели','Прогресс по шагам, воде и сну за сегодня.')+row(K.search,'Умный поиск','Быстрый поиск любой карточки по названию.')+row(K.mood,'Дневник самочувствия','Оценка дня и заметка. Данные хранятся только на телефоне.')+'<div class="card" id="reviewDiag" style="margin-bottom:10px"><b>Диагностика источников</b>'+diagHTML()+'</div><button class="btn ghost" id="reviewRefresh" style="width:100%">Обновить диагностику</button>';
       v.classList.add('on');
-      const rf=document.querySelector('#reviewRefresh');if(rf)rf.onclick=()=>{document.querySelector('#reviewDiag').innerHTML='<b>Последняя синхронизация</b>'+diagHTML()}};
+      v.querySelectorAll('[data-review-toggle]').forEach(btn=>btn.onclick=()=>{const k=btn.dataset.reviewToggle;set(k,!get(k));location.reload()});
+      const rf=document.querySelector('#reviewRefresh');if(rf)rf.onclick=()=>{document.querySelector('#reviewDiag').innerHTML='<b>Диагностика источников</b>'+diagHTML()};
+      const si=document.querySelector('#metricSearch');if(si)si.oninput=()=>{const q=si.value.toLowerCase();const res=(window.M||[]).filter(m=>(m.name||'').toLowerCase().includes(q)).slice(0,8);document.querySelector('#searchResults').innerHTML=res.map(m=>'<button class="btn ghost" data-metric="'+esc(m.id)+'" style="width:100%;margin-bottom:6px">'+esc(m.name)+'</button>').join('')||'<p class="foot">Ничего не найдено.</p>'};
+      const ms=document.querySelector('#moodSave');if(ms)ms.onclick=()=>{let d={};try{d=JSON.parse(localStorage.getItem(K.mood)||'{}')}catch(e){}const today=new Date().toISOString().slice(0,10);const btn=v.querySelector('[data-mood].btn[style*="accent"]');d[today]={mood:btn?Number(btn.dataset.mood):0,note:document.querySelector('#moodNote').value};localStorage.setItem(K.mood,JSON.stringify(d));location.reload()};
+      v.querySelectorAll('[data-mood]').forEach(btn=>btn.onclick=()=>{let d={};try{d=JSON.parse(localStorage.getItem(K.mood)||'{}')}catch(e){}const today=new Date().toISOString().slice(0,10);d[today]={mood:Number(btn.dataset.mood),note:(d[today]||{}).note||''};localStorage.setItem(K.mood,JSON.stringify(d));location.reload()})};
     bar.append(b)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tab);else tab();
 })();}catch(e){console.error('Review tab disabled',e)}
