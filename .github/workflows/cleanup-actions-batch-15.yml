@@ -1,0 +1,56 @@
+name: Cleanup Actions batch 15
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/cleanup-actions-batch-15.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-batch15-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG" || true
+          git push origin "$TAG" || true
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Remove obsolete workflow files
+        run: |
+          git rm -f \
+            .github/workflows/fix-batch-2.yml \
+            .github/workflows/fix-batch-3.yml \
+            .github/workflows/fix-batch-4.yml \
+            .github/workflows/fix-batch-10.yml \
+            .github/workflows/fix-batch-12.yml \
+            .github/workflows/fix-batch-13-premium-ui.yml \
+            .github/workflows/retry-batches-2-4.yml \
+            .github/workflows/fix-periods.yml \
+            .github/workflows/split-index.yml \
+            .github/workflows/split-part6.yml || true
+      - name: Update FIXES.md
+        run: |
+          touch FIXES.md
+          cat >> FIXES.md <<'EOF'
+
+          ## Пакет 15 — очистка GitHub Actions
+
+          - Удалены устаревшие одноразовые и дублирующие workflow-файлы.
+          - Оставлены только fix-batch-14-combined.yml и apply-all.yml.
+          - Репозиторий приведён к простому и безопасному набору Actions.
+          - Перед изменениями создан тег отката: ${{ env.ROLLBACK_TAG }}.
+          EOF
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Clean up obsolete GitHub Actions workflows" || exit 0
+          git push
