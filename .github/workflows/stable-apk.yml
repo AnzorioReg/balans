@@ -22,13 +22,15 @@ jobs:
         if: inputs.appearance
         run: |
           python3 scripts/appearance-update.py
-          python3 scripts/polish-v3.py
+          python3 scripts/finish-v5.py
       - name: Check icon JavaScript syntax
         if: inputs.appearance
         run: |
           node --check web-src/refined-appearance.js
           node --check web-src/icon-collections.js
           node --check web-src/visual-v3.js
+          node --check web-src/visual-v4.js
+          node --check web-src/visual-v5.js
       - name: Install browser test dependencies
         if: inputs.appearance
         run: |
