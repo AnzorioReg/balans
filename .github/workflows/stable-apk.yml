@@ -23,9 +23,11 @@ jobs:
         run: |
           python3 scripts/appearance-update.py
           python3 scripts/finish-v5.py
-      - name: Sync generated interface into Android assets
+      - name: Sync generated interface and fix menu routing
         if: inputs.appearance
-        run: cp web-src/index.html app/src/main/assets/index.html
+        run: |
+          cp web-src/index.html app/src/main/assets/index.html
+          python3 scripts/menu-fix.py
       - name: Check icon JavaScript syntax
         if: inputs.appearance
         run: |
@@ -45,6 +47,11 @@ jobs:
         env:
           NODE_PATH: /tmp/balans-ui/node_modules
         run: node scripts/ui-smoke.cjs
+      - name: Require both dashboard menus to open and close
+        if: inputs.appearance
+        env:
+          NODE_PATH: /tmp/balans-ui/node_modules
+        run: node scripts/menu-check.cjs
       - name: Show UI check results
         if: always() && inputs.appearance
         run: |
