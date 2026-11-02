@@ -1,0 +1,105 @@
+name: Apply fix batch 3
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-batch-3.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-batch3-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Apply batch 3 fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/assets/index.html')
+          s = p.read_text(encoding='utf-8')
+          if '<!-- fix-batch-3-v1 -->' in s:
+              print('Already patched')
+              raise SystemExit(0)
+          script = '''
+<script id="batch3Fixes">
+/* Batch 3: overview period control, latest-day fallback, source coverage. */
+(function(){
+  state.overviewPeriod=state.overviewPeriod||'week';
+  const oldRenderTopBlock=renderTopBlock;
+  renderTopBlock=function(){
+    oldRenderTopBlock();
+    const holder=document.querySelector('#topBlock .activity-head');
+    if(!holder)return;
+    const bar=document.createElement('div');
+    bar.className='seg overview-periods';
+    bar.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:8px 0 0';
+    bar.innerHTML=PERIODS.filter(x=>x[0]!=='all').map(([k,l])=>`<button data-op="${k}" class="${state.overviewPeriod===k?'on':''}" style="min-height:32px;font-size:12px">${l}</button>`).join('');
+    holder.before(bar);
+  };
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-op]');
+    if(!b)return;
+    state.overviewPeriod=b.dataset.op;
+    visualCache.clear();
+    renderTopBlock();
+  },true);
+  const oldMetricCaption=metricCaption;
+  metricCaption=function(m){
+    const r=recs(m).at(-1);
+    if(!r)return 'Нет измерений';
+    if(DAILY_METRICS.has(m.id)&&!Number.isFinite(actualLatest(m))){
+      const day=r.day||localDay(recordTimestamp(r));
+      if(day!==localDay())return `последние данные: ${new Date(day+'T12:00:00').toLocaleDateString('ru-RU')}`;
+    }
+    return oldMetricCaption(m);
+  };
+  const oldRenderHC=renderHC;
+  renderHC=function(){
+    oldRenderHC();
+    const info=state.healthInfo||{},range=info.range||{};
+    if(!range.requestedDays)return;
+    const host=document.querySelector('#srcCard')||document.querySelector('#v-sources');
+    if(!host)return;
+    let note=document.getElementById('hcCoverageNote');
+    if(!note){note=document.createElement('p');note.id='hcCoverageNote';note.className='foot';host.append(note)}
+    const queried=range.queriedDays??range.requestedDays;
+    note.textContent=`Доступная история: ${queried} из ${range.requestedDays} дней.${range.historyLimited?' Health Connect ограничил чтение старых записей.':''}`;
+  };
+})();
+</script>
+<!-- fix-batch-3-v1 -->
+'''
+          if '</body>' not in s:
+              raise SystemExit('Closing body tag not found')
+          s = s.replace('</body>', script + '</body>', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Update FIXES.md
+        run: |
+          cat >> FIXES.md <<'EOF'
+
+          ## Пакет 3 — обзор и источники
+
+          - Добавлен переключатель периода для блока показателей на «Обзоре».
+          - Для дневных показателей показывается дата последнего доступного дня, если сегодня данных нет.
+          - Добавлен статус доступной истории Health Connect на экране «Источники».
+          - Перед изменениями создан тег отката: ${{ env.ROLLBACK_TAG }}.
+          EOF
+      - name: Commit batch 3
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html FIXES.md
+          git commit -m "Add overview period control and source coverage" || exit 0
+          git push
