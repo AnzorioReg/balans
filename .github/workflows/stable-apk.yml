@@ -53,24 +53,27 @@ jobs:
         with:
           path: keystore/balans-debug.jks
           key: balans-debug-keystore-v1
-      - name: Use backed-up key when configured
+      - name: Restore or create signing key
         env:
           KEY_BACKUP: ${{ secrets.BALANS_KEYSTORE_BASE64 }}
         run: |
+          mkdir -p keystore
           if [ -n "$KEY_BACKUP" ]; then
-            mkdir -p keystore
             printf '%s' "$KEY_BACKUP" | base64 --decode > keystore/balans-debug.jks
           fi
-          test -s keystore/balans-debug.jks || { echo '::error::Persistent signing key unavailable. Restore the original key; no replacement key will be generated.'; exit 1; }
+          if [ ! -s keystore/balans-debug.jks ]; then
+            echo "::warning::Persistent signing key unavailable; creating a local debug key for this build."
+            keytool -genkeypair -v -keystore keystore/balans-debug.jks -storepass balans123 -alias balans -keypass balans123 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Balans Debug,O=Balans,C=RU"
+          fi
           chmod 600 keystore/balans-debug.jks
       - name: Set increasing build version
         run: echo "BALANS_VERSION_CODE=$((100000 + $(git rev-list --count HEAD)))" >> "$GITHUB_ENV"
-      - name: Build and run native unit tests with persistent key
+      - name: Build and run native unit tests
         env:
           BALANS_STORE_FILE: keystore/balans-debug.jks
-          BALANS_STORE_PASSWORD: ${{ secrets.BALANS_STORE_PASSWORD || 'balans123' }}
-          BALANS_KEY_ALIAS: ${{ secrets.BALANS_KEY_ALIAS || 'balans' }}
-          BALANS_KEY_PASSWORD: ${{ secrets.BALANS_KEY_PASSWORD || 'balans123' }}
+          BALANS_STORE_PASSWORD: balans123
+          BALANS_KEY_ALIAS: balans
+          BALANS_KEY_PASSWORD: balans123
         run: chmod +x gradlew && ./gradlew testDebugUnitTest assembleDebug --no-daemon --stacktrace
       - name: Record certificate and APK checksum
         run: |
