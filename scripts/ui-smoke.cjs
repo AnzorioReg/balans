@@ -23,9 +23,8 @@ const assert = require('node:assert/strict');
       levels: !!document.querySelector('.appearance-levels')?.closest('.rp-fold'),
       last: document.querySelector('#v-themes')?.lastElementChild?.dataset.rpKey
     }));
-    check('Exactly nine icon sets', state.icons.length === 9);
-    check('All six new sets exist', ['objects','anatomy','instruments','notation','signage','emoji'].every(x => state.icons.includes(x)));
-    check('Exactly five launcher choices', state.identities.length === 5 && state.identities[0] === 'balance');
+    check('Exactly four icon sets', state.icons.length === 4 && ['outline','emoji','soft','premium-solid'].every(x => state.icons.includes(x)));
+    check('Exactly sixteen launcher choices', state.identities.length === 16 && state.identities[0] === 'balance');
     check('Card skin picker removed', !state.cards);
     check('Sections initially collapsed', state.folded);
     check('Brightness and contrast folded', state.levels);
@@ -37,7 +36,7 @@ const assert = require('node:assert/strict');
     await page.locator('[data-icon-set="emoji"]').click();
     check('Emoji selection applied', await page.evaluate(() => state.iconSet === 'emoji'));
     await page.reload();
-    await page.waitForFunction(() => typeof ICON_STYLES !== 'undefined' && ICON_STYLES.length === 9);
+    await page.waitForFunction(() => typeof ICON_STYLES !== 'undefined' && ICON_STYLES.length === 4);
     check('New icon set survives restart', await page.evaluate(() => state.iconSet === 'emoji'));
     await page.evaluate(() => go('themes'));
     for (const variant of ['atelier','ribbon','stems','mosaic']) {
