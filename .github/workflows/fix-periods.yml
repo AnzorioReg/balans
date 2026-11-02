@@ -1,0 +1,49 @@
+name: Apply period fixes
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-periods.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index.html
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/assets/index.html')
+          s = p.read_text(encoding='utf-8')
+          if '<!-- period-fix-v1 -->' in s:
+              print('Already patched')
+              raise SystemExit(0)
+          replacements = [
+            ("let sheetPeriod='week';", "let sheetPeriod='day';"),
+            ("const m=byId[id];sheetPeriod='week';sheetSel=null;", "const m=byId[id];sheetPeriod='day';sheetSel=null;"),
+            ("function dashboardCurrent(m){const r=recs(m).at(-1);return !avail(m)||r?.day&&r.day!==dashboardToday()?NaN:cur(m)}",
+             "function dashboardCurrent(m){const r=recs(m).at(-1);if(!avail(m))return NaN;if(r?.day===dashboardToday())return cur(m);return Number.isFinite(r?.v)?r.v:NaN}"),
+            ("return `${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))} · записей: ${rows.length}, дней с данными: ${days} · график: ${operation} ${scale}. Пропуски не считаются нулём.`;",
+             "return `${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))} · записей: ${rows.length}, дней с данными: ${days} · график: ${operation} ${scale}. Показаны только фактические записи; за даты без данных нули не добавляются.`;")
+          ]
+          for old, new in replacements:
+              if old not in s:
+                  print('NOT FOUND:', old[:80])
+                  raise SystemExit(1)
+              s = s.replace(old, new, 1)
+          s += '\n<!-- period-fix-v1 -->\n'
+          p.write_text(s, encoding='utf-8')
+          print('Patched successfully')
+          PY
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html
+          git commit -m "Fix metric periods: open on day, show latest rare values, clarify coverage" || exit 0
+          git push
