@@ -1,0 +1,103 @@
+name: Apply combined batch 14
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-batch-14-combined.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-batch14-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG" || true
+          git push origin "$TAG" || true
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Apply batch 12
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/assets/index.html');s=p.read_text(encoding='utf-8')
+          if '<!-- fix-batch-12-v1 -->' in s:
+              print('Batch 12 already applied');raise SystemExit(0)
+          script='''
+<script id='batch12Fixes'>
+(function(){
+function baseline(m,days){const r=metricRecords(m,days).map(x=>x.v).filter(Number.isFinite);if(r.length<3)return null;const a=r.slice().sort((x,y)=>x-y),q=p=>a[Math.min(a.length-1,Math.floor(a.length*p))];return{low:q(.25),mid:q(.5),high:q(.75),count:r.length}}
+function weeklySummary(){return [['sleep','Сон'],['heart','Пульс'],['steps','Шаги'],['activeCalories','Калории'],['water','Вода'],['weight','Вес']].map(([id,name])=>{const m=byId[id];if(!m)return '';const rows=metricRecords(m,'week').map(x=>x.v).filter(Number.isFinite),avg=rows.length?rows.reduce((a,b)=>a+b,0)/rows.length:NaN,b=baseline(m,'month');let st='мало данных';if(Number.isFinite(avg)&&b){st=avg<b.low?'ниже обычного':avg>b.high?'выше обычного':'в обычном диапазоне'}return '<div class=\'drow\'><span class=\'k\'>'+esc(name)+'</span><span class=\'val num\'>'+(Number.isFinite(avg)?show(m,avg):'—')+' · '+st+'</span></div>'}).join('')}
+const oldTop=renderTopBlock;renderTopBlock=function(){oldTop();const h=document.querySelector('#topBlock');if(!h||document.querySelector('#weeklySummary'))return;const c=document.createElement('div');c.id='weeklySummary';c.className='card';c.style.cssText='margin:10px 0;padding:12px';c.innerHTML='<b>Сводка недели</b><p class=\'foot\'>Средние значения за неделю и сравнение с твоими обычными значениями за 30 дней. Наблюдение, не медицинский вывод.</p>'+weeklySummary();h.append(c)};
+const oldGroups=renderGroups;renderGroups=function(){oldGroups();const h=document.querySelector('#groups');if(!h||document.querySelector('#quickAddBar'))return;const b=document.createElement('div');b.id='quickAddBar';b.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0';b.innerHTML=[['water','Вода'],['weight','Вес'],['bp','Давление'],['sleep','Сон']].map(([id,n])=>'<button class=\'btn ghost\' data-addm=\''+id+'\' style=\'min-height:38px;font-size:12px\'>'+n+'</button>').join('');h.before(b)};
+const oldReport=reportHTML;reportHTML=function(){return oldReport().replace('</body>','<h2>Наблюдения</h2><p>Отчёт содержит только сохранённые записи и их источники. Приложение не даёт медицинских рекомендаций.</p></body>')};
+window.addEventListener('load',()=>{try{const out={app:'Баланс',version:'1.16',generatedAt:new Date().toISOString(),metrics:{}};M.forEach(m=>{const r=metricRecords(m,'month');out.metrics[m.id]={name:m.name,unit:m.unit,count:r.length,latest:r.at(-1)?.v??null,weeklyAverage:r.length?r.reduce((a,b)=>a+b.v,0)/r.length:null,baseline:baseline(m,'month')}});localStorage.setItem('balans2.widgetData',JSON.stringify(out))}catch(e){}});
+})();
+</script>
+<!-- fix-batch-12-v1 -->
+'''
+          if '</body>' not in s:raise SystemExit('No body')
+          p.write_text(s.replace('</body>',script+'</body>',1),encoding='utf-8')
+          PY
+      - name: Apply batch 13
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/assets/index.html');s=p.read_text(encoding='utf-8')
+          if '<!-- premium-ui-batch-13-v1 -->' in s:
+              print('Batch 13 already applied');raise SystemExit(0)
+          css='''
+<style id='premiumUiBatch13'>
+:root{--bg:#070b12;--surface:#0f1520;--surface2:#151d2a;--surface3:#1d2735;--line:#243141;--text:#f2f6fb;--muted:#9aa8b8;--faint:#6d7a8a;--accent:#5fe3c8;--accent-ink:#04211c;--r-lg:22px;--r-md:18px;--shadow-soft:0 10px 30px rgba(0,0,0,.28);--shadow-card:0 18px 44px rgba(0,0,0,.34);--glow:0 0 0 1px rgba(95,227,200,.14),0 18px 44px rgba(95,227,200,.10)}
+[data-theme=light]{--bg:#f4f6f9;--surface:#fff;--surface2:#f5f7fa;--surface3:#e9edf2;--line:#dde3ea;--text:#101821;--muted:#57636f;--faint:#79858f;--accent:#0d8d80;--accent-ink:#fff;--shadow-soft:0 10px 30px rgba(16,24,33,.08);--shadow-card:0 18px 44px rgba(16,24,33,.10);--glow:0 0 0 1px rgba(13,141,128,.12),0 18px 44px rgba(13,141,128,.08)}
+body{background:radial-gradient(1100px 620px at 85% -10%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 62%),radial-gradient(900px 520px at -10% 8%,color-mix(in srgb,#5aa9ff 8%,transparent),transparent 60%),var(--bg)}
+.card,.group,.src,.list,.sheet{border-radius:var(--r-lg)!important;box-shadow:var(--shadow-card)!important}
+.card{background:linear-gradient(165deg,color-mix(in srgb,var(--surface2) 88%,var(--accent) 5%),var(--surface))!important}
+.today{border-radius:var(--r-lg)!important;box-shadow:var(--glow)!important;border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line))!important}
+.today p{font-size:21px!important;font-weight:750!important;letter-spacing:-.025em!important}
+.ring svg{filter:drop-shadow(0 6px 18px color-mix(in srgb,var(--accent) 18%,transparent))}
+.ring{animation:premiumRise .5s cubic-bezier(.2,.8,.2,1) both}.ring:nth-child(2){animation-delay:.06s}.ring:nth-child(3){animation-delay:.12s}
+@keyframes premiumRise{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.view.on{animation:premiumView .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes premiumView{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.chart svg{filter:drop-shadow(0 8px 22px rgba(0,0,0,.18))}
+.btn{border-radius:16px!important;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 20%,transparent)!important}.btn:active{transform:scale(.97)}
+.tabbar{backdrop-filter:blur(18px) saturate(150%);background:color-mix(in srgb,var(--surface) 84%,transparent)!important;box-shadow:0 16px 40px rgba(0,0,0,.38)!important}
+.emptybox{border:1px dashed color-mix(in srgb,var(--line) 88%,transparent);border-radius:var(--r-lg);background:linear-gradient(165deg,color-mix(in srgb,var(--surface2) 90%,var(--accent) 4%),var(--surface))}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+'''
+          js='''
+<script id='premiumUiBatch13Js'>
+(function(){function up(){document.querySelectorAll('.emptybox').forEach(e=>{if(e.dataset.p==='1')return;e.dataset.p='1';const b=e.querySelector('b'),s=e.querySelector('small');if(b&&!b.textContent.trim())b.textContent='Пока нет данных';if(s&&!s.textContent.trim())s.textContent='Добавь запись или подключи источник — здесь появится понятная динамика.'})}new MutationObserver(up).observe(document.documentElement,{childList:true,subtree:true});document.addEventListener('DOMContentLoaded',up);window.addEventListener('load',up)})();
+</script>
+<!-- premium-ui-batch-13-v1 -->
+'''
+          if '</head>' not in s or '</body>' not in s:raise SystemExit('No anchors')
+          s=s.replace('</head>',css+'</head>',1).replace('</body>',js+'</body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Update FIXES.md
+        run: |
+          touch FIXES.md
+          cat >> FIXES.md <<'EOF'
+
+          ## Пакет 14 — объединённый финальный запуск
+
+          - Применён Пакет 12: умная сводка недели, личные ориентиры, быстрый ввод, экспорт для врача и данные для будущих виджетов.
+          - Применён Пакет 13: премиальное оформление, обновлённые темы, карточки, графики, анимации и пустые состояния.
+          - Перед изменениями создан тег отката: ${{ env.ROLLBACK_TAG }}.
+          EOF
+      - name: Commit combined batch 14
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html FIXES.md
+          git commit -m "Apply combined batch 14: batch 12 features and batch 13 premium UI" || exit 0
+          git push
