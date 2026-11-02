@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
             webView.evaluateJavascript("window.onAppForeground&&window.onAppForeground()", null);
         }
         if (healthBridge != null) {
-            healthBridge.syncRange(7);
+            healthBridge.syncRange(366);
         }
     }
 
