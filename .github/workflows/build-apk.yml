@@ -3,9 +3,29 @@ on:
   push:
     branches: [sync-auto-refresh]
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   build:
     uses: ./.github/workflows/stable-apk.yml
     with:
       appearance: true
     secrets: inherit
+  report:
+    name: Publish build report
+    needs: build
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Publish result for connector access
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: python3 scripts/publish-build-report.py
