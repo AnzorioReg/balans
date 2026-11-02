@@ -8,10 +8,23 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Restore stable debug keystore
+        id: keystore
+        uses: actions/cache@v4
+        with:
+          path: keystore/balans-debug.jks
+          key: balans-debug-keystore-v1
+
+      - name: Create stable debug keystore
+        if: steps.keystore.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p keystore
+          keytool -genkeypair -v -keystore keystore/balans-debug.jks -alias balans -keyalg RSA -keysize 2048 -validity 10000 -storepass balans123 -keypass balans123 -dname "CN=Balans Debug,O=Balans,C=RU"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -21,21 +34,6 @@ jobs:
 
       - name: Grant execute permission to Gradle wrapper
         run: chmod +x ./gradlew
-
-      - name: Create stable debug keystore
-        run: |
-          if [ ! -f keystore/balans-debug.jks ]; then
-            mkdir -p keystore
-            keytool -genkeypair -v -keystore keystore/balans-debug.jks -alias balans -keyalg RSA -keysize 2048 -validity 10000 -storepass balans123 -keypass balans123 -dname "CN=Balans Debug,O=Balans,C=RU"
-          fi
-
-      - name: Commit stable keystore
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add keystore/balans-debug.jks
-          git diff --cached --quiet || git commit -m "Добавить стабильный debug-keystore"
-          git push
 
       - name: Apply review tab safely
         shell: python
