@@ -20,12 +20,15 @@ jobs:
           java-version: '17'
       - name: Apply approved appearance patch
         if: inputs.appearance
-        run: python3 scripts/appearance-update.py
+        run: |
+          python3 scripts/appearance-update.py
+          python3 scripts/polish-v3.py
       - name: Check icon JavaScript syntax
         if: inputs.appearance
         run: |
           node --check web-src/refined-appearance.js
           node --check web-src/icon-collections.js
+          node --check web-src/visual-v3.js
       - name: Install browser test dependencies
         if: inputs.appearance
         run: |
