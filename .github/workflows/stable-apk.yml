@@ -18,6 +18,31 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Apply approved appearance patch
+        if: inputs.appearance
+        run: python3 scripts/appearance-update.py
+      - name: Check icon JavaScript syntax
+        if: inputs.appearance
+        run: |
+          node --check web-src/refined-appearance.js
+          node --check web-src/icon-collections.js
+      - name: Install browser test dependencies
+        if: inputs.appearance
+        run: |
+          npm install --prefix /tmp/balans-ui --no-audit --no-fund playwright
+          node /tmp/balans-ui/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Test actual browser interface
+        if: inputs.appearance
+        env:
+          NODE_PATH: /tmp/balans-ui/node_modules
+        run: node scripts/ui-smoke.cjs
+      - name: Upload interface test evidence
+        if: always() && inputs.appearance
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-check-${{ github.sha }}
+          path: ui-report/
+          if-no-files-found: warn
       - name: Restore existing signing key
         uses: actions/cache/restore@v4
         with:
@@ -35,16 +60,13 @@ jobs:
           chmod 600 keystore/balans-debug.jks
       - name: Set increasing build version
         run: echo "BALANS_VERSION_CODE=$((100000 + $(git rev-list --count HEAD)))" >> "$GITHUB_ENV"
-      - name: Apply approved appearance patch
-        if: inputs.appearance
-        run: python3 scripts/appearance-update.py
-      - name: Build with persistent key
+      - name: Build and run native unit tests with persistent key
         env:
           BALANS_STORE_FILE: keystore/balans-debug.jks
           BALANS_STORE_PASSWORD: ${{ secrets.BALANS_STORE_PASSWORD || 'balans123' }}
           BALANS_KEY_ALIAS: ${{ secrets.BALANS_KEY_ALIAS || 'balans' }}
           BALANS_KEY_PASSWORD: ${{ secrets.BALANS_KEY_PASSWORD || 'balans123' }}
-        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace
+        run: chmod +x gradlew && ./gradlew testDebugUnitTest assembleDebug --no-daemon --stacktrace
       - name: Record certificate and APK checksum
         run: |
           APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)
