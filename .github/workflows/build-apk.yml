@@ -22,12 +22,11 @@ jobs:
       - name: Grant execute permission to Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Apply period chart fix
+      - name: Apply chart fixes
         run: |
           FILE=app/src/main/assets/index.html
-          if ! grep -q 'BALANS_PERIOD_CHART_FIX_V1' "$FILE"; then
-            cat tools/period-chart-fix.js >> "$FILE"
-          fi
+          grep -q 'BALANS_PERIOD_CHART_FIX_V1' "$FILE" || cat tools/period-chart-fix.js >> "$FILE"
+          grep -q 'BALANS_REVIEW_MODE_V1' "$FILE" || cat tools/review-mode.js >> "$FILE"
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
