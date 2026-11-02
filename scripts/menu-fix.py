@@ -1,38 +1,26 @@
 import subprocess
 from pathlib import Path
-import re
 
-base=subprocess.run(['git','show','7d2079f18d80eaa0e474db1618e497f4dcce1f62:scripts/menu-fix.py'],check=True,capture_output=True,text=True).stdout
-assert 'width=18,gap=.65' in base
-base=base.replace('width=18,gap=.65','width=22,gap=.65',1)
-exec(compile(base,'heart-v9-base.py','exec'),{})
-pattern=r'\.activity-glyph\[data-hero-style=heart\] path(?:\[data-part=track-outline\])?\{[^}]*\}'
+ui=Path('web-src/ui.js').read_text(encoding='utf-8')
+tracks=ui.split("if(style==='tracks')",1)[1].split("if(style==='orbit')",1)[0]
+assert '107-i*29' in tracks and ',x,25)' in tracks
+base=subprocess.run(['git','show','f00029cec2ec0feff08cc8e3b07032170b6bd416:scripts/menu-fix.py'],check=True,capture_output=True,text=True).stdout
+base=base.replace('width=22,gap=.65','width=22,gap=4')
+exec(compile(base,'heart-working-base.py','exec'),{})
 for name in ['app/src/main/assets/index.html','web-src/index.html']:
  p=Path(name)
  text=p.read_text(encoding='utf-8')
- text,count=re.subn(pattern,'',text)
- assert count>=2, 'Expected legacy heart CSS overrides'
- assert not re.search(pattern,text)
- assert 'width=22,gap=.65' in text
+ start=text.index('/* PARALLEL_HEART_V9 */')
+ end=text.index('ensureDemo();applyTheme();',start)
+ heart=text[start:end]
+ assert 'width=22,gap=4' in heart
+ assert 'stroke-linejoin="round"' in heart
+ heart=heart.replace('stroke-linejoin="round"','stroke-linejoin="miter" stroke-miterlimit="10"')
+ text=text[:start]+heart+text[end:]
  p.write_text(text,encoding='utf-8')
 check=Path('scripts/menu-check.cjs')
 text=check.read_text(encoding='utf-8')
-anchor="   await page.waitForSelector('#topBlock .dots[data-dashboard=top]');"
-extra=r'''
-   await page.evaluate(()=>{
-    state.top.style='heart';state.top.showFigure=true;renderTopBlock();
-    const svg=document.querySelector('#topBlock svg[data-heart-version="9"]');
-    if(!svg)throw new Error('New heart missing');
-    const masks=[...svg.querySelectorAll('mask path[stroke="black"]')];
-    if(masks.length!==5)throw new Error('Expected five inset stroke boundaries');
-    for(const p of masks){
-     const intended=Number(p.getAttribute('stroke-width'));
-     const actual=parseFloat(getComputedStyle(p).strokeWidth);
-     if(Math.abs(intended-actual)>.01)throw new Error('Heart mask width overridden: '+actual+' instead of '+intended);
-    }
-    if(svg.querySelectorAll('g[mask]>path[opacity]').length!==3)throw new Error('Three colored heart bands required');
-   });
-   await page.screenshot({path:'ui-report/heart-fixed-'+width+'.png'});
-'''
-assert text.count(anchor)==1
-check.write_text(text.replace(anchor,anchor+extra,1),encoding='utf-8')
+needle="     const intended=Number(p.getAttribute('stroke-width'));"
+assert text.count(needle)==1
+text=text.replace(needle,"     if(getComputedStyle(p).strokeLinejoin!=='miter')throw new Error('Heart joins must be pointed');"+chr(10)+needle,1)
+check.write_text(text,encoding='utf-8')
