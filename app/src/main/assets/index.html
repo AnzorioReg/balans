@@ -367,6 +367,7 @@ body.anim .animrun svg rect{transform-box:fill-box;transform-origin:50% 100%;ani
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<link rel="stylesheet" href="batch14.css">
 </head>
 <body>
 <div class="stage">
@@ -1605,7 +1606,8 @@ function reportHTML(){const P={week:'7 дней',month:'30 дней',year:'12 м
 <h1>Отчёт о показателях</h1><small>${esc(p.name)}${p.year?' · '+esc(p.year)+' г.р.':''} · рост ${p.height} см · период: ${P[state.rperiod]} по ${new Date().toLocaleDateString('ru-RU')}</small>
 <table><tr><th>Показатель</th><th>Среднее</th><th>Мин–макс</th><th>Тренд</th></tr>${reportRows().map(r=>`<tr><td>${esc(r.n)}</td><td class="n">${r.a}</td><td class="n">${r.r}</td><td>${r.t}</td></tr>`).join('')}</table>
 ${state.diary.length?`<h2>События из дневника</h2><table>${state.diary.slice().sort((a,b)=>b.d.localeCompare(a.d)).map(d=>`<tr><td style="width:130px">${dRu(d.d)}</td><td>${esc(d.t)}</td></tr>`).join('')}</table>`:''}
-<footer>Источники: ${demoOn()?'демонстрационные данные, ':''}${Object.keys(state.deviceData||{}).length?'Health Connect, ':''}${Object.keys(state.bleData||{}).length?'Bluetooth, ':''}ручные записи при наличии. Сформировано приложением «Баланс». Не является медицинским заключением.</footer></body></html>`}
+<footer>Источники: ${demoOn()?'демонстрационные данные, ':''}${Object.keys(state.deviceData||{}).length?'Health Connect, ':''}${Object.keys(state.bleData||{}).length?'Bluetooth, ':''}ручные записи при наличии. Сформировано приложением «Баланс». Не является медицинским заключением.</footer><script src="batch14.js"></script>
+</body></html>`}
 
 /* ===== Вкладка «Цель»: тело, план, тренировки, скидки, подписка ===== */
 (function(){const st=document.createElement('style');st.textContent=`
