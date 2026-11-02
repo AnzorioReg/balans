@@ -1,0 +1,880 @@
+ke-width="2"/>`;
+     g+=xy.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2" fill="${cv(m)}"/>`).join('');
+   }
+   g+=`<text x="24" y="170" fill="var(--muted)" font-size="12">Фактические записи · ${vs.length}${series(m,p).length>120?' последних':''}</text>`;
+   return {svg:`<svg viewBox="0 0 380 180" aria-label="Фактические записи">${g}</svg>`,v:vs,p:null,noSel:true};
+ }
+ return oldDrawChart(m,p,c);
+};
+const oldVizBig=vizBig,oldBigLegend=bigLegend,oldDetails=details,oldDeltaChip=deltaChip,oldVsUsual=vsUsual;
+vizBig=function(m,p){return demoOn()?oldVizBig(m,p):drawChart(m,p,false)};
+bigLegend=function(m){return demoOn()?oldBigLegend(m):''};
+details=function(m,v){
+ if(demoOn())return oldDetails(m,v);
+ const a=v.filter(Number.isFinite);
+ if(!a.length)return [];
+ return [['Источник последней записи',esc(sourceName(m))],['Всего сохранённых записей',String(recs(m).length)]];
+};
+deltaChip=function(m){
+ if(demoOn())return oldDeltaChip(m);
+ const a=recs(m);if(a.length<2)return '';
+ const d=a.at(-1).v-a.at(-2).v;
+ if(Math.abs(d)<.5/Math.pow(10,m.dec||0))return 'Без заметного изменения';
+ return `${d>0?'+':''}${fmt(d,m.dec)} ${esc(m.unit)} к предыдущей записи`;
+};
+vsUsual=function(m){return demoOn()?oldVsUsual(m):deltaChip(m)};
+const oldSpark=spark;
+spark=function(m,w=150,h=44){return demoOn()?oldSpark(m,w,h):vizMini(m,w,h)};
+const oldMoreBadges=moreBadges;
+moreBadges=function(){return {...oldMoreBadges(),sources:state.hc.on?'доступ есть':'не подключено'}};
+if(isNative())setTimeout(()=>nativeHealth('status'),300);
+const sourceResponsiveStyle=document.createElement('style');
+sourceResponsiveStyle.textContent=`
+.view,.card,.item,.item>.t,.item>.t>b,.item>.t>small,.frow>.k{min-width:0}
+.item>.t>b,.item>.t>small,.foot,.frow>.k{overflow-wrap:anywhere;white-space:normal}
+.ble-device-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.ble-device-row.is-saved{grid-template-columns:minmax(0,1fr) auto 28px}
+.ble-device-row>.t{width:auto;min-width:0;overflow-wrap:anywhere}
+.ble-device-row>.btn{min-width:0;max-width:100%;white-space:nowrap;overflow-wrap:normal;padding:11px 12px}
+.ble-device-row>.xbtn{width:28px;min-width:0;justify-self:end}
+.ble-card .frow{align-items:center}.ble-card .frow input[type=checkbox]{width:22px;height:22px;flex:0 0 22px;margin:0;accent-color:var(--accent)}
+.ble-card .frow>.k{flex:1}.ble-card .foot{overflow-wrap:anywhere}
+#srcCard .item>.btn{flex-shrink:0}
+.btnrow{min-width:0;flex-wrap:wrap}.btnrow>.btn{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.pinrow>.n{min-width:0;overflow-wrap:anywhere}.pinrow>.num{flex:none}
+@media(max-width:480px){.ble-device-row,.ble-device-row.is-saved{grid-template-columns:minmax(0,1fr) 28px}.ble-device-row>.t{grid-column:1/-1}.ble-device-row>.btn{grid-column:1;justify-self:start;max-width:100%}.ble-device-row>.xbtn{grid-column:2}}
+`;
+document.head.appendChild(sourceResponsiveStyle);
+
+/* Shared, data-driven visual language. Styling never enables synthetic samples. */
+const DAILY_METRICS=new Set(['steps','distance','activeCalories','totalCalories','exercise','floors','elevation','water','nutrition']);
+function localDay(value=Date.now()){const d=new Date(value);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+const periodCache=new Map(),visualCache=new Map();
+function metricRecords(m,period='week',prev=false){
+ const rows=recs(m),key=m.id+':'+period+':'+prev,stamp=Math.floor(Date.now()/30000),old=periodCache.get(key);
+ if(old?.rows===rows&&old.stamp===stamp)return old.result;
+ const now=new Date(),days={day:1,week:7,month:30,'6m':183,year:366,all:36500}[period]||30;
+ let until=Date.now(),since=new Date(now.getFullYear(),now.getMonth(),now.getDate()-(days-1)).getTime();
+ if(prev){until=since-1;since=new Date(now.getFullYear(),now.getMonth(),now.getDate()-(2*days-1)).getTime()}
+ let result=rows.filter(r=>Number.isFinite(r.v)&&recordTimestamp(r)>=since&&recordTimestamp(r)<=until);
+ if(DAILY_METRICS.has(m.id)){
+   const daily=new Map();result.forEach(r=>daily.set(r.day||localDay(recordTimestamp(r)),r));result=[...daily.values()];
+ }
+ periodCache.set(key,{rows,stamp,result});return result;
+}
+series=function(m,p,prev=false){return metricRecords(m,p,prev).map(r=>r.v)};
+const VISUAL_STYLES=[['signature','Авторские','Прежние диаграммы из исходного оформления'],['aurora','Сияние','Градиенты и мягкая заливка'],['capsule','Насыщенные','Чёткие формы и плотный цвет'],['points','Контурные','Яркие контуры и метки']];
+const ICON_STYLES=[['classic','Классика'],['outline','Контур'],['soft','Мягкие'],['duo','Два цвета']];
+state.chartSet=LS.get('balans2.chartSet','signature');state.iconSet=LS.get('balans2.iconSet','classic');
+if(!VISUAL_STYLES.some(x=>x[0]===state.chartSet))state.chartSet='signature';
+if(!ICON_STYLES.some(x=>x[0]===state.iconSet))state.iconSet='classic';
+if(LS.get('balans2.originalAuthorDesign',0)!==1){
+ state.chartSet='signature';LS.set('balans2.chartSet','signature');LS.set('balans2.originalAuthorDesign',1);
+}
+function visualPrefs(){document.documentElement.dataset.chartSet=state.chartSet;document.documentElement.dataset.iconSet=state.iconSet}
+const cardGlyphOriginal=mic;
+mic=function(m){const id=cardGlyphOriginal(m);return state.iconSet==='outline'?'o-'+id:state.iconSet==='duo'?'d-'+id:id};
+function installCardGlyphs(){
+ const holder=document.querySelector('svg[aria-hidden="true"] defs')||document.querySelector('svg defs');
+ const symbols=[...document.querySelectorAll('symbol[id^="i-"]')];if(!symbols.length)return;
+ const target=holder||symbols[0].parentNode;
+ symbols.forEach(s=>{
+   for(const prefix of ['o-','d-']){
+     const c=s.cloneNode(true);c.id=prefix+s.id;c.setAttribute('stroke-width',prefix==='o-'?'1.35':'2.4');
+     c.querySelectorAll('[stroke-width]').forEach(p=>p.setAttribute('stroke-width',prefix==='o-'?'1.35':'2.4'));
+     if(prefix==='d-')c.querySelectorAll('path,circle,rect,ellipse').forEach((p,i)=>{if(i%2===0){p.setAttribute('fill','currentColor');p.setAttribute('fill-opacity','.22')}});
+     target.appendChild(c);
+   }
+ });
+}
+function chartColors(m){return PAL[m.id]||[`var(${CATS[m.cat].c})`,`var(${CATS[m.cat].c})`]}
+function metricGoal(m){return {steps:GOAL.steps,water:GOAL.water,sleep:GOAL.sleep,activeCalories:GOAL.active,exercise:60,bodyFat:100,spo2:100}[m.id]}
+function chartNumber(m,v){return m.id==='sleep'?fmtSleep(v):fmt(v,m.dec)}
+function metricSummary(m,period){
+ const rows=metricRecords(m,period),v=rows.map(r=>r.v),lo=rows.map(r=>r.lo).filter(Number.isFinite);
+ return [['Среднее',avg],['Минимум',a=>Math.min(...a)],['Максимум',a=>Math.max(...a)]].map(([name,f])=>
+  [name,show(m,v.length?f(v):NaN,m.id==='bp'&&lo.length?f(lo):undefined)]);
+}
+function visualSVG(w,h,b,label){return `<svg class="real-visual" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">${b}</svg>`}
+function actualDate(r,short=true){const ts=recordTimestamp(r);return Number.isFinite(ts)?new Date(ts).toLocaleDateString('ru-RU',short?{day:'numeric',month:'numeric'}:{day:'numeric',month:'long',...(r.dateOnly?{}:{hour:'2-digit',minute:'2-digit'})}):'Дата не указана'}
+function visualRecordSubset(rows,n){if(rows.length<=n)return rows;return Array.from({length:n},(_,i)=>rows[Math.round(i*(rows.length-1)/(n-1))])}
+function stageVisual(r,w,h){
+ const stages=(r?.stages||[]).filter(s=>Number.isFinite(s.start)&&Number.isFinite(s.end)&&s.end>s.start);
+ if(!stages.length)return null;
+ const kinds={wake:[0,'#ffbc73'],out:[0,'#ffbc73'],rem:[1,'#69dcff'],light:[2,'#b0a1ff'],deep:[3,'#745bff'],sleep:[2,'#aa96ff'],unknown:[2,'var(--faint)']};
+ const start=r.start||stages[0].start,end=r.end||stages.at(-1).end,span=Math.max(1,end-start);
+ const top=6,bottom=h-18,row=(bottom-top)/4;
+ const body=stages.map(s=>{const [level,color]=kinds[s.kind]||kinds.unknown,x=4+(w-8)*(s.start-start)/span,width=Math.max(.6,(w-8)*(s.end-s.start)/span);return `<rect x="${x}" y="${top+row*level+row*.15}" width="${width}" height="${row*.7}" rx="3" fill="${color}"/>`}).join('');
+ const time=t=>new Date(t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+ return body+`<text x="4" y="${h-2}" font-size="10" fill="var(--muted)">${time(start)}</text><text x="${w-4}" y="${h-2}" text-anchor="end" font-size="10" fill="var(--muted)">${time(end)}</text>`;
+}
+function renderTrendVisual(m,w,h,rows,mini=true,variant=state.chartSet){
+ const P=chartColors(m),g=uid('actual'),gradient=lg(g,P,false).replace('<linearGradient ','<linearGradient gradientUnits="userSpaceOnUse" ').replace('x2="1"',`x2="${w}"`),defs=`<defs>${gradient}<linearGradient id="${g}fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${P[0]}" stop-opacity=".42"/><stop offset="1" stop-color="${P.at(-1)}" stop-opacity=".02"/></linearGradient></defs>`;
+ const last=rows.at(-1),style=variant;
+ if(!last)return visualSVG(w,h,`<path d="M8 ${h/2}H${w-8}" stroke="var(--line)" stroke-dasharray="3 5"/><text x="${w/2}" y="${Math.max(12,h/2-7)}" text-anchor="middle" fill="var(--muted)" font-size="${h<50?9:12}">Нет измерений</text>`,m.name+': нет измерений');
+ if(m.id==='sleep'&&style==='signature'){
+   const phases=stageVisual(last,w,h);if(phases)return visualSVG(w,h,phases,'Фазы сна из источника');
+ }
+ let b=defs;
+ const goal=metricGoal(m),hasGoal=Number.isFinite(goal)&&goal>0;
+ const curValue=DAILY_METRICS.has(m.id)&&((last.day||localDay(recordTimestamp(last)))!==localDay())?NaN:last.v;
+ if(mini&&style==='signature'&&['activeCalories','spo2','bodyFat','water'].includes(m.id)&&Number.isFinite(curValue)&&h>35){
+   const percent=Math.max(0,Math.min(1,curValue/goal||0));
+   if(m.id==='activeCalories'){
+     const r=Math.min(w/2-8,h-14),cx=w/2,cy=h-5,length=Math.PI*r;
+     b+=`<path d="M${cx-r} ${cy}A${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="var(--surface3)" stroke-width="8" stroke-linecap="round"/>`;
+     if(percent>0)b+=`<path d="M${cx-r} ${cy}A${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="url(#${g})" stroke-width="8" stroke-linecap="round" stroke-dasharray="${length*percent} ${length}"/>`;
+     b+=`<text x="${cx}" y="${cy-6}" fill="var(--text)" font-size="${Math.min(16,r*.6)}" font-weight="800" text-anchor="middle">${Math.round(curValue/goal*100)}%</text>`;
+   }else if(m.id==='water'){
+     const gw=Math.min(40,w*.26),gh=h-10,x=w/2-gw/2,y=5,level=gh*percent;
+     b+=`<rect x="${x}" y="${y}" width="${gw}" height="${gh}" rx="10" fill="var(--surface3)"/><rect x="${x}" y="${y+gh-level}" width="${gw}" height="${level}" rx="${Math.min(10,level/2)}" fill="url(#${g})"/><rect x="${x}" y="${y}" width="${gw}" height="${gh}" rx="10" fill="none" stroke="${P[0]}" stroke-width="1.4"/>`;
+     if(w>125)b+=`<text x="${x+gw+9}" y="${h*.55}" fill="var(--text)" font-size="14" font-weight="700">${Math.round(curValue/goal*100)}%</text>`;
+   }else{
+     const r=Math.min(w,h)/2-6,cx=w/2,cy=h/2,C=2*Math.PI*r;
+     b+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface3)" stroke-width="5"/>`;
+     if(percent>0)b+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#${g})" stroke-width="5" stroke-linecap="round" stroke-dasharray="${percent*C} ${C}" transform="rotate(-90 ${cx} ${cy})"/>`;
+     b+=`<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="var(--text)" font-size="${Math.min(15,r*.7)}" font-weight="800">${fmt(curValue,m.dec)}%</text>`;
+   }
+   return visualSVG(w,h,b,m.name+': '+chartNumber(m,curValue));
+ }
+ const reduced=visualRecordSubset(rows,mini?Math.max(2,Math.min(14,Math.floor(w/8))):70),v=reduced.map(r=>r.v);
+ const bar=style==='capsule'||style==='signature'&&(['bar','ring'].includes(m.chart)||['sleep','exercise','mindfulness','cadence','cyclingCadence'].includes(m.id));
+ const bottoms=m.id==='bp'?reduced.map(r=>r.lo).filter(Number.isFinite):[];
+ let mn=bar?Math.min(0,...v):Math.min(...v,...bottoms),mx=Math.max(...v,...bottoms);
+ if(!mini&&hasGoal&&['steps','water','activeCalories','sleep'].includes(m.id))mx=Math.max(mx,goal);
+ const padding=bar?Math.max(1,Math.abs(mx)*.12):Math.max(m.dec?.2:1,(mx-mn)*.2);
+ mx+=padding;if(!bar)mn-=padding;
+ const left=mini?5:36,right=mini?5:10,top=mini?5:12,bottom=mini?Math.min(12,h*.2):28;
+ const y=x=>top+(h-top-bottom)*(1-(x-mn)/Math.max(.0001,mx-mn)),step=(w-left-right)/Math.max(1,v.length),x=i=>left+step*(i+.5);
+ if(!mini){
+   [mn,(mn+mx)/2,mx].forEach(t=>{b+=`<path d="M${left} ${y(t)}H${w-right}" fill="none" stroke="var(--line)" stroke-dasharray="3 5"/><text x="${left-5}" y="${y(t)+3}" text-anchor="end" font-size="10" fill="var(--muted)">${fmt(t,m.id==='sleep'?1:m.dec)}</text>`});
+ }
+ if(hasGoal&&['steps','water','activeCalories','sleep'].includes(m.id)&&goal>=mn&&goal<=mx){
+   b+=`<path d="M${left} ${y(goal)}H${w-right}" fill="none" stroke="${P.at(-1)}" stroke-dasharray="3 4" opacity=".7"/>`;
+   if(!mini)b+=`<text x="${w-right}" y="${Math.max(11,y(goal)-4)}" text-anchor="end" font-size="10" fill="${P.at(-1)}">цель ${fmt(goal,m.dec)}</text>`;
+ }
+ if(m.id==='bp'){
+   const bw=Math.min(12,step*.5);
+   reduced.forEach((r,i)=>{
+     if(Number.isFinite(r.lo))b+=`<rect x="${x(i)-bw/2}" y="${Math.min(y(r.v),y(r.lo))}" width="${bw}" height="${Math.max(2,Math.abs(y(r.lo)-y(r.v)))}" rx="${bw/2}" fill="url(#${g})"/><circle cx="${x(i)}" cy="${y(r.lo)}" r="${Math.min(3,bw/3)}" fill="${P.at(-1)}"/>`;
+     b+=`<circle cx="${x(i)}" cy="${y(r.v)}" r="${Math.min(4,step*.22)}" fill="${P[0]}"/>`;
+   });
+ }else if(bar){
+   const bw=Math.max(.8,Math.min(mini?25:20,step*.62)),base=y(Math.max(0,mn));
+   v.forEach((val,i)=>{const hh=Math.abs(base-y(val));b+=`<rect x="${x(i)-bw/2}" y="${Math.min(base,y(val))}" width="${bw}" height="${Math.max(val===0?1:.7,hh)}" rx="${Math.min(6,bw/2,hh/2)}" fill="url(#${g})" opacity="${i===v.length-1?1:.8}"/>`});
+ }else{
+   const pts=v.map((val,i)=>[x(i),y(val)]),d=style==='points'?pts.map((p,i)=>`${i?'L':'M'}${p.join(' ')}`).join(' '):smooth(pts);
+   if(v.length>1){
+     if(style!=='points')b+=`<path d="${d}L${x(v.length-1)} ${h-bottom}L${x(0)} ${h-bottom}Z" fill="url(#${g}fill)"/>`;
+     b+=`<path d="${d}" fill="none" stroke="url(#${g})" stroke-width="${mini?2.5:2.8}" stroke-linecap="round" stroke-linejoin="round"/>`;
+   }
+   pts.forEach(([xx,yy],i)=>{if(style==='points'||v.length<15||i===v.length-1)b+=`<circle cx="${xx}" cy="${yy}" r="${i===v.length-1?3.7:2.2}" fill="${i===v.length-1?P.at(-1):P[0]}" stroke="var(--surface)" stroke-width="1"/>`});
+ }
+ if(!mini||h>=60){
+   const indices=[...new Set([0,Math.floor((reduced.length-1)/2),reduced.length-1])];
+   indices.forEach(i=>b+=`<text x="${x(i)}" y="${h-4}" text-anchor="middle" font-size="${mini?9:10}" fill="var(--muted)">${actualDate(reduced[i])}</text>`);
+ }
+ return visualSVG(w,h,b,`${m.name}: реальные измерения${reduced.length<rows.length?', показана выборка':''}`);
+}
+vizMini=function(m,w=150,h=44){
+ const rows=metricRecords(m,'week'),fallback=rows.length?rows:recs(m).slice(-1);
+ const key=m.id+':'+w+':'+h+':'+state.chartSet+':'+JSON.stringify(GOAL),old=visualCache.get(key);
+ if(old?.rows===rows&&old.last===fallback.at(-1))return old.svg;
+ const value=renderRealVisual(m,w,h,fallback,true);visualCache.set(key,{rows,last:fallback.at(-1),svg:value});return value;
+};
+drawChart=function(m,p,compare=false){
+ const rows=metricRecords(m,p),reduced=visualRecordSubset(rows,70);
+ const previous=compare?metricRecords(m,p,true):null;
+ let svg=renderRealVisual(m,W,H,rows,false);
+ if(previous)svg=`<div class="chart-comparison"><div><small>Текущий период</small>${svg}</div><div><small>Предыдущий период</small>${renderRealVisual(m,W,H,previous,false)}</div></div>`;
+ return {svg,v:rows.map(r=>r.v),p:previous?.map(r=>r.v)||null,noSel:true};
+};
+vizBig=function(m,p){return drawChart(m,p,false)};
+spark=function(m,w=150,h=44){return vizMini(m,w,h)};
+bigLegend=function(m){
+ if(m.id==='sleep'&&recs(m).at(-1)?.stages?.length)return '<span>Фазы из источника: бодрствование, REM, лёгкий и глубокий сон; серый означает неизвестную фазу.</span>';
+ if(m.id==='bp')return '<span>Верхнее и нижнее давление из одной записи. Отсутствующее нижнее не вычисляется.</span>';
+ return '';
+};
+details=function(m,v){
+ const r=recs(m).at(-1);if(!r)return [];
+ const out=[['Источник последней записи',esc(sourceName(m))],['Дата измерения',esc(actualDate(r,false))],['Сохранено записей',String(recs(m).length)]];
+ if(m.id==='sleep'&&!r.stages?.length)out.push(['Фазы сна','Источник не передал']);
+ if(m.id==='sleep'&&r.sleepKind==='session_less_awake')out.push(['Расчёт','Длительность сессии за вычетом известных пробуждений; не все фазы переданы']);
+ if(m.id==='sleep'&&r.stageDetailsTruncated)out.push(['Подробность фаз',`Показаны до 200 участков из ${r.stageCountOriginal}; длительность рассчитана по полной записи`]);
+ return out;
+};
+function actualLatest(m){
+ const rows=recs(m),r=rows.at(-1);if(!r)return NaN;
+ return DAILY_METRICS.has(m.id)&&(r.day||localDay(recordTimestamp(r)))!==localDay()?NaN:r.v;
+}
+showCur=function(m){const r=recs(m).at(-1);return show(m,actualLatest(m),r?.lo)};
+function metricCaption(m){
+ const r=recs(m).at(-1);if(!r)return 'Нет измерений';
+ if(DAILY_METRICS.has(m.id)&&!Number.isFinite(actualLatest(m)))return 'Нет данных за сегодня';
+ const delta=shortDelta(m);return delta?(delta==='≈'?'Без существенных изменений':delta+' к вашему среднему'):actualDate(r);
+}
+let dataViewsDirty=false,dataPaintTimer=0;
+function refreshDataSections(){
+ dataViewsDirty=true;
+ if(dataPaintTimer)return;
+ dataPaintTimer=setTimeout(()=>{
+   dataPaintTimer=0;
+   const sh=$('#sheet');
+   if(sh?.classList.contains('on')){
+     if(sh._draw&&!sh.querySelector('input,textarea')){const top=sh.scrollTop;sh._draw();sh.scrollTop=top}
+     return;
+   }
+   if($('#v-overview').classList.contains('on')){renderTopBlock();renderGroups();scanAnim()}
+   if($('#v-dynamics').classList.contains('on'))renderDynamics();
+   if($('#v-goal').classList.contains('on'))renderGoal();
+ },80);
+}
+const originalSetTab=setTab;
+setTab=function(tab){
+ originalSetTab(tab);
+ if(dataViewsDirty){if(tab==='overview'){renderTopBlock();renderGroups()}if(tab==='dynamics')renderDynamics();dataViewsDirty=false}
+ scanAnim();
+};
+const closeSheetWithData=closeSheet;
+closeSheet=function(){closeSheetWithData();if(dataViewsDirty)refreshDataSections()};
+window.onStorageError=function(){
+ const parent=document.querySelector('.view.on')||$('#v-overview');if(!parent)return;
+ let warning=document.getElementById('storageWarning');
+ if(!warning){warning=document.createElement('p');warning.id='storageWarning';warning.className='card';warning.setAttribute('role','alert');warning.style.cssText='padding:12px;border-color:#ffb547;color:var(--text);font-size:13px;line-height:1.5';parent.append(warning)}
+ warning.textContent='Не удалось сохранить изменения: недостаточно места в хранилище. Не закрывайте приложение до сохранения резервной копии через «Ещё → Экспорт и копия». Новые записи пока доступны только в текущем сеансе.';
+};
+const originalOpenAdd=openAdd;
+openAdd=function(){
+ originalOpenAdd();
+ $('#sheet').querySelectorAll('[data-y=unfold]').forEach(button=>{
+  const m=byId[button.dataset.a],dot=button.querySelector('.dotc');
+  if(dot){dot.className='metric-mini-icon';dot.style.cssText='width:28px;height:30px;display:grid;place-items:center;color:var(--c);flex:none';dot.innerHTML=ic(mic(m))}
+  if(recs(m).length){
+   const chart=document.createElement('span');chart.style.cssText='width:78px;flex:none';
+   chart.innerHTML=vizMini(m,78,32);button.insertBefore(chart,button.querySelector('.num'));
+  }
+ });
+};
+function metricViewsRefresh(){
+ visualPrefs();visualCache.clear();renderAll();if($('#sheet')?.classList.contains('on')&&$('#sheet')._draw)$('#sheet')._draw();
+}
+function renderVisualPreferences(){
+ const wrap=document.createElement('section');wrap.id='visualPreferences';
+ wrap.innerHTML=`<div class="lbl2">Графики и диаграммы</div><div class="visual-choices">${VISUAL_STYLES.map(([id,title,description])=>`<button data-visual-set="${id}" aria-pressed="${state.chartSet===id}" class="visual-choice ${state.chartSet===id?'on':''}"><span class="choice-preview"></span><b>${title}</b><small>${description}</small></button>`).join('')}</div><div class="lbl2">Наборы значков карточек</div><div class="visual-choices">${ICON_STYLES.map(([id,title])=>`<button data-icon-set="${id}" aria-pressed="${state.iconSet===id}" class="visual-choice ${state.iconSet===id?'on':''}"><span class="choice-preview icon-${id}">${ic(semanticGlyph('heart',id))}${ic(semanticGlyph('water',id))}${ic(semanticGlyph('shoe',id))}</span><b>${title}</b></button>`).join('')}</div>`;
+ wrap.querySelectorAll('[data-visual-set] .choice-preview').forEach(el=>{
+  el.setAttribute('aria-hidden','true');
+  el.innerHTML=['steps','water','heart'].map(id=>{
+   const m=byId[id],sample=({steps:[2000,5000,3000],water:[600,1200,1800],heart:[68,84,73]})[id];
+   const rows=sample.map((v,i)=>({v,ts:Date.now()-(2-i)*86400000,day:localDay(Date.now()-(2-i)*86400000)}));
+   const variant=el.parentElement.dataset.visualSet;
+   return renderRealVisual(m,variant==='signature'?120:36,variant==='signature'?56:28,rows,true,variant);
+  }).join('');
+ });
+ return wrap;
+}
+window.addEventListener('click',e=>{
+ const b=e.target.closest('button[data-visual-set],button[data-icon-set]');if(!b)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ const scroll=$('#screen').scrollTop;
+ if(b.dataset.visualSet){state.chartSet=b.dataset.visualSet;LS.set('balans2.chartSet',state.chartSet)}
+ if(b.dataset.iconSet){state.iconSet=b.dataset.iconSet;LS.set('balans2.iconSet',state.iconSet)}
+ metricViewsRefresh();renderThemes();$('#screen').scrollTop=scroll;
+},true);
+const realVisualCSS=document.createElement('style');
+realVisualCSS.textContent=`
+.real-visual{display:block;width:100%;height:100%;overflow:visible;filter:var(--visual-filter,none)}
+.visual-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.visual-choice{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:12px;text-align:left;min-width:0}
+.visual-choice.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.visual-choice.on:after{content:'✓';position:absolute;right:8px;top:6px;color:var(--accent);font-size:18px;font-weight:800}
+.visual-choice b,.visual-choice small{display:block}.visual-choice small{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4}
+.choice-preview{display:flex;height:38px;gap:12px;align-items:center;margin-bottom:8px}.choice-preview>svg.i{width:25px;height:25px;color:var(--c-heart)}
+.choice-preview .real-visual{height:36px}
+[data-icon-set="outline"] .g3 .ic,[data-icon-set="outline"] .fold .ic{background:transparent!important;color:var(--c)!important;border:1px solid var(--c);border-radius:50%}
+[data-icon-set="soft"] .g3 .ic,[data-icon-set="soft"] .fold .ic{border-radius:50%;background:color-mix(in srgb,var(--c) 20%,var(--surface))!important;color:var(--c)!important}
+[data-icon-set="duo"] .g3 .ic,[data-icon-set="duo"] .fold .ic{background:linear-gradient(135deg,color-mix(in srgb,var(--c) 22%,var(--surface)),color-mix(in srgb,var(--c) 8%,var(--surface)))!important;color:var(--c)!important;border:1px solid color-mix(in srgb,var(--c) 50%,var(--line))}
+[data-icon-set="outline"] [data-metric] .ic{background:transparent!important;color:var(--c)!important;border:1px solid var(--c);border-radius:50%}
+[data-icon-set="soft"] [data-metric] .ic{border-radius:50%;background:color-mix(in srgb,var(--c) 20%,var(--surface))!important;color:var(--c)!important}
+[data-icon-set="duo"] [data-metric] .ic{background:linear-gradient(135deg,color-mix(in srgb,var(--c) 22%,var(--surface)),color-mix(in srgb,var(--c) 8%,var(--surface)))!important;color:var(--c)!important;border:1px solid color-mix(in srgb,var(--c) 50%,var(--line))}
+[data-metric] .ic,.fold .ic{filter:var(--visual-filter,none)}.fold{opacity:1!important}
+`;
+document.head.appendChild(realVisualCSS);installCardGlyphs();visualPrefs();
+
+/* Semantic 24px health glyphs: the same meaning in four visibly different sets. */
+const HEALTH_GLYPHS={
+ shoe:{
+  outline:'<path d="M3 11 7 6l4 5c2 2 5 2 8 3l2 3v3H3v-4Z"/><path d="M3 17h18M10 10l-2 2m5 0-2 2m5-1-2 2"/>',
+  solid:'<path d="m3 11 4-5 4 5c2 2 5 2 8 3l2 3v3H3Z"/>',
+  cut:'<path d="M3 17h18M10 10l-2 2m5 0-2 2m5-1-2 2"/>'
+ },
+ flame:{
+  outline:'<path d="M13 2c1 5-4 6-4 10-2-1-2-3-2-4-4 4-5 8-2 11 3 4 10 4 13 0 5-6-1-11-5-17Z"/><path d="M12 13c0 3-4 4-2 7 2 2 5 0 5-2 0-2-1-3-3-5Z"/>',
+  solid:'<path d="M13 2c1 5-4 6-4 10-2-1-2-3-2-4-4 4-5 8-2 11 3 4 10 4 13 0 5-6-1-11-5-17Z"/>',
+  cut:'<path d="M12 13c0 3-4 4-2 7 2 2 5 0 5-2 0-2-1-3-3-5Z" fill="var(--glyph-cut,var(--surface))" stroke="none"/>'
+ },
+ clock:{outline:'<circle cx="12" cy="13" r="8"/><path d="M12 9v5l3 2M9 2h6M12 2v3m6 0 2 2"/>',solid:'<circle cx="12" cy="13" r="8"/><path d="M9 1h6v3H9Zm9 3 3 3-2 2-3-3Z"/>',cut:'<path d="M12 8v6l3 2"/>'},
+ dumbbell:{outline:'<path d="M3 7v10m3-12v14M18 5v14m3-12v10M6 10h12v4H6M1 10v4m22-4v4"/>',solid:'<rect x="3" y="5" width="5" height="14" rx="2"/><rect x="16" y="5" width="5" height="14" rx="2"/><rect x="7" y="10" width="10" height="4"/><path d="M1 8h2v8H1Zm20 0h2v8h-2Z"/>'},
+ heart:{outline:'<path d="M12 21S2 15 2 8a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 7-10 13-10 13Z"/><path d="M4 12h4l2-4 3 8 2-4h5"/>',solid:'<path d="M12 21S2 15 2 8a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 7-10 13-10 13Z"/>',cut:'<path d="M3 12h5l2-4 3 8 2-4h6"/>'},
+ water:{outline:'<path d="M12 2S4 11 4 16a8 8 0 0 0 16 0C20 11 12 2 12 2Z"/><path d="M8 15a4 4 0 0 0 4 5"/>',solid:'<path d="M12 2S4 11 4 16a8 8 0 0 0 16 0C20 11 12 2 12 2Z"/>',cut:'<path d="M8 15a4 4 0 0 0 4 5"/>'},
+ route:{outline:'<circle cx="5" cy="5" r="3"/><circle cx="19" cy="19" r="3"/><path d="M5 8v7a4 4 0 0 0 4 4h7M8 5h7a4 4 0 0 1 0 8H9"/>',solid:'<circle cx="5" cy="5" r="4"/><circle cx="19" cy="19" r="4"/>',extra:'<path d="M5 9v6a4 4 0 0 0 4 4h6M9 5h6a4 4 0 0 1 0 8H9"/>'},
+ stairs:{outline:'<path d="M3 21h18M3 18h6v-6h6V6h6M3 9V3h6M3 3l7 7"/>',solid:'<path d="M3 17h6v-6h6V5h6v16H3Z"/>',extra:'<path d="M3 9V3h6M3 3l7 7"/>'},
+ mountain:{outline:'<path d="m2 20 7-15 5 8 3-5 5 12ZM6 12l3 2 3-2M17 3v-2m-3 3-2-2m8 2 2-2"/>',solid:'<path d="m2 21 7-16 5 9 3-6 5 13Z"/>',cut:'<path d="m6 12 3 2 3-2"/>'},
+ speed:{outline:'<path d="M4 19a10 10 0 1 1 16 0ZM5 12h2m10 0h2M12 5v2m-6-1 2 2m10-2-2 2M12 15l5-6"/><circle cx="12" cy="15" r="2"/>',solid:'<path d="M4 20a10 10 0 1 1 16 0Z"/>',cut:'<path d="M5 12h2m10 0h2M12 5v2m0 8 5-6"/><circle cx="12" cy="15" r="2" fill="var(--glyph-cut,var(--surface))" stroke="none"/>'},
+ moon:{outline:'<path d="M19 15A9 9 0 0 1 9 3a9 9 0 1 0 10 12ZM17 2v5m-2-3h4m2 4v4m-2-2h4"/>',solid:'<path d="M19 15A9 9 0 0 1 9 3a9 9 0 1 0 10 12ZM17 1l1 3 3 1-3 1-1 3-1-3-3-1 3-1Z"/>'},
+ resting:{outline:'<path d="M12 20S3 15 3 9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6-9 11-9 11Z"/><path d="M13 9a4 4 0 1 0 4 5 4 4 0 0 1-4-5Z"/>',solid:'<path d="M12 21S2 15 2 8a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 7-10 13-10 13Z"/>',cut:'<path d="M13 8a5 5 0 1 0 5 6 5 5 0 0 1-5-6Z" fill="var(--glyph-cut,var(--surface))" stroke="none"/>'},
+ variability:{outline:'<circle cx="12" cy="12" r="10"/><path d="M3 12h4l2-5 4 11 2-6h6"/>',solid:'<circle cx="12" cy="12" r="10"/>',cut:'<path d="M3 12h4l2-5 4 11 2-6h6"/>'},
+ pressure:{outline:'<path d="M4 3h9v13H4ZM6 6h5M13 9h3a4 4 0 0 1 4 4v2M5 16v5h7"/><circle cx="19" cy="18" r="4"/><path d="m19 18 2-2"/>',solid:'<rect x="3" y="2" width="11" height="15" rx="3"/><circle cx="19" cy="18" r="4"/>',cut:'<path d="M6 6h5m8 12 2-2"/>',extra:'<path d="M5 17v4h7M14 9h2a4 4 0 0 1 4 4v1"/>'},
+ oxygen:{outline:'<path d="M12 2S4 10 4 15a8 8 0 0 0 16 0c0-5-8-13-8-13Z"/><ellipse cx="10" cy="15" rx="2" ry="3"/><path d="M15 14c2-2 4 1 1 3l-1 1h3"/>',solid:'<path d="M12 2S4 10 4 15a8 8 0 0 0 16 0c0-5-8-13-8-13Z"/>',cut:'<ellipse cx="10" cy="15" rx="2" ry="3"/><path d="M15 14c2-2 4 1 1 3l-1 1h3"/>'},
+ scale:{outline:'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 7q5-4 10 0l-2 5H9ZM12 7v3"/>',solid:'<rect x="2" y="2" width="20" height="20" rx="5"/>',cut:'<path d="M7 7q5-4 10 0l-2 5H9ZM12 7v3"/>'},
+ ruler:{outline:'<path d="M7 2h10v20H7ZM7 6h5M7 10h3m-3 4h5m-5 4h3"/>',solid:'<rect x="6" y="1" width="12" height="22" rx="2"/>',cut:'<path d="M6 5h7m-7 4h4m-4 4h7m-7 4h4"/>'},
+ fat:{outline:'<path d="M12 2S4 11 4 16a8 8 0 0 0 16 0C20 11 12 2 12 2Z"/><path d="m9 19 6-7"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="18" r="1"/>',solid:'<path d="M12 2S4 11 4 16a8 8 0 0 0 16 0C20 11 12 2 12 2Z"/>',cut:'<path d="m9 19 6-7"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="18" r="1"/>'},
+ muscle:{outline:'<path d="m3 15 3-9h6v4H9l-1 5c4-4 10-4 13 0v5c-6 3-13 2-18-1Z"/><path d="M10 6V3h4v7m-5 7q5-3 9 0"/>',solid:'<path d="m3 15 3-9h4V3h5v8c3 0 5 2 6 4v5c-6 3-13 2-18-1Z"/>',cut:'<path d="M9 17q5-3 9 0M10 6v4H9"/>'},
+ hydration:{outline:'<circle cx="8" cy="4" r="2"/><path d="M4 20v-8a4 4 0 0 1 8 0v8m-4-5v6M18 7s-4 5-4 8a4 4 0 0 0 8 0c0-3-4-8-4-8Z"/>',solid:'<circle cx="8" cy="4" r="3"/><path d="M3 20v-8a5 5 0 0 1 9-3v12H9v-6H7v6H3ZM18 7s-4 5-4 8a4 4 0 0 0 8 0c0-3-4-8-4-8Z"/>'},
+ bone:{outline:'<path d="M7 4a3 3 0 1 0-4 4l4 4 5 5a3 3 0 1 0 4 4 3 3 0 1 0 4-4l-4-4-5-5a3 3 0 1 0-4-4Z"/>',solid:'<path d="M7 4a3 3 0 1 0-4 4l4 4 5 5a3 3 0 1 0 4 4 3 3 0 1 0 4-4l-4-4-5-5a3 3 0 1 0-4-4Z"/>'},
+ meal:{outline:'<circle cx="13" cy="12" r="6"/><path d="M2 2v6a2 2 0 0 0 4 0V2M4 2v20M22 2v20m0-20c-4 3-4 10 0 10"/>',solid:'<circle cx="13" cy="12" r="6"/>',extra:'<path d="M2 2v6a2 2 0 0 0 4 0V2M4 2v20M22 2v20m0-20c-4 3-4 10 0 10"/>'},
+ thermometer:{outline:'<path d="M9 4a3 3 0 0 1 6 0v10a5 5 0 1 1-6 0ZM12 7v10m5-12h3m-3 4h2"/><circle cx="12" cy="18" r="2"/>',solid:'<path d="M9 4a3 3 0 0 1 6 0v10a5 5 0 1 1-6 0Z"/>',cut:'<path d="M12 7v10"/><circle cx="12" cy="18" r="2"/>',extra:'<path d="M18 5h3m-3 4h2"/>'},
+ skin:{outline:'<path d="M4 20c-2-5 0-9 2-8l2 3V4a1.5 1.5 0 0 1 3 0v7-9a1.5 1.5 0 0 1 3 0v9-7a1.5 1.5 0 0 1 3 0v8-5a1.5 1.5 0 0 1 3 0v10l-3 4H7Z"/>',solid:'<path d="M4 20c-2-5 0-9 2-8l2 3V4a1.5 1.5 0 0 1 3 0v7-9a1.5 1.5 0 0 1 3 0v9-7a1.5 1.5 0 0 1 3 0v8-5a1.5 1.5 0 0 1 3 0v10l-3 4H7Z"/>'},
+ glucose:{outline:'<path d="M12 2S4 11 4 16a8 8 0 0 0 16 0C20 11 12 2 12 2Z"/><path d="M9 13h6v6H9Zm3 0v6m-3-3h6"/>',solid:'<path d="M12 2S4 11 4 16a8 8 0 0 0 16 0C20 11 12 2 12 2Z"/>',cut:'<path d="M9 13h6v6H9Zm3 0v6m-3-3h6"/>'},
+ lotus:{outline:'<path d="M12 17c-7-1-8-6 0-14 8 8 7 13 0 14ZM12 17C5 18 1 13 2 8c7 0 10 3 10 9Zm0 0c7 1 11-4 10-9-7 0-10 3-10 9Zm-7 4h14"/>',solid:'<path d="M12 17c-7-1-8-6 0-14 8 8 7 13 0 14ZM10 19C3 19 0 14 1 9c6 0 10 4 9 10Zm4 0c7 0 10-5 9-10-6 0-10 4-9 10Z"/>'},
+ lungs:{outline:'<path d="M12 2v11m0-5-3 4m3-4 3 4M9 5C5 5 1 13 2 18c1 4 7 2 7-1Zm6 0c4 0 8 8 7 13-1 4-7 2-7-1Z"/>',solid:'<path d="M9 5C5 5 1 13 2 18c1 4 7 2 7-1Zm6 0c4 0 8 8 7 13-1 4-7 2-7-1Z"/>',extra:'<path d="M12 2v10m0-4-3 4m3-4 3 4"/>'},
+ capacity:{outline:'<path d="M12 2v10m0-5-3 4m3-4 3 4M9 5C5 5 1 13 2 18c1 4 7 2 7-1Zm6 0c4 0 8 8 7 13-1 4-7 2-7-1ZM4 14h3m10 0h3m-15 3h2m10 0h2"/>',solid:'<path d="M9 5C5 5 1 13 2 18c1 4 7 2 7-1Zm6 0c4 0 8 8 7 13-1 4-7 2-7-1Z"/>',cut:'<path d="M4 14h3m10 0h3m-15 3h2m10 0h2"/>',extra:'<path d="M12 2v10m0-5-3 4m3-4 3 4"/>'},
+ metabolism:{outline:'<path d="M13 2c1 5-4 6-4 10-2-1-2-3-2-4-4 4-5 8-2 11 3 4 10 4 13 0 5-6-1-11-5-17Z"/><path d="m14 11-5 5h5l-2 5"/>',solid:'<path d="M13 2c1 5-4 6-4 10-2-1-2-3-2-4-4 4-5 8-2 11 3 4 10 4 13 0 5-6-1-11-5-17Z"/>',cut:'<path d="m14 11-5 5h5l-2 5"/>'},
+ bolt:{outline:'<path d="M14 2 4 14h7l-1 8 10-13h-7Z"/>',solid:'<path d="M14 2 4 14h7l-1 8 10-13h-7Z"/>'},
+ cadence:{outline:'<ellipse cx="8" cy="8" rx="3" ry="5" transform="rotate(20 8 8)"/><ellipse cx="16" cy="15" rx="3" ry="5" transform="rotate(-20 16 15)"/><path d="m5 16 2 3m10-15 2 3"/>',solid:'<ellipse cx="8" cy="7" rx="3.5" ry="5" transform="rotate(20 8 7)"/><ellipse cx="16" cy="16" rx="3.5" ry="5" transform="rotate(-20 16 16)"/><circle cx="5" cy="16" r="2"/><circle cx="19" cy="7" r="2"/>'},
+ cycle:{outline:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2m-7 10-5 5h-3m8-10 5-5h3"/>',solid:'<circle cx="12" cy="12" r="7"/>',cut:'<circle cx="12" cy="12" r="3"/>',extra:'<path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2m-7 10-5 5h-3m8-10 5-5h3"/>'}
+};
+const METRIC_GLYPH_MAP={
+ steps:'shoe',distance:'route',activeCalories:'flame',totalCalories:'metabolism',exercise:'dumbbell',
+ floors:'stairs',elevation:'mountain',speed:'speed',heart:'heart',restingHeart:'resting',bp:'pressure',spo2:'oxygen',hrv:'variability',
+ sleep:'moon',weight:'scale',height:'ruler',bodyFat:'fat',leanMass:'muscle',bodyWater:'hydration',boneMass:'bone',
+ water:'water',nutrition:'meal',temp:'thermometer',skinTemperature:'skin',glucose:'glucose',mindfulness:'lotus',
+ resp:'lungs',vo2:'capacity',bmr:'metabolism',power:'bolt',cadence:'cadence',cyclingCadence:'cycle'
+};
+function semanticGlyph(name,variant=state.iconSet){return `health-${variant}-${HEALTH_GLYPHS[name]?name:'heart'}`}
+function metricGlyph(m,variant=state.iconSet){return semanticGlyph(METRIC_GLYPH_MAP[m.id]||'heart',variant)}
+mic=function(m){return metricGlyph(m)};
+function installHealthGlyphs(){
+ const target=document.querySelector('symbol')?.parentNode;if(!target)return;
+ const ns='http://www.w3.org/2000/svg';
+ for(const [name,g]of Object.entries(HEALTH_GLYPHS))for(const variant of ['classic','outline','soft','duo']){
+  const symbol=document.createElementNS(ns,'symbol');symbol.id=semanticGlyph(name,variant);symbol.setAttribute('viewBox','0 0 24 24');
+  const stroke=(body,width=2)=>`<g fill="none" stroke="currentColor" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${body}</g>`;
+  const filled=`<g stroke="none" fill="currentColor">${g.solid||''}</g>${g.cut?`<g fill="none" stroke="var(--glyph-cut,var(--surface))" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${g.cut}</g>`:''}${g.extra?stroke(g.extra,2.1):''}`;
+  symbol.innerHTML=variant==='outline'?stroke(g.outline,1.8):variant==='soft'?`<circle cx="12" cy="12" r="12" fill="currentColor" opacity=".16"/><g transform="translate(3 3) scale(.75)">${filled}</g>`:variant==='duo'?`<g opacity=".25" transform="translate(1.3 1.3)">${filled}</g>${stroke(g.outline,1.65)}`:filled;
+  target.appendChild(symbol);
+ }
+}
+installHealthGlyphs();
+
+/* Original metric-specific visual language, with measured values only. */
+Object.assign(PAL,{
+ totalCalories:['#ffb547','#ff5e27'],floors:['#50f5ac','#05cbb7'],elevation:['#a4ff2f','#29e8a4'],
+ speed:['#0ff4d4','#02abff'],resp:['#ff9dc8','#fe55ac'],height:['#ffc94e','#ff8e35'],
+ bodyFat:['#ffc048','#ff5f72'],leanMass:['#ffbd48','#ff7748'],bodyWater:['#55eaff','#1685ff'],
+ boneMass:['#ffe08a','#fbad39'],nutrition:['#b8ff34','#14dba0'],temp:['#ffcc38','#ff6448'],
+ skinTemperature:['#ffad6c','#ff4a7e'],glucose:['#ffc843','#ff6830'],mindfulness:['#ce9bff','#895bff'],
+ vo2:['#ffb548','#ff764d'],bmr:['#ffbd55','#ff6a36'],power:['#ff4da1','#c15cff'],
+ cadence:['#fb4aa0','#ff824e'],cyclingCadence:['#e968ff','#9a68ff']
+});
+function signatureVisual(m,w,h,rows,mini){
+ const last=rows.at(-1),P=chartColors(m),g=uid('signature'),color=P[0],other=P.at(-1),compact=h<48;
+ const defs=`<defs>${lg(g,P,false)}<linearGradient id="${g}v" x1="0" y1="1" x2="0" y2="0">${P.map((c,i)=>`<stop offset="${i/Math.max(1,P.length-1)}" stop-color="${c}"/>`).join('')}</linearGradient></defs>`;
+ const finish=(body,kind)=>visualSVG(w,h,defs+body,m.name+': '+show(m,last.v,last.lo)).replace('class="real-visual"',`class="real-visual signature-${kind}" data-design="${kind}"`);
+ const glyph=(name,x,y,size,c=color)=>`<svg x="${x-size/2}" y="${y-size/2}" width="${size}" height="${size}" viewBox="0 0 24 24" style="color:${c}"><use href="#${semanticGlyph(name,'classic')}"/></svg>`;
+ const label=(x,y,t,size=12)=>`<text x="${x}" y="${y}" text-anchor="middle" fill="var(--text)" font-size="${size}" font-weight="800">${esc(String(t))}</text>`;
+ const ring=(percent,r,cx,cy,stroke=7)=>{const C=2*Math.PI*r,p=Math.max(0,Math.min(1,percent));return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-opacity=".18" stroke-width="${stroke}"/>${p>0?`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#${g})" stroke-width="${stroke}" stroke-dasharray="${p*C} ${C}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>`:''}`};
+ const current=DAILY_METRICS.has(m.id)?actualLatest(m):last.v;
+ const observations=visualRecordSubset(rows,mini?14:60),values=observations.map(r=>r.v);
+ const history=(variant='aurora')=>renderTrendVisual(m,w,h,rows,mini,variant);
+ // Percent rings are percentages supplied by the source, not synthetic parts.
+ if(['spo2','bodyFat'].includes(m.id)){
+  if(!mini)return history('aurora');
+  const r=Math.max(5,Math.min(w*.26,h*.44)-3),cx=w/2,cy=h/2;
+  return finish(ring(last.v/100,r,cx,cy,Math.max(4,r*.22))+glyph(METRIC_GLYPH_MAP[m.id],cx,cy,Math.max(9,r*.9)),m.id==='spo2'?'oxygen-ring':m.id==='bodyFat'?'fat-ring':'water-ring');
+ }
+ if(m.id==='activeCalories'&&mini){
+  const goal=GOAL.active,p=Number.isFinite(current)?Math.min(1,Math.max(0,current/goal)):0;
+  const r=Math.max(5,Math.min(w*.4,h*.83)-3),cx=w/2,cy=h-4,C=Math.PI*r,sw=Math.max(4,Math.min(8,r*.23));
+  const path=`M${cx-r} ${cy}A${r} ${r} 0 0 1 ${cx+r} ${cy}`;
+  return finish(`<path d="${path}" fill="none" stroke="${color}" stroke-opacity=".2" stroke-width="${sw}" stroke-linecap="round"/>${p?`<path d="${path}" fill="none" stroke="url(#${g})" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${p*C} ${C}"/>`:''}${glyph('flame',cx,cy-r*.25,Math.max(9,r*.5),other)}`,'energy-gauge');
+ }
+ if(m.id==='water'&&mini){
+  const p=Number.isFinite(current)?Math.min(1,Math.max(0,current/GOAL.water)):0;
+  const gw=Math.min(w*.4,h*.7),gh=h-5,x=w/2-gw/2,y=2,level=y+gh*(1-p),clip=uid('liquid');
+  return finish(`<defs><clipPath id="${clip}"><path d="M${x} ${y}h${gw}l-${gw*.08} ${gh}h-${gw*.84}Z"/></clipPath></defs><path d="M${x} ${y}h${gw}l-${gw*.08} ${gh}h-${gw*.84}Z" fill="${color}" fill-opacity=".12" stroke="${color}" stroke-width="1.8"/><g clip-path="url(#${clip})">${p?`<path d="M${x-2} ${level}Q${x+gw*.25} ${level-3} ${x+gw*.5} ${level}T${x+gw+2} ${level}V${h+3}H${x-2}Z" fill="url(#${g}v)"/>`:''}</g>${glyph('water',w/2,h/2,Math.max(9,Math.min(14,h*.35)),p>.6?'var(--surface)':color)}`,'water-glass');
+ }
+ if(m.id==='nutrition'&&mini){
+  // Segments mean calorie totals on actual recorded dates, never invented macros.
+  const daily=new Map();rows.forEach(r=>daily.set(r.day||localDay(recordTimestamp(r)),r));
+  const dates=[...daily.values()].slice(-7),total=dates.reduce((s,r)=>s+Math.max(0,r.v),0);
+  const r=Math.max(5,Math.min(w,h)*.44-2),cx=w/2,cy=h/2,C=2*Math.PI*r;
+  let offset=0;let b='';
+  dates.forEach((r0,i)=>{const fraction=total>0?Math.max(0,r0.v)/total:0,len=Math.max(0,fraction*C-2);b+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${[color,other,'#eaff76','#46fbd7'][i%4]}" stroke-width="${Math.max(4,r*.3)}" stroke-dasharray="${len} ${C}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"><title>${actualDate(r0)}: ${r0.v} ккал</title></circle>`;offset+=fraction*C});
+  return finish(b+glyph('meal',cx,cy,Math.max(10,r*.95)),'nutrition-donut');
+ }
+ if(m.id==='sleep'){
+  const stages=stageVisual(last,w,h);
+  if(stages&&(!mini||h>=48))return finish(stages,'sleep-stages');
+  // Each capsule is the actual duration of one saved night, not a fake stage.
+  if(!mini)return history('capsule');
+  const bw=(w-6)/Math.max(1,Math.min(7,values.length)),mx=Math.max(1,...values);
+  let b='';values.slice(-7).forEach((v,i)=>{const hh=Math.max(2,v/mx*(h-7));b+=`<rect x="${3+bw*i+bw*.16}" y="${h-3-hh}" width="${bw*.65}" height="${hh}" rx="${Math.min(5,bw*.3)}" fill="${['#bd9dff','#9270ff','#6e61ff'][i%3]}"/>`});
+  return finish(b,'sleep-nights');
+ }
+ if(m.id==='temp'&&mini){
+  const lo=Math.min(35,...values),hi=Math.max(41,...values),p=Math.min(1,Math.max(0,(last.v-lo)/(hi-lo)));
+  const cx=w/2,r=Math.max(3,Math.min(6,h*.14)),top=2,bottom=h-r-2,stemW=r*.8;
+  return finish(`<rect x="${cx-stemW}" y="${top}" width="${stemW*2}" height="${bottom-top}" rx="${stemW}" fill="${color}" fill-opacity=".2"/><rect x="${cx-stemW*.65}" y="${bottom-(bottom-top)*p}" width="${stemW*1.3}" height="${(bottom-top)*p}" rx="${stemW*.65}" fill="url(#${g}v)"/><circle cx="${cx}" cy="${bottom}" r="${r}" fill="${other}"/>`,'temperature-tube');
+ }
+ if(['glucose','vo2'].includes(m.id)&&mini){
+  const lo=Math.min(...values),hi=Math.max(...values),p=hi>lo?(last.v-lo)/(hi-lo):.5;
+  const y=h*.6,sw=Math.max(5,h*.2),left=7,right=w-7;
+  return finish(`<path d="M${left} ${y}H${right}" stroke="url(#${g})" stroke-width="${sw}" stroke-linecap="round"/><circle cx="${left+(right-left)*p}" cy="${y}" r="${sw*.85}" fill="var(--surface)" stroke="${other}" stroke-width="2.5"/>${glyph(METRIC_GLYPH_MAP[m.id],w/2,h*.17,Math.min(12,h*.32))}`,m.id+'-observed-range');
+ }
+ if(m.id==='power'&&mini){
+  const max=Math.max(1,...values),p=Math.max(0,Math.min(1,last.v/max)),cx=w/2,size=h-2,clip=uid('power');
+  return finish(`<defs><clipPath id="${clip}"><path d="M${cx+size*.1} 1 ${cx-size*.35} ${h*.58}H${cx-size*.02}L${cx-size*.1} ${h-1} ${cx+size*.35} ${h*.38}H${cx+size*.03}Z"/></clipPath></defs><g clip-path="url(#${clip})"><rect x="${cx-size}" y="0" width="${size*2}" height="${h}" fill="${color}" opacity=".2"/><rect x="${cx-size}" y="${h*(1-p)}" width="${size*2}" height="${h*p}" fill="url(#${g}v)"/></g>`,'power-bolt');
+ }
+ if(m.id==='cyclingCadence'&&mini){
+  const r=Math.max(5,Math.min(w,h)*.44-2),cx=w/2,cy=h/2,max=Math.max(1,...values),N=Math.min(10,observations.length);
+  let b='';observations.slice(-N).forEach((r0,i)=>{const a=(-Math.PI/2)+(i/N)*Math.PI*2,rad=r*(.6+.4*Math.max(0,r0.v)/max);b+=`<path d="M${cx+Math.cos(a)*r*.4} ${cy+Math.sin(a)*r*.4}L${cx+Math.cos(a)*rad} ${cy+Math.sin(a)*rad}" stroke="${i%2?other:color}" stroke-width="${Math.max(3,r*.2)}" stroke-linecap="round"/>`});
+  return finish(b+glyph('cycle',cx,cy,Math.max(9,r*.8)),'cadence-wheel');
+ }
+ if(m.id==='mindfulness'&&mini){
+  const cx=w/2,cy=h/2,r=Math.max(3,Math.min(w,h)*.42),max=Math.max(1,...values),n=Math.min(7,values.length);
+  let b='';values.slice(-n).forEach((v,i)=>{const a=360*i/n,len=r*(.45+.55*Math.max(0,v)/max);b+=`<ellipse cx="${cx}" cy="${cy-len*.36}" rx="${Math.max(2,r*.23)}" ry="${len*.6}" transform="rotate(${a} ${cx} ${cy})" fill="${i%2?other:color}" fill-opacity=".85"/>`});
+  return finish(b+`<circle cx="${cx}" cy="${cy}" r="${r*.24}" fill="var(--surface)"/>`,'mindful-petals');
+ }
+ if(m.id==='boneMass'&&mini){
+  const mx=Math.max(1,...values),step=(w-8)/Math.max(1,values.length);
+  return finish(values.map((v,i)=>{const x=4+(i+.5)*step,y=h-4-(h-10)*v/mx;return `<path d="M${x} ${h-4}V${y}" stroke="${color}" stroke-opacity=".5" stroke-width="2"/><circle cx="${x}" cy="${y}" r="${Math.max(2,Math.min(4,step*.25))}" fill="${other}"/>`}).join(''),'bone-lollipops');
+ }
+ const barIds=new Set(['steps','totalCalories','floors','elevation','exercise','leanMass','bmr']);
+ const result=history(barIds.has(m.id)?'capsule':'aurora');
+ // Keep each metric's original colour and time-series identity, with only real points.
+ return result.replace('class="real-visual"',`class="real-visual signature-history" data-design="${m.id}-history"`);
+}
+function emptyMetricVisual(m,w,h){
+ const p=chartColors(m),cx=w/2,cy=h/2,r=Math.max(4,Math.min(w,h)*.39);
+ const frame=['water','temp'].includes(m.id)
+  ?`<rect x="${cx-r*.65}" y="${cy-r}" width="${r*1.3}" height="${r*2}" rx="${r*.35}" fill="none" stroke="${p[0]}" stroke-opacity=".4" stroke-width="2"/>`
+  :`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${p[0]}" stroke-opacity=".32" stroke-width="3" stroke-dasharray="2 4"/>`;
+ const size=Math.max(9,r*1.15);
+ return visualSVG(w,h,frame+`<svg x="${cx-size/2}" y="${cy-size/2}" width="${size}" height="${size}" viewBox="0 0 24 24" style="color:${p[0]}"><use href="#${metricGlyph(m)}"/></svg>`,m.name+': нет измерений').replace('class="real-visual"','class="real-visual empty-metric" data-empty="true"');
+}
+function renderRealVisual(m,w,h,rows,mini=true,variant=state.chartSet){
+ if(variant==='signature'&&typeof originalAuthorVisual==='function')return originalAuthorVisual(m,w,h,rows,mini);
+ if(typeof metricDesignVisual==='function')return metricDesignVisual(m,w,h,rows,mini,variant);
+ if(!rows.length&&mini)return emptyMetricVisual(m,w,h);
+ return variant==='signature'&&rows.length?signatureVisual(m,w,h,rows,mini):renderTrendVisual(m,w,h,rows,mini,variant);
+}
+
+/* Metric-specific, bounded SVGs. Shapes are not simulated sensor waveforms.
+ * Only finite source rows create marks. Scales are actual observed ranges,
+ * configured goals or explicit 0–100 percentages; never clinical "normal" zones.
+ * Paint variants preserve the metric's geometry and meaning.
+ */
+const METRIC_DESIGN_IDS={
+ steps:'step-columns',distance:'dated-route',activeCalories:'flame-level',totalCalories:'radiant-energy',
+ exercise:'duration-capsules',floors:'floor-staircase',elevation:'elevation-peaks',speed:'speed-dial',
+ heart:'measured-heartline',restingHeart:'rest-deviations',bp:'paired-pressure',spo2:'oxygen-percent',
+ hrv:'variability-ribbon',resp:'respiratory-ribs',sleep:'recorded-nights',weight:'mass-balance',
+ height:'height-ruler',bodyFat:'fat-silhouette',leanMass:'lean-chevrons',bodyWater:'water-mass-drops',
+ boneMass:'bone-lengths',water:'hydration-glass',nutrition:'record-energy-plate',temp:'temperature-tube',
+ skinTemperature:'signed-skin-deltas',glucose:'glucose-observed-range',mindfulness:'session-petals',
+ vo2:'capacity-fan',bmr:'metabolic-coil',power:'power-bolt',cadence:'cadence-footprints',
+ cyclingCadence:'pedal-wheel'
+};
+function mdDate(r){
+ const d=r?.day||r?.d;
+ if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d))return d.slice(8)+'.'+d.slice(5,7);
+ const ts=typeof recordTimestamp==='function'?recordTimestamp(r):r?.ts;
+ if(!Number.isFinite(ts))return 'Дата не указана';
+ const t=new Date(ts);return String(t.getDate()).padStart(2,'0')+'.'+String(t.getMonth()+1).padStart(2,'0');
+}
+function metricDesignVisual(m,w,h,sourceRows,mini=true,variant=state.chartSet){
+ w=Math.max(24,Number(w)||100);h=Math.max(18,Number(h)||44);
+ const rows=(Array.isArray(sourceRows)?sourceRows:[]).filter(r=>Number.isFinite(r?.v));
+ const last=rows.at(-1),kind=METRIC_DESIGN_IDS[m.id]||'measured-records',P=chartColors(m),c=P[0],c2=P.at(-1);
+ const id=uid('metric'),grad='url(#'+id+')',clip=uid('metricClip');
+ const sample=visualRecordSubset(rows,mini?10:16),vals=sample.map(r=>r.v);
+ const lo=vals.length?Math.min(...vals):0,hi=vals.length?Math.max(...vals):1,peak=Math.max(.000001,...vals.map(v=>Math.abs(v)));
+ const aw=mini?w:Math.min(145,w*.44),ah=mini?h:Math.max(56,Math.min(92,h*.54)),cx=aw/2,cy=ah/2;
+ const pts=variant==='points',soft=variant==='aurora',solid=variant==='capsule';
+ const paint=solid?c:grad,alpha=pts?.75:soft?.85:1,sw=pts?1.8:solid?3.5:2.6;
+ const defs=`<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${ah}" x2="${aw}" y2="0"><stop stop-color="${c}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`;
+ const num=v=>Number.isFinite(v)?chartNumber(m,v):'—';
+ const label=(x,y,s,size=11,color='var(--text)',anchor='middle')=>`<text x="${x}" y="${y}" font-size="${size}" font-weight="650" fill="${color}" text-anchor="${anchor}">${esc(String(s))}</text>`;
+ const tip=r=>`<title>${esc((r.aggregate?(r.aggregate==='sum'?'Сумма за интервал · ':'Среднее за интервал · '):'')+mdDate(r)+': '+show(m,r.v,r.lo))}</title>`;
+ const path=(d,stroke=paint,width=sw,fill='none',opacity=1)=>`<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${width}" opacity="${opacity}" stroke-linejoin="round" stroke-linecap="round"/>`;
+ const circle=(x,y,r,fill=paint,stroke='none',width=1)=>`<circle cx="${x}" cy="${y}" r="${Math.max(0,r)}" fill="${fill}" stroke="${stroke}" stroke-width="${width}"/>`;
+ const rect=(x,y,ww,hh,r=3,fill=paint,opacity=1)=>`<rect x="${x}" y="${y}" width="${Math.max(0,ww)}" height="${Math.max(0,hh)}" rx="${Math.max(0,r)}" fill="${fill}" fill-opacity="${opacity}" ${pts&&opacity>.4?`stroke="${c2}" stroke-width="1"`:''}/>`;
+ const glyph=(name,x,y,size,color=c)=>`<svg x="${x-size/2}" y="${y-size/2}" width="${size}" height="${size}" viewBox="0 0 24 24" style="color:${color}"><use href="#${semanticGlyph(name)}"/></svg>`;
+ const polar=(r,a,x=cx,y=cy)=>[x+Math.cos(a*Math.PI/180)*r,y+Math.sin(a*Math.PI/180)*r];
+ const arc=(r,start,end,x=cx,y=cy)=>{const a=polar(r,start,x,y),b=polar(r,end,x,y);return `M${a[0]} ${a[1]}A${r} ${r} 0 ${end-start>180?1:0} 1 ${b[0]} ${b[1]}`};
+ const bounds=(includeZero=false)=>{
+  let mn=includeZero?Math.min(0,lo):lo,mx=includeZero?Math.max(0,hi):hi;
+  if(mx===mn){if(includeZero&&mx===0){mn=0;mx=1}else{const pad=Math.max(Math.abs(mx)*.05,m.dec?.1:1);mn-=pad;mx+=pad}}
+  return {mn,mx,x:i=>6+(aw-12)*(sample.length<2?.5:i/(sample.length-1)),y:v=>4+(ah-8)*(1-(v-mn)/(mx-mn))};
+ };
+ const points=(includeZero=false)=>{const b=bounds(includeZero);return sample.map((r,i)=>[b.x(i),b.y(r.v),r])};
+ const line=ps=>ps.map((p,i)=>`${i?'L':'M'}${p[0]} ${p[1]}`).join(' ');
+ const progress=(goal)=>{
+  if(!last||!Number.isFinite(goal)||goal<=0)return 0;
+  if(mini&&!m.historicalView&&DAILY_METRICS.has(m.id)){
+   const day=last.day||localDay(recordTimestamp(last));
+   if(day!==localDay())return 0;
+  }
+  return Math.max(0,Math.min(1,last.v/goal));
+ };
+ const ring=(r,p,x=cx,y=cy,width=6)=>{
+  const C=2*Math.PI*r;
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${c}" stroke-opacity=".18" stroke-width="${width}"/>`+(p>0?`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${paint}" stroke-width="${width}" stroke-dasharray="${p*C} ${C}" stroke-linecap="round" transform="rotate(-90 ${x} ${y})"/>`:'');
+ };
+ const wrap=(body,empty=false)=>`<svg class="real-visual metric-design" data-design="${kind}" data-variant="${esc(variant)}" ${empty?'data-empty="true"':''} viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(m.name+': '+(last?show(m,last.v,last.lo)+' · '+mdDate(last):'нет измерений'))}">${defs}${body}</svg>`;
+ if(!last){
+  const size=Math.max(12,Math.min(ah*.72,aw*.55));
+  let b=`<g opacity=".45">${glyph(METRIC_GLYPH_MAP[m.id]||'heart',cx,cy,size)}${path(`M7 ${ah-3}H${aw-7}`,'var(--line)',1)}</g>`;
+  if(!mini)b+=label(aw+16,ah*.45,'—',26,'var(--text)','start')+label(aw+16,ah*.45+20,'Нет измерений',11,'var(--muted)','start');
+  return wrap(b,true);
+ }
+ let b='';
+ switch(m.id){
+  case 'steps':{
+   const max=Math.max(1,...vals),step=(aw-8)/sample.length,bw=Math.min(step*.66,18);
+   b+=path(`M4 ${ah-3}H${aw-4}`,'var(--line)',1);
+   sample.forEach((r,i)=>{const hh=Math.max(0,r.v)/max*(ah-10),x=4+step*(i+.5);b+=`<g>${tip(r)}${rect(x-bw/2,ah-3-hh,bw,hh,Math.min(3,bw/3),paint,alpha)}${circle(x,ah-3-hh,Math.min(2.4,bw*.2),c2)}</g>`});
+   break;
+  }
+  case 'distance':{
+   const ps=points();b+=path(line(ps),paint,sw,'none',.65).replace('<path ','<path stroke-dasharray="3 4" ');
+   ps.forEach(([x,y,r],i)=>b+=`<g>${tip(r)}${circle(x,y,i===ps.length-1?4:2.8,'var(--surface)',i===ps.length-1?c2:c,2)}${i===ps.length-1?path(`M${x} ${y-3}v-8h6l-2 3 2 3h-6`,c2,1.4):''}</g>`);
+   break;
+  }
+  case 'activeCalories':{
+   const fw=Math.min(aw*.52,ah*.7),x=cx-fw/2,y=2,hh=ah-4;
+   const d=`M${cx+fw*.08} ${y}C${cx+fw*.28} ${y+hh*.3} ${cx-fw*.1} ${y+hh*.34} ${cx-fw*.14} ${y+hh*.55}C${x+fw*.12} ${y+hh*.53} ${x+fw*.16} ${y+hh*.35} ${x+fw*.15} ${y+hh*.3}C${x-fw*.15} ${y+hh*.7} ${x} ${y+hh} ${cx} ${y+hh}C${x+fw*1.18} ${y+hh} ${x+fw*1.2} ${y+hh*.45} ${cx+fw*.08} ${y}Z`;
+   const p=progress(GOAL.active);
+   b+=`<defs><clipPath id="${clip}"><path d="${d}"/></clipPath></defs>${path(d,c,1.6,c,.12)}<g clip-path="url(#${clip})">${rect(x-fw*.5,ah*(1-p),fw*2,ah*p,0,paint,alpha)}</g>`;
+   break;
+  }
+  case 'totalCalories':{
+   const r=Math.max(3,Math.min(aw,ah)*.22),outer=Math.min(aw,ah)*.46,n=sample.length;
+   b+=circle(cx,cy,r,paint)+glyph('metabolism',cx,cy,r*1.45,'var(--surface)');
+   sample.forEach((row,i)=>{const angle=-90+i*360/n,a=polar(r+3,angle),q=polar(r+3+(outer-r-3)*Math.max(0,row.v)/peak,angle);b+=`<g>${tip(row)}${path(`M${a}L${q}`,i%2?c2:paint,Math.max(2,Math.min(7,outer*.18)))}</g>`});
+   break;
+  }
+  case 'exercise':{
+   const n=sample.length,step=(ah-6)/n,bh=Math.min(9,step*.62),left=aw*.12;
+   sample.forEach((r,i)=>{const y=3+i*step,len=(aw-left-5)*Math.max(0,r.v)/peak;b+=`<g>${tip(r)}${circle(left*.38,y+bh/2,Math.min(2,bh*.3),c2)}${rect(left,y,len,bh,bh/2,paint,alpha)}</g>`});
+   break;
+  }
+  case 'floors':{
+   const z=bounds(true),step=(aw-10)/sample.length,base=ah-4;
+   let d=`M5 ${base}`;sample.forEach((r,i)=>{const x=5+i*step,y=z.y(r.v);d+=`V${y}H${x+step}`;b+=`<g>${tip(r)}${circle(x+step*.5,y,2,c2)}</g>`});
+   b=path(d+`V${base}Z`,'none',0,paint,alpha*.3)+path(d,paint,sw)+b;
+   break;
+  }
+  case 'elevation':{
+   const ps=points(true),d=line(ps);b+=path(d+`L${aw-6} ${ah-4}H6Z`,'none',0,paint,alpha*.55)+path(d,paint,sw);
+   ps.forEach(([x,y,r])=>b+=`<g>${tip(r)}${path(`M${x-3} ${y+5}L${x} ${y}l3 5`,c2,1.3)}</g>`);
+   break;
+  }
+  case 'speed':{
+   const r=Math.max(4,Math.min(aw*.36,ah*.43)),p=Math.max(0,last.v)/peak;
+   b+=path(arc(r,-210,30),c,Math.max(3,r*.15),'none',.2);
+   if(p>0)b+=path(arc(r,-210,-210+240*p),paint,Math.max(3,r*.15));
+   for(let i=0;i<=6;i++){const a=polar(r*.8,-210+i*40),q=polar(r*.91,-210+i*40);b+=path(`M${a}L${q}`,c2,1)}
+   const q=polar(r*.74,-210+240*p);b+=path(`M${cx} ${cy}L${q}`,c2,2)+circle(cx,cy,3.5,c);
+   if(!mini)b+=label(cx-r,cy+r*.72,'0',8,'var(--muted)')+label(cx+r,cy+r*.72,fmt(peak,m.dec),8,'var(--muted)');
+   break;
+  }
+  case 'heart':{
+   const ps=points(),d=line(ps);b+=glyph('heart',aw*.83,ah*.28,ah*.46,c).replace('style="','opacity=".12" style="');
+   b+=path(d+`L${ps.at(-1)[0]} ${ah-3}H${ps[0][0]}Z`,'none',0,paint,alpha*.2)+path(d,paint,sw);
+   ps.forEach(([x,y,r],i)=>b+=`<g>${tip(r)}${circle(x,y,i===ps.length-1?3:1.7,c2)}</g>`);
+   break;
+  }
+  case 'restingHeart':{
+   const mean=rows.reduce((a,r)=>a+r.v,0)/rows.length,range=Math.max(1,...vals.map(v=>Math.abs(v-mean))),step=(aw-10)/sample.length;
+   b+=path(`M5 ${cy}H${aw-5}`,c,1,'none',.25);
+   sample.forEach((r,i)=>{const x=5+step*(i+.5),y=cy-(r.v-mean)/range*(ah*.35);b+=`<g>${tip(r)}${path(`M${x} ${cy}V${y}`,paint,Math.min(5,step*.3))}${circle(x,y,Math.min(3,step*.25),c2)}</g>`});
+   b+=glyph('resting',aw-9,9,15,c2);break;
+  }
+  case 'bp':{
+   const lower=sample.map(r=>r.lo).filter(Number.isFinite),mn=Math.min(...vals,...lower),mx=Math.max(...vals,...lower),span=Math.max(1,mx-mn),step=(aw-10)/sample.length;
+   const y=v=>5+(ah-10)*(1-(v-mn)/span);
+   sample.forEach((r,i)=>{const x=5+step*(i+.5),top=y(r.v);b+=`<g>${tip(r)}`;
+    if(Number.isFinite(r.lo)){const bottom=y(r.lo);b+=path(`M${x} ${top}V${bottom}`,paint,Math.min(5,step*.25))+path(`M${x-3} ${bottom}h6`,c2,1.5)+circle(x,bottom,2.4,c2)}
+    b+=circle(x,top,3,c)+path(`M${x-3} ${top}h6`,c,1.5)+'</g>';
+   });break;
+  }
+  case 'spo2':{
+   const r=Math.max(4,Math.min(aw,ah)*.38);b+=ring(r,Math.max(0,Math.min(1,last.v/100)),cx,cy,Math.max(3,r*.22));
+   b+=label(cx,cy+r*.18,'O₂',Math.max(9,r*.62),c2);break;
+  }
+  case 'hrv':{
+   const ps=points(),d=line(ps);b+=path(d,c,Math.min(14,ah*.28),'none',.12)+path(d,paint,Math.min(7,ah*.15));
+   ps.forEach(([x,y,r])=>b+=`<g>${tip(r)}${circle(x,y,2,'var(--surface)',c2,1.2)}</g>`);
+   break;
+  }
+  case 'resp':{
+   const n=sample.length,step=(ah-8)/n,mid=aw/2,gap=Math.max(2,aw*.035);
+   sample.forEach((r,i)=>{const y=4+step*(i+.5),len=(aw*.4)*Math.max(0,r.v)/peak;b+=`<g>${tip(r)}${path(`M${mid-gap} ${y}h-${len}M${mid+gap} ${y}h${len}`,paint,Math.max(1.5,step*.56))}</g>`});
+   b+=path(`M${mid} 2V${ah*.54}M${mid} ${ah*.2}l-${gap*2} 6M${mid} ${ah*.2}l${gap*2} 6`,c2,1.6);break;
+  }
+  case 'sleep':{
+   const stages=!mini||ah>=48?stageVisual(last,aw,ah):null;
+   if(stages){b+=stages;break}
+   const n=Math.min(7,sample.length),nights=sample.slice(-n),step=(aw-8)/n,max=Math.max(1,...nights.map(r=>r.v));
+   nights.forEach((r,i)=>{const x=4+step*(i+.5),ww=step*.62,hh=Math.max(0,r.v)/max*(ah-12),rr=Math.min(ww/2,hh/2),base=ah-4;if(hh>0)b+=`<g>${tip(r)}${path(`M${x-ww/2} ${base}V${base-hh+rr}Q${x-ww/2} ${base-hh} ${x} ${base-hh}Q${x+ww/2} ${base-hh} ${x+ww/2} ${base-hh+rr}V${base}Z`,'none',0,paint,alpha)}</g>`});
+   b+=glyph('moon',aw-8,9,14,c2);break;
+  }
+  case 'weight':{
+   const r=Math.max(3,Math.min(aw*.16,ah*.17)),left=cx-aw*.29,right=cx+aw*.29,top=ah*.28,base=ah*.88;
+   const prev=rows.length>1?rows.at(-2):null,delta=prev?last.v-prev.v:0,tilt=Math.max(-ah*.1,Math.min(ah*.1,delta/Math.max(1,hi-lo)*ah*.15));
+   b+=path(`M${cx} ${top-5}V${base}M${cx-aw*.12} ${base}h${aw*.24}`,c2,2);
+   b+=path(`M${left} ${top-tilt}L${right} ${top+tilt}`,paint,3);
+   [[left,top-tilt,prev],[right,top+tilt,last]].forEach(([x,y,row])=>{b+=path(`M${x} ${y}v${ah*.3}m-${r} 0q${r} ${r} ${r*2} 0`,paint,1.6);if(row)b+=`<g>${tip(row)}${circle(x,y+ah*.3-r*.35,r*.6,paint)}</g>`});
+   break;
+  }
+  case 'height':{
+   const top=4,bottom=ah-4,x=cx,ruler=cx-aw*.18,p=Math.max(0,last.v)/peak,yy=bottom-(bottom-top)*p;
+   b+=path(`M${ruler} ${top}V${bottom}`,c,2);
+   for(let i=0;i<=8;i++){const y=bottom-(bottom-top)*i/8;b+=path(`M${ruler} ${y}h${i%2?5:9}`,c2,1)}
+   b+=path(`M${x} ${bottom}V${yy}M${x-5} ${bottom}h10M${x-5} ${yy}h10`,paint,4)+circle(x,yy,3,c2);
+   break;
+  }
+  case 'bodyFat':{
+   const ww=Math.min(aw*.52,ah*.65),x=cx-ww/2,y=3,hh=ah-6;
+   const d=`M${x+ww*.12} ${y}Q${cx} ${y+hh*.2} ${x+ww*.88} ${y}L${x+ww} ${y+hh*.3}Q${x+ww*.62} ${y+hh*.52} ${x+ww} ${y+hh*.8}L${x+ww*.78} ${y+hh}Q${cx} ${y+hh*.8} ${x+ww*.22} ${y+hh}L${x} ${y+hh*.8}Q${x+ww*.38} ${y+hh*.52} ${x} ${y+hh*.3}Z`;
+   const p=Math.max(0,Math.min(1,last.v/100));
+   b+=`<defs><clipPath id="${clip}"><path d="${d}"/></clipPath></defs>${path(d,c,1.8,c,.15)}<g clip-path="url(#${clip})">${rect(x,y+hh*(1-p),ww,hh*p,0,paint,alpha)}</g>`;break;
+  }
+  case 'leanMass':{
+   const step=(aw-8)/sample.length,bw=Math.min(16,step*.7);
+   sample.forEach((r,i)=>{const x=4+step*(i+.5),hh=Math.max(0,r.v)/peak*(ah-9),top=ah-4-hh;b+=`<g>${tip(r)}${hh>0?path(`M${x-bw/2} ${ah-4}V${top+Math.min(4,hh/2)}L${x} ${top}l${bw/2} ${Math.min(4,hh/2)}V${ah-4}l-${bw/2} -${Math.min(4,hh/2)}Z`,'none',0,paint,alpha):circle(x,ah-4,1,c)}</g>`});break;
+  }
+  case 'bodyWater':{
+   const z=bounds(true);
+   sample.forEach((r,i)=>{const x=z.x(i),y=z.y(r.v),rr=Math.min(4,(aw-8)/sample.length*.28);b+=`<g>${tip(r)}${path(`M${x} ${ah-3}V${y}`,c,1.2,'none',.4)}${path(`M${x} ${y-rr*1.6}C${x-rr*2} ${y} ${x-rr} ${y+rr} ${x} ${y+rr}C${x+rr} ${y+rr} ${x+rr*2} ${y} ${x} ${y-rr*1.6}Z`,'none',0,paint)}</g>`});break;
+  }
+  case 'boneMass':{
+   const step=(ah-6)/sample.length,rr=Math.max(1,Math.min(3,step*.25));
+   sample.forEach((r,i)=>{const y=3+step*(i+.5),len=Math.max(0,r.v)/peak*(aw-14),x=(aw-len)/2;b+=`<g>${tip(r)}${path(`M${x} ${y}h${len}`,paint,rr*1.3)}${circle(x,y-rr*.5,rr,c)}${circle(x,y+rr*.5,rr,c)}${circle(x+len,y-rr*.5,rr,c2)}${circle(x+len,y+rr*.5,rr,c2)}</g>`});break;
+  }
+  case 'water':{
+   const ww=Math.min(aw*.45,ah*.65),x=cx-ww/2,y=3,hh=ah-6,p=progress(GOAL.water);
+   const d=`M${x} ${y}H${x+ww}L${x+ww*.88} ${y+hh}H${x+ww*.12}Z`;
+   b+=`<defs><clipPath id="${clip}"><path d="${d}"/></clipPath></defs>${path(d,c,1.8,c,.1)}<g clip-path="url(#${clip})">${rect(x-1,y+hh*(1-p),ww+2,hh*p,0,paint,alpha)}</g>`;
+   for(let i=1;i<4;i++)b+=path(`M${x+ww*.12} ${y+hh*i/4}h${ww*.16}`,c2,1.1);
+   break;
+  }
+  case 'nutrition':{
+   const r=Math.max(3,Math.min(aw,ah)*.35),C=2*Math.PI*r,total=rows.reduce((s,r)=>s+Math.max(0,r.v),0);
+   // Sampling is not used for proportions: contiguous groups sum actual records.
+   const groups=[];for(let i=0;i<Math.min(24,rows.length);i++){const start=Math.floor(i*rows.length/Math.min(24,rows.length)),end=Math.floor((i+1)*rows.length/Math.min(24,rows.length));groups.push({first:rows[start],last:rows[end-1],v:rows.slice(start,end).reduce((s,r)=>s+Math.max(0,r.v),0)})}
+   let offset=0;b+=ring(r,0,cx,cy,Math.max(3,r*.34));
+   groups.forEach((row,i)=>{const fraction=total?row.v/total:0,len=fraction*C;if(len>0)b+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${i%2?c2:paint}" stroke-width="${Math.max(3,r*.34)}" stroke-dasharray="${Math.max(0,len-Math.min(1.5,len*.12))} ${C}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"><title>${esc(mdDate(row.first)+(row.first!==row.last?'–'+mdDate(row.last):'')+': '+fmt(row.v,0)+' ккал')}</title></circle>`;offset+=len});
+   b+=glyph('meal',cx,cy,r*.9,c2);break;
+  }
+  case 'temp':{
+   const rr=Math.max(3,Math.min(7,ah*.16)),x=cx,y=4,bottom=ah-rr-2,p=(last.v-(lo-1))/Math.max(1,hi-lo+2),yy=bottom-(bottom-y)*p;
+   b+=rect(x-rr*.6,y,rr*1.2,bottom-y,rr*.6,c,.18)+rect(x-rr*.32,yy,rr*.64,bottom-yy,rr*.32,paint,alpha)+circle(x,bottom,rr,paint);
+   for(let i=0;i<5;i++)b+=path(`M${x+rr+2} ${y+i*(bottom-y)/5}h${i%2?3:6}`,c2,1);
+   break;
+  }
+  case 'skinTemperature':{
+   const max=Math.max(.1,...vals.map(v=>Math.abs(v))),step=(aw-8)/sample.length,bw=Math.min(12,step*.62);
+   b+=path(`M4 ${cy}H${aw-4}`,'var(--muted)',1);
+   sample.forEach((r,i)=>{const hh=Math.abs(r.v)/max*(ah*.38),x=4+step*(i+.5);b+=`<g>${tip(r)}${rect(x-bw/2,r.v>=0?cy-hh:cy,bw,hh,2,r.v>=0?c:c2,alpha)}${circle(x,r.v>=0?cy-hh:cy+hh,1.6,r.v>=0?c:c2)}</g>`});break;
+  }
+  case 'glucose':{
+   const span=Math.max(.1,hi-lo),n=sample.length;
+   b+=path(`M7 ${ah-4}H${aw-7}`,c,2,'none',.25);
+   sample.forEach((r,i)=>{const x=7+(aw-14)*(hi===lo?.5:(r.v-lo)/span),y=4+(ah-10)*(i+.5)/n;b+=`<g>${tip(r)}${path(`M${x} ${y}V${ah-4}`,c,1,'none',.14)}${circle(x,y,Math.max(2,Math.min(4,ah/n*.28)),i===n-1?c2:paint)}</g>`});break;
+  }
+  case 'mindfulness':{
+   const r=Math.min(aw,ah)*.42,n=sample.length;
+   sample.forEach((row,i)=>{const len=r*Math.max(0,row.v)/peak,rx=Math.max(1,r*.2);if(len>0)b+=`<g>${tip(row)}<ellipse cx="${cx}" cy="${cy-len*.45}" rx="${rx}" ry="${len*.6}" transform="rotate(${i*360/n} ${cx} ${cy})" fill="${i%2?c2:paint}" fill-opacity="${alpha}"/></g>`});
+   b+=circle(cx,cy,r*.2,'var(--surface)',c2,1);break;
+  }
+  case 'vo2':{
+   const recent=sample.slice(-5),r=Math.min(aw,ah)*.44,spacing=r/(recent.length+1);
+   recent.forEach((row,i)=>{const rr=r-i*spacing,p=Math.max(0,row.v)/peak;b+=`<g>${tip(row)}${path(arc(rr,145,395),c,Math.max(2,spacing*.55),'none',.12)}${p>0?path(arc(rr,145,145+250*p),paint,Math.max(2,spacing*.55)):''}</g>`});break;
+  }
+  case 'bmr':{
+   const recent=sample.slice(-7),step=(ah-8)/Math.max(1,recent.length);
+   recent.forEach((r,i)=>{const len=(aw-12)*Math.max(0,r.v)/peak,x=(aw-len)/2,y=4+step*(i+.5),rx=Math.min(4,step*.4,len/3);b+=`<g>${tip(r)}${len>0?path(`M${x+rx} ${y}H${x+len-rx}q${rx} 0 ${rx} ${rx}q0 ${rx} -${rx} ${rx}H${x+rx}`,paint,Math.max(1.5,step*.26)):circle(cx,y,1,c)}</g>`});break;
+  }
+  case 'power':{
+   const size=Math.min(aw*.6,ah*.9),x=cx-size*.5,y=(ah-size)/2,p=Math.max(0,last.v)/peak;
+   const d=`M${x+size*.58} ${y}L${x+size*.12} ${y+size*.58}H${x+size*.44}L${x+size*.35} ${y+size}L${x+size*.9} ${y+size*.38}H${x+size*.56}Z`;
+   b+=`<defs><clipPath id="${clip}"><path d="${d}"/></clipPath></defs>${path(d,c,1.5,c,.15)}<g clip-path="url(#${clip})">${rect(x,y+size*(1-p),size,size*p,0,paint,alpha)}</g>`;break;
+  }
+  case 'cadence':{
+   const z=bounds(),size=Math.max(7,Math.min(16,aw/sample.length*.8));
+   sample.forEach((r,i)=>{const x=z.x(i),y=z.y(r.v);b+=`<g transform="rotate(${i%2?16:-16} ${x} ${y})">${tip(r)}${glyph('shoe',x,y,size,i%2?c2:c)}</g>`});break;
+  }
+  case 'cyclingCadence':{
+   const r=Math.max(4,Math.min(aw,ah)*.43);b+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="2"/>`;
+   sample.forEach((row,i)=>{const angle=-90+i*360/sample.length,a=polar(r*.2,angle),q=polar(r*.2+r*.7*Math.max(0,row.v)/peak,angle);b+=`<g>${tip(row)}${path(`M${a}L${q}`,i%2?c2:paint,Math.max(1.5,r*.09))}</g>`});
+   b+=path(`M${cx-r*.35} ${cy+r*.2}L${cx} ${cy}l${r*.35} -${r*.2}m-${r*.08} -2h${r*.2}M${cx-r*.42} ${cy+r*.2+2}h${r*.2}`,c2,2)+circle(cx,cy,2.4,c2);break;
+  }
+  default:{
+   const ps=points();b+=path(line(ps),paint,sw);ps.forEach(([x,y,r])=>b+=`<g>${tip(r)}${circle(x,y,2,c2)}</g>`);
+  }
+ }
+ if(!mini){
+  const value=m.id==='bp'&&Number.isFinite(last.lo)?fmt(last.v,0)+'/'+fmt(last.lo,0):num(last.v);
+  const x=aw+Math.min(14,w*.04),numSize=Math.max(16,Math.min(26,(w-x)/Math.max(4,value.length)*1.55));
+  b+=label(x,ah*.43,value,numSize,'var(--text)','start')+label(x,ah*.43+17,m.unit,10,'var(--muted)','start')+label(x,ah*.43+33,mdDate(last),10,'var(--muted)','start');
+  let scale='';
+  if(['speed','power','vo2','height'].includes(m.id))scale='По записям: 0–'+fmt(peak,m.dec);
+  if(m.id==='activeCalories')scale='Цель: '+fmt(GOAL.active,0)+' ккал';
+  if(m.id==='water')scale='Цель: '+fmt(GOAL.water,0)+' мл';
+  if(['bodyFat','spo2'].includes(m.id))scale='Шкала: 0–100%';
+  if(m.id==='temp')scale='Шкала записей: '+fmt(lo-1,1)+'–'+fmt(hi+1,1)+' °C';
+  if(m.id==='nutrition')scale='Доли калорий записей';
+  if(m.id==='restingHeart')scale='База: среднее '+fmt(rows.reduce((a,r)=>a+r.v,0)/rows.length,m.dec)+' '+m.unit;
+  if(m.id==='weight'&&rows.length>1)scale='Изменение: '+fmt(last.v-rows.at(-2).v,m.dec)+' кг';
+  if(m.id==='distance')scale='Диапазон: '+fmt(lo,m.dec)+'–'+fmt(hi,m.dec)+' км';
+  if(scale)b+=label(x,ah*.43+46,scale,8,'var(--muted)','start');
+  const y=ah+10,hh=Math.max(16,h-y-15);
+  const hist=renderTrendVisual(m,w,hh,rows,true,pts?'points':'aurora');
+  b+=`<g transform="translate(0 ${y})" data-secondary-history="actual">${hist.slice(hist.indexOf('>')+1,hist.lastIndexOf('</svg>'))}</g>`;
+  b+=label(5,h-2,mdDate(rows[0]),8,'var(--muted)','start')+label(w-5,h-2,mdDate(last),8,'var(--muted)','end');
+ }
+ return wrap(b);
+}
+
+/* Original author designs from viz.js / viz2.js, adapted to supplied records.
+ * No generated series, ECG, sleep phases, clinical zones or macro splits.
+ * The original palette is copied literally BEFORE later PAL extensions.
+ */
+const ORIGINAL_AUTHOR_PAL={
+ steps:['#3fe0c5','#b6f36b'],distance:['#4fb8ff','#3fe0c5'],activeCalories:['#ffd23f','#ff7a3d','#ff3d6e'],
+ exercise:['#ff8a4c','#ff4fa3'],heart:['#ff9a8b','#ff3d6e','#c13dff'],restingHeart:['#ff6f91','#ffb3c6'],
+ bp:['#ff4d6d','#7b6cff'],spo2:['#4fd1ff','#3d7bff'],hrv:['#b18cff','#ff6fd8'],
+ weight:['#ffd166','#ff8a4c'],sleep:['#9d8cff','#4c3df0'],water:['#7fe3ff','#2f8bff']
+};
+const ORIGINAL_AUTHOR_PHASES=[['Бодрствование','#ffb066'],['Быстрый','#4fd1ff'],['Лёгкий','#9d8cff'],['Глубокий','#4c3df0']];
+const ORIGINAL_AUTHOR_MINI_LIMITS={totalCalories:7,floors:7,elevation:7,nutrition:7,mindfulness:7,bmr:7,speed:7,bodyWater:7,skinTemperature:7,boneMass:7,bodyFat:5,leanMass:6};
+function oaDate(r,short=false){
+ const ts=recordTimestamp(r);if(!Number.isFinite(ts))return '—';
+ const d=new Date(ts);return short?['Вс','Пн','Вт','Ср','Чт','Пт','Сб'][d.getDay()]:String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');
+}
+function oaStages(r){
+ return (r?.stages||[]).filter(s=>Number.isFinite(s.start)&&Number.isFinite(s.end)&&s.end>s.start).slice().sort((a,b)=>a.start-b.start);
+}
+function oaPhase(kind){return ({wake:0,out:0,rem:1,light:2,deep:3})[kind]??-1}
+function oaHypnogram(r,w,h,mini){
+ const stages=oaStages(r);if(!stages.length)return null;
+ const start=Number.isFinite(r.start)?r.start:stages[0].start,end=Number.isFinite(r.end)?r.end:stages.at(-1).end;
+ if(!(end>start))return null;
+ const top=mini?2:18,bot=mini?12:22,left=mini?0:64,rowH=Math.max(.5,(h-top-bot)/4),X=t=>left+(w-left)*(t-start)/(end-start);
+ let b='';if(!mini)ORIGINAL_AUTHOR_PHASES.forEach(([n,c],i)=>b+=`<text x="0" y="${top+rowH*i+rowH/2+4}" font-size="10" fill="${c}">${n==='Бодрствование'?'Пробужд.':n}</text><line x1="${left}" x2="${w}" y1="${top+rowH*i+rowH/2}" y2="${top+rowH*i+rowH/2}" stroke="var(--line)" stroke-dasharray="2 4"/>`);
+ let prev=null;
+ stages.forEach(s=>{
+  const l=oaPhase(s.kind),level=l<0?2:l,x=X(Math.max(start,s.start)),x2=X(Math.min(end,s.end)),yc=top+rowH*level+rowH/2,hh=rowH*.62;
+  if(x2<=x)return;
+  if(prev&&prev.end===s.start)b+=`<line x1="${x}" x2="${x}" y1="${Math.min(prev.y,yc)}" y2="${Math.max(prev.y,yc)}" stroke="var(--faint)" stroke-opacity=".5" stroke-width="1.2"/>`;
+  b+=`<rect x="${x}" y="${yc-hh/2}" width="${Math.max(.2,x2-x-.6)}" height="${hh}" rx="${Math.min(hh/2,4)}" fill="${l<0?'var(--faint)':ORIGINAL_AUTHOR_PHASES[l][1]}"><title>${esc(s.kind||'Неизвестная фаза')}</title></rect>`;
+  prev={end:s.end,y:yc};
+ });
+ const time=t=>new Date(t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+ b+=`<text x="${left}" y="${h-1}" font-size="${mini?9:10}" fill="var(--faint)">${time(start)}</text><text x="${w}" y="${h-1}" font-size="${mini?9:10}" fill="var(--faint)" text-anchor="end">${time(end)}</text>`;
+ if(!mini)[.25,.5,.75].forEach(f=>b+=`<text x="${X(start+(end-start)*f)}" y="${h-1}" font-size="10" fill="var(--faint)" text-anchor="middle">${time(start+(end-start)*f)}</text>`);
+ return b;
+}
+function originalAuthorVisual(m,w,h,inputRows,mini=true){
+ w=Math.max(24,Number(w)||120);h=Math.max(18,Number(h)||44);
+ const all=(Array.isArray(inputRows)?inputRows:[]).filter(r=>Number.isFinite(r?.v));
+ const rows=visualRecordSubset(all,mini?(ORIGINAL_AUTHOR_MINI_LIMITS[m.id]||14):70),v=rows.map(r=>r.v),n=v.length,last=all.at(-1);
+ const P=ORIGINAL_AUTHOR_PAL[m.id]||[`var(${CATS[m.cat].c})`,`var(${CATS[m.cat].c})`],g=uid('original');
+ const mn=n?Math.min(...v):0,mx=n?Math.max(...v):0,absMax=Math.max(.000001,...v.map(Math.abs));
+ const rawMin=all.reduce((a,r)=>Math.min(a,r.v),Infinity),rawMax=all.reduce((a,r)=>Math.max(a,r.v),-Infinity);
+ const wrap=(body,design=m.id)=>`<svg class="real-visual original-author" data-design="original-${design}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(m.name+': '+(last?show(m,last.v,last.lo)+' · '+oaDate(last):'нет измерений'))}">${body}</svg>`;
+ const grad=(id=g,vertical=true,reverse=false,box=vertical||['activeCalories','glucose','vo2'].includes(m.id))=>`<linearGradient id="${id}" gradientUnits="${box?'objectBoundingBox':'userSpaceOnUse'}" x1="0" y1="${vertical?(box?1:h):0}" x2="${vertical?0:(box?1:w)}" y2="0">${(reverse?P.slice().reverse():P).map((c,i)=>`<stop offset="${i/Math.max(1,P.length-1)}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+ const text=(x,y,t,extra='')=>`<text x="${x}" y="${y}" font-size="9" fill="var(--faint)" text-anchor="middle" ${extra}>${esc(String(t))}</text>`;
+ const title=r=>`<title>${esc((r.aggregate?(r.aggregate==='sum'?'Сумма за интервал · ':'Среднее за интервал · '):'')+oaDate(r)+': '+show(m,r.v,r.lo))}</title>`;
+ const labelAt=i=>n<=7||[0,Math.floor((n-1)/2),n-1].includes(i)?oaDate(rows[i],mini&&n<=7):'';
+ const padRange=(a,b,pad=.2)=>{const p=(b-a)*pad||Math.max(.1,Math.abs(b)*.02);return [a-p,b+p]};
+ const range=padRange(rawMin,rawMax,.1);
+ const current=last&&!(mini&&!m.historicalView&&DAILY_METRICS.has(m.id)&&(last.day||localDay(recordTimestamp(last)))!==localDay())?last.v:NaN;
+ const pct=goal=>Number.isFinite(current)&&goal>0?Math.max(0,Math.min(1,current/goal)):0;
+ const cumulative=new Map();let total=0;
+ if(m.id==='distance')all.forEach(r=>{total+=r.v;cumulative.set(r,total)});
+ if(!n)return wrap(`<line x1="4" x2="${w-4}" y1="${h/2}" y2="${h/2}" stroke="var(--faint)" stroke-dasharray="3 5"/>${text(w/2,h/2-7,'Нет измерений')}`);
+ const miniLine=(values=v,colors=P,angular=true)=>{
+  const a=Math.min(...values),z=Math.max(...values),span=z-a||1;
+  const pts=values.map((x,i)=>[values.length===1?w/2:6+i*(w-12)/(values.length-1),h-8-(h-16)*(z===a?.5:(x-a)/span)]);
+  const d=angular?pts.map((p,i)=>(i?'L':'M')+p.join(' ')).join(' '):smooth(pts);
+  return `<defs>${grad(g,false)}</defs><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${pts.at(-1)[0]}" cy="${pts.at(-1)[1]}" r="3.5" fill="${colors[1]}"/>`;
+ };
+ const miniBar=(values=v,capsule=false)=>{
+  const max=Math.max(.000001,...values)*(capsule?1:1.1),bw=w/(capsule?Math.max(1,values.length):7),base=h-(capsule?6:4);
+  return `<defs>${grad(g,false)}</defs>`+values.map((x,i)=>{const hh=Math.max(0,x)/max*(h-(capsule?10:8)),ww=Math.max(.3,bw-2);return `<g>${title(rows[i])}<rect x="${i*bw+1}" y="${base-hh}" width="${ww}" height="${hh}" rx="${capsule?Math.min(ww/2,4):ww/2.4}" fill="${capsule?P[i%2]:`url(#${g})`}" opacity="${i===values.length-1?1:.55}"/></g>`}).join('');
+ };
+ if(mini){
+  switch(m.id){
+   case 'steps':{
+    const goal=GOAL.steps,max=Math.max(1,goal*1.12,...v),bw=w/n,base=h-12,y=x=>base-(base-6)*x/max,gy=y(goal);
+    let b=`<defs>${grad()}</defs>`;
+    if(goal>0)b+=`<line x1="0" x2="${w}" y1="${gy}" y2="${gy}" stroke="${P[1]}" stroke-opacity=".7" stroke-dasharray="3 4"/><text x="${w-2}" y="${gy-3}" font-size="9" fill="${P[1]}" text-anchor="end">цель</text>`;
+    v.forEach((x,i)=>{const X=i*bw+bw*.2,ww=bw*.6,Y=y(x);b+=`<g>${title(rows[i])}<rect x="${X}" y="${Y}" width="${ww}" height="${Math.max(0,base-Y)}" rx="${ww/2.4}" fill="url(#${g})" opacity="${i===n-1?1:.62}"/>${goal>0&&x>=goal?`<circle cx="${X+ww/2}" cy="${Y-5}" r="2.6" fill="${P[1]}"/>`:''}</g>`+text(X+ww/2,h-1,labelAt(i))});return wrap(b);
+   }
+   case 'distance':{
+    const c=rows.map(r=>cumulative.get(r)),max=Math.max(.000001,total),pts=c.map((x,i)=>[n===1?w/2:8+i*(w-16)/(n-1),h-8-(h-18)*x/max]),d=smooth(pts);
+    let b=`<defs>${grad(g,false)}<linearGradient id="${g}a" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${P[0]}" stop-opacity=".35"/><stop offset="1" stop-color="${P[0]}" stop-opacity="0"/></linearGradient></defs>`;
+    b+=`<path d="${d}L${pts.at(-1)[0]} ${h}L${pts[0][0]} ${h}Z" fill="url(#${g}a)"/><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="3" stroke-dasharray="1 6" stroke-linecap="round"/><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="1.2" opacity=".5"/>`;
+    pts.forEach((p,i)=>b+=`<circle cx="${p[0]}" cy="${p[1]}" r="${i===n-1?5:2.6}" fill="${i===n-1?P[1]:'var(--surface)'}" stroke="url(#${g})" stroke-width="2">${title(rows[i])}</circle>`);
+    if(w>=130)b+=`<text x="${pts.at(-1)[0]-8}" y="${pts.at(-1)[1]+3}" font-size="10" font-weight="700" fill="var(--text)" text-anchor="end">${fmt(total,1)} км по записям</text>`;return wrap(b);
+   }
+   case 'activeCalories':{
+    const goal=GOAL.active,p=pct(goal),r=Math.max(2,Math.min(w/2-8,h-10)),cx=w/2,cy=h-4,L=Math.PI*r,a=Math.PI*(1-p);
+    return wrap(`<defs>${grad(g,false)}</defs><path d="M${cx-r} ${cy}A${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="var(--surface3)" stroke-width="10" stroke-linecap="round"/>${p>0?`<path d="M${cx-r} ${cy}A${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="url(#${g})" stroke-width="10" stroke-linecap="round" stroke-dasharray="${L*p} ${L}"/>`:''}<circle cx="${cx+r*Math.cos(a)}" cy="${cy-r*Math.sin(a)}" r="6" fill="var(--surface)" stroke="${P[2]}" stroke-width="3"/><text x="${cx}" y="${cy-6}" font-size="15" font-weight="800" fill="var(--text)" text-anchor="middle">${Number.isFinite(current)?Math.round(p*100)+'%':'—'}</text><text x="${cx}" y="${cy-r*.55}" font-size="9" fill="var(--muted)" text-anchor="middle">цель ${goal}</text>`);
+   }
+   case 'exercise':{
+    const max=Math.max(.000001,...v),bw=w/n;
+    let b=`<defs><radialGradient id="${g}" cx=".35" cy=".35" r=".8"><stop stop-color="${P[0]}"/><stop offset="1" stop-color="${P[1]}"/></radialGradient></defs>`;
+    v.forEach((x,i)=>{const cap=Math.max(0,Math.min(bw/2-1,h/2-6)),r=cap*Math.sqrt(Math.max(0,x)/max),cx=i*bw+bw/2,cy=(h-12)/2;b+=`<g>${title(rows[i])}<circle cx="${cx}" cy="${cy}" r="${cap}" fill="var(--surface3)" opacity=".5"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${g})" opacity="${i===n-1?1:.75}"/></g>`+text(cx,h-1,labelAt(i))});return wrap(b);
+   }
+   case 'heart':{
+    const [a,z]=padRange(mn,mx,.25),pts=v.map((x,i)=>[n===1?w/2:i*w/(n-1),4+(h-8)*(1-(x-a)/(z-a))]),d=smooth(pts);
+    return wrap(`<defs>${grad(g,false)}<filter id="${g}f" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="2.4"/></filter></defs><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="5" opacity=".45" filter="url(#${g}f)"/><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>${n===1?`<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="3" fill="${P[1]}"/>`:''}`);
+   }
+   case 'restingHeart':{
+    const band=[rawMin,rawMax],[a,z]=padRange(band[0],band[1],.3),y=x=>6+(h-18)*(1-(x-a)/(z-a)),bw=w/n;
+    let b=`<rect x="0" y="${y(band[1])}" width="${w}" height="${Math.max(0,y(band[0])-y(band[1]))}" rx="6" fill="${P[0]}" opacity=".16"/>`;
+    if(w>=170)b+=`<text x="${w-3}" y="${Math.max(9,y(band[1])-3)}" font-size="9" fill="${P[0]}" text-anchor="end">записи ${fmt(band[0])}–${fmt(band[1])}</text>`;
+    const pts=v.map((x,i)=>[i*bw+bw/2,y(x)]);b+=`<path d="${pts.map((p,i)=>(i?'L':'M')+p.join(' ')).join(' ')}" fill="none" stroke="${P[0]}" stroke-opacity=".35" stroke-width="1.5"/>`;
+    pts.forEach((p,i)=>b+=`<circle cx="${p[0]}" cy="${p[1]}" r="${i===n-1?5.5:3.8}" fill="${i===n-1?P[0]:P[1]}" stroke="var(--surface)" stroke-width="1.5">${title(rows[i])}</circle>`+text(p[0],h-1,labelAt(i)));return wrap(b);
+   }
+   case 'bp':{
+    const dia=rows.map(r=>r.lo).filter(Number.isFinite),[a,z]=padRange(Math.min(...v,...dia),Math.max(...v,...dia),.15),y=x=>4+(h-16)*(1-(x-a)/(z-a)),bw=w/n;
+    let b=`<defs>${grad(g,true,true)}</defs>`;rows.forEach((r,i)=>{const cx=i*bw+bw/2,ww=Math.min(12,bw*.45),yt=y(r.v);
+     if(Number.isFinite(r.lo)){const top=Math.min(yt,y(r.lo)),hh=Math.abs(y(r.lo)-yt),rr=Math.max(.5,Math.min(ww/2,hh/2)-1);b+=`<g>${title(r)}<rect x="${cx-ww/2}" y="${top}" width="${ww}" height="${hh}" rx="${Math.min(ww/2,hh/2)}" fill="url(#${g})" opacity="${i===n-1?1:.7}"/><circle cx="${cx}" cy="${top+rr}" r="${rr}" fill="#fff" opacity=".85"/><circle cx="${cx}" cy="${top+hh-rr}" r="${rr}" fill="#fff" opacity=".85"/></g>`}
+     else b+=`<circle cx="${cx}" cy="${yt}" r="${Math.min(4,ww/2)}" fill="${P[0]}">${title(r)}</circle>`;
+     b+=text(cx,h-1,labelAt(i));
+    });return wrap(b);
+   }
+   case 'spo2':{
+    const val=last.v,N=36,r=Math.max(2,Math.min(w,h)/2-4),cx=w/2,cy=h/2,on=Math.round(N*Math.max(0,Math.min(1,val/100)));
+    let b=`<defs>${grad(g,false)}</defs>`;for(let i=0;i<N;i++){const a=-Math.PI/2+i/N*2*Math.PI,r1=Math.max(0,r-7);b+=`<line x1="${cx+r1*Math.cos(a)}" y1="${cy+r1*Math.sin(a)}" x2="${cx+r*Math.cos(a)}" y2="${cy+r*Math.sin(a)}" stroke="${i<on?(i<on/2?P[0]:P[1]):'var(--surface3)'}" stroke-width="3" stroke-linecap="round"/>`}
+    return wrap(b+`<text x="${cx}" y="${cy+5}" font-size="${Math.max(8,r*.5)}" font-weight="800" fill="var(--text)" text-anchor="middle">${fmt(val,m.dec)}%</text>`);
+   }
+   case 'hrv':{
+    const cy=h/2,bw=w/n;let b=`<defs>${grad(g,false)}</defs>`;
+    v.forEach((x,i)=>{const a=Math.max(0,x)/absMax*(h/2-3);b+=`<rect x="${i*bw+bw/2-Math.min(3,bw*.5)/2}" y="${cy-a}" width="${Math.min(3,bw*.5)}" height="${2*a}" rx="1.5" fill="url(#${g})" opacity="${.45+.55*(i+1)/n}">${title(rows[i])}</rect>`});return wrap(b);
+   }
+   case 'sleep':{
+    const phases=oaHypnogram(last,w,h,true);return wrap(phases||miniBar(v,true));
+   }
+   case 'weight':{
+    const a=mn-.3,z=mx+.3,pts=v.map((x,i)=>[n===1?w/2:6+i*(w-12)/(n-1),6+(h-18)*(1-(x-a)/(z-a))]),d=smooth(pts);
+    let b=`<defs>${grad(g,false)}<linearGradient id="${g}a" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${P[0]}" stop-opacity=".4"/><stop offset="1" stop-color="${P[1]}" stop-opacity="0"/></linearGradient></defs><path d="${d}L${pts.at(-1)[0]} ${h-10}L${pts[0][0]} ${h-10}Z" fill="url(#${g}a)"/><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="3" stroke-linecap="round"/>`;
+    const iMin=v.indexOf(mn),iMax=v.indexOf(mx);
+    [[iMin,'мин'],[iMax,'макс']].forEach(([i,l])=>b+=`<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="3.5" fill="var(--surface)" stroke="${P[1]}" stroke-width="2"/>${h>=55?`<text x="${pts[i][0]}" y="${pts[i][1]+(l==='мин'?14:-7)}" font-size="9" fill="var(--muted)" text-anchor="middle">${fmt(v[i],1)}</text>`:''}`);
+    b+=`<circle cx="${pts.at(-1)[0]}" cy="${pts.at(-1)[1]}" r="5" fill="${P[1]}"/>`;pts.forEach((p,i)=>b+=text(p[0],h-1,labelAt(i)));return w
