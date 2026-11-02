@@ -1,67 +1,42 @@
+import subprocess
 from pathlib import Path
-import re
 
-html=Path('app/src/main/assets/index.html')
-s=html.read_text(encoding='utf-8')
-s=re.sub(r"document.addEventListener\('click',e=>\{const d=e.target.closest\('\.dots\[data-dashboard\]'\);if\(!d\)return;const pop=.*?\},true\);",'',s)
-s=re.sub(r"setInterval\(\(\)=>\{document.querySelectorAll\('\.dashboard-popover'\).*?\},50\);",'',s)
-patch=r'''
-/* MENU_ROUTING_V8 */
+base=subprocess.run(['git','show','13fa3fdcc12678343a897d36bae32d182701875c:scripts/menu-fix.py'],check=True,capture_output=True,text=True).stdout
+exec(compile(base,'menu-fix-v8.py','exec'),{})
+heart=r'''
+/* PARALLEL_HEART_V9 */
 (function(){
- let active=null;
- window.addEventListener('click',function(e){
-  const button=e.target.closest?.('.dots[data-dashboard]');
-  if(!button||!['top','cards'].includes(button.dataset.dashboard))return;
-  e.preventDefault();e.stopImmediatePropagation();
-  const action=button.dataset.dashboard;
-  if(active===action&&document.getElementById('dashboardPopover')){closeDashboardPopover();active=null;return;}
-  closeDashboardPopover();
-  if(action==='top'){
-   if(document.body.classList.contains('pickmode'))finishDashboardPick();
-   topCfgSheet(button);
-  }else cardMenu(null,button);
-  active=action;
-  const p=document.getElementById('dashboardPopover');
-  if(!p)throw new Error('Dashboard menu was not created: '+action);
-  p.dataset.menuV8=action;
-  const frame=document.getElementById('phone').getBoundingClientRect();
-  p.style.position='fixed';p.style.zIndex='100';p.style.right='auto';
-  p.style.left=Math.max(frame.left+8,frame.right-p.offsetWidth-8)+'px';
-  p.style.top=(action==='top'?frame.top+42:Math.max(frame.top+42,frame.bottom-p.offsetHeight-90))+'px';
-  p.style.maxHeight=Math.max(120,frame.height-140)+'px';
-  p.style.visibility='visible';p.style.opacity='1';p.style.pointerEvents='auto';
- },true);
+ const previous=activityGlyph;
+ let serial=0;
+ const d='M140 246 C111 222 25 164 25 96 C25 35 96 19 140 68 C184 19 255 35 255 96 C255 164 169 222 140 246 Z';
+ activityGlyph=function(style,small=false,a=ACTIVITY()){
+  if(style!=='heart')return previous(style,small,a);
+  const id='parallel-heart-'+(++serial),width=18,gap=.65;
+  let defs='',body='',badges='';
+  const path=(fill,extra='')=>'<path d="'+d+'" fill="'+fill+'" '+extra+'/>';
+  const maskStart=name=>'<mask id="'+name+'" maskUnits="userSpaceOnUse" x="0" y="0" width="280" height="280" style="mask-type:luminance">';
+  for(let k=0;k<6;k++){
+   const inset=Math.floor(k/2)*(width+gap)+(k%2?width:0);
+   defs+=maskStart(id+'-inset-'+k)+path('white',inset?'stroke="black" stroke-width="'+(2*inset)+'" stroke-linejoin="round"':'')+'</mask>';
+  }
+  a.slice(0,3).forEach((x,i)=>{
+   const band=id+'-band-'+i;
+   defs+=maskStart(band)+'<g mask="url(#'+id+'-inset-'+(2*i)+')">'+path('white')+'</g><g mask="url(#'+id+'-inset-'+(2*i+1)+')">'+path('black')+'</g></mask>';
+   const p=Number.isFinite(x.p)?Math.max(0,Math.min(1,x.p)):0;
+   body+='<g mask="url(#'+band+')">'+path(x.c,'opacity="'+(small?1:.44)+'"');
+   if(!small&&p>0)body+=path('none','stroke="'+x.c+'" style="stroke-width:140!important" stroke-linejoin="round" stroke-linecap="butt" pathLength="100" stroke-dasharray="'+(p*100)+' 100" data-goal="'+x.m.id+'"');
+   body+='</g>';
+   if(!small)badges+=dashboardGoalBadge(x,140,246-(i*(width+gap)+width/2),false);
+  });
+  return '<svg class="activity-glyph '+(small?'small':'')+'" data-hero-style="heart" data-heart-version="9" viewBox="0 0 280 280" aria-hidden="true"><defs>'+defs+'</defs>'+body+badges+'</svg>';
+ };
 })();
 '''
-assert s.count('ensureDemo();applyTheme();')==1
-s=s.replace('ensureDemo();applyTheme();',patch+chr(10)+'ensureDemo();applyTheme();',1)
-assert 'MENU_ROUTING_V8' in s
-html.write_text(s,encoding='utf-8')
-Path('web-src/index.html').write_text(s,encoding='utf-8')
-Path('scripts/menu-check.cjs').write_text(r'''
-const {chromium}=require('playwright');
-const fs=require('fs'),path=require('path'),assert=require('assert/strict');
-(async()=>{
- const browser=await chromium.launch({headless:true});
- try {
-  for(const width of [360,412]){
-   const page=await browser.newPage({viewport:{width,height:844},isMobile:true,hasTouch:true});
-   await page.goto('file://'+path.resolve('app/src/main/assets/index.html'));
-   await page.waitForSelector('#topBlock .dots[data-dashboard=top]');
-   for(const action of ['top','cards']){
-    const trigger=()=>page.locator('.dots[data-dashboard='+action+']');
-    await trigger().tap();
-    const menu=page.locator('#dashboardPopover');
-    await menu.waitFor({state:'visible'});
-    assert.equal(await menu.getAttribute('data-menu-v8'),action);
-    assert.ok(await menu.locator('button').count()>0);
-    await trigger().tap();
-    await menu.waitFor({state:'detached'});
-   }
-   await page.screenshot({path:'ui-report/menu-v8-'+width+'.png'});
-   await page.close();
-  }
-  fs.writeFileSync('ui-report/menu-v8.json',JSON.stringify({passed:true,widths:[360,412]}));
- }finally{await browser.close();}
-})().catch(e=>{console.error(e);process.exitCode=1;});
-''',encoding='utf-8')
+for name in ['app/src/main/assets/index.html','web-src/index.html']:
+ p=Path(name)
+ text=p.read_text(encoding='utf-8')
+ marker='ensureDemo();applyTheme();'
+ assert text.count(marker)==1
+ text=text.replace(marker,heart+chr(10)+marker,1)
+ assert 'PARALLEL_HEART_V9' in text
+ p.write_text(text,encoding='utf-8')
