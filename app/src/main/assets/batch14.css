@@ -1,0 +1,19 @@
+:root{--bg:#070b12;--surface:#0f1520;--surface2:#151d2a;--surface3:#1d2735;--line:#243141;--text:#f2f6fb;--muted:#9aa8b8;--faint:#6d7a8a;--accent:#5fe3c8;--accent-ink:#04211c;--r-lg:22px;--r-md:18px;--shadow-soft:0 10px 30px rgba(0,0,0,.28);--shadow-card:0 18px 44px rgba(0,0,0,.34);--glow:0 0 0 1px rgba(95,227,200,.14),0 18px 44px rgba(95,227,200,.10)}
+[data-theme=light]{--bg:#f4f6f9;--surface:#fff;--surface2:#f5f7fa;--surface3:#e9edf2;--line:#dde3ea;--text:#101821;--muted:#57636f;--faint:#79858f;--accent:#0d8d80;--accent-ink:#fff;--shadow-soft:0 10px 30px rgba(16,24,33,.08);--shadow-card:0 18px 44px rgba(16,24,33,.10);--glow:0 0 0 1px rgba(13,141,128,.12),0 18px 44px rgba(13,141,128,.08)}
+body{background:radial-gradient(1100px 620px at 85% -10%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 62%),radial-gradient(900px 520px at -10% 8%,color-mix(in srgb,#5aa9ff 8%,transparent),transparent 60%),var(--bg)}
+.card,.group,.src,.list,.sheet{border-radius:var(--r-lg)!important;box-shadow:var(--shadow-card)!important}
+.card{background:linear-gradient(165deg,color-mix(in srgb,var(--surface2) 88%,var(--accent) 5%),var(--surface))!important}
+.today{border-radius:var(--r-lg)!important;box-shadow:var(--glow)!important;border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line))!important}
+.today p{font-size:21px!important;font-weight:750!important;letter-spacing:-.025em!important}
+.ring svg{filter:drop-shadow(0 6px 18px color-mix(in srgb,var(--accent) 18%,transparent))}
+.ring{animation:premiumRise .5s cubic-bezier(.2,.8,.2,1) both}
+.ring:nth-child(2){animation-delay:.06s}.ring:nth-child(3){animation-delay:.12s}
+@keyframes premiumRise{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.view.on{animation:premiumView .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes premiumView{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.chart svg{filter:drop-shadow(0 8px 22px rgba(0,0,0,.18))}
+.btn{border-radius:16px!important;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 20%,transparent)!important}
+.btn:active{transform:scale(.97)}
+.tabbar{backdrop-filter:blur(18px) saturate(150%);background:color-mix(in srgb,var(--surface) 84%,transparent)!important;box-shadow:0 16px 40px rgba(0,0,0,.38)!important}
+.emptybox{border:1px dashed color-mix(in srgb,var(--line) 88%,transparent);border-radius:var(--r-lg);background:linear-gradient(165deg,color-mix(in srgb,var(--surface2) 90%,var(--accent) 4%),var(--surface))}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
