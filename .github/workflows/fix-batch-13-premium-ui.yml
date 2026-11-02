@@ -1,0 +1,140 @@
+name: Apply premium UI batch 13
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-batch-13-premium-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-batch13-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG" || true
+          git push origin "$TAG" || true
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Apply premium UI batch 13
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/assets/index.html')
+          s = p.read_text(encoding='utf-8')
+          if '<!-- premium-ui-batch-13-v1 -->' in s:
+              print('Already patched')
+              raise SystemExit(0)
+          css = '''
+<style id='premiumUiBatch13'>
+/* Premium UI batch 13: calmer premium dark theme, refined cards, motion, charts and empty states. */
+:root{
+  --bg:#070b12;--surface:#0f1520;--surface2:#151d2a;--surface3:#1d2735;--line:#243141;
+  --text:#f2f6fb;--muted:#9aa8b8;--faint:#6d7a8a;
+  --accent:#5fe3c8;--accent-ink:#04211c;
+  --r-lg:22px;--r-md:18px;--r-sm:14px;
+  --shadow-soft:0 10px 30px rgba(0,0,0,.28);
+  --shadow-card:0 18px 44px rgba(0,0,0,.34);
+  --glow:0 0 0 1px rgba(95,227,200,.14),0 18px 44px rgba(95,227,200,.10);
+}
+[data-theme=light]{
+  --bg:#f4f6f9;--surface:#ffffff;--surface2:#f5f7fa;--surface3:#e9edf2;--line:#dde3ea;
+  --text:#101821;--muted:#57636f;--faint:#79858f;
+  --accent:#0d8d80;--accent-ink:#ffffff;
+  --shadow-soft:0 10px 30px rgba(16,24,33,.08);
+  --shadow-card:0 18px 44px rgba(16,24,33,.10);
+  --glow:0 0 0 1px rgba(13,141,128,.12),0 18px 44px rgba(13,141,128,.08);
+}
+body{background:
+  radial-gradient(1100px 620px at 85% -10%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 62%),
+  radial-gradient(900px 520px at -10% 8%,color-mix(in srgb,#5aa9ff 8%,transparent),transparent 60%),
+  var(--bg);
+}
+.card,.group,.src,.list,.sheet{border-radius:var(--r-lg)!important;box-shadow:var(--shadow-card)!important;border-color:color-mix(in srgb,var(--line) 82%,transparent)!important}
+.card{background:linear-gradient(165deg,color-mix(in srgb,var(--surface2) 88%,var(--accent) 5%),var(--surface))!important}
+.kpi,.ring,.stat,.th,.tl,.lr,.g3 .t{border-radius:var(--r-md)!important}
+.kpi,.ring,.stat,.tl,.lr,.g3 .t{transition:transform .18s ease,box-shadow .22s ease,border-color .22s ease}
+.kpi:active,.ring:active,.stat:active,.tl:active,.lr:active,.g3 .t:active{transform:scale(.982)}
+.kpi:hover,.tl:hover,.g3 .t:hover{box-shadow:var(--shadow-soft)}
+.today{border-radius:var(--r-lg)!important;box-shadow:var(--glow)!important;border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line))!important}
+.today .lbl{letter-spacing:.12em!important}
+.today p{font-size:21px!important;font-weight:750!important;letter-spacing:-.025em!important}
+.ring svg{filter:drop-shadow(0 6px 18px color-mix(in srgb,var(--accent) 18%,transparent))}
+.ring{animation:premiumRise .5s cubic-bezier(.2,.8,.2,1) both}
+.ring:nth-child(2){animation-delay:.06s}.ring:nth-child(3){animation-delay:.12s}
+@keyframes premiumRise{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.view.on{animation:premiumView .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes premiumView{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.chart svg{filter:drop-shadow(0 8px 22px rgba(0,0,0,.18))}
+.chart path,.chart circle{transition:opacity .25s ease,transform .25s ease}
+.chart:hover path{opacity:.92}
+.btn{border-radius:16px!important;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 20%,transparent)!important;transition:transform .16s ease,box-shadow .2s ease}
+.btn:active{transform:scale(.97)}
+.btn.ghost{box-shadow:none!important}
+.iconbtn,.tabbar button{border-radius:16px!important}
+.tabbar{backdrop-filter:blur(18px) saturate(150%);background:color-mix(in srgb,var(--surface) 84%,transparent)!important;box-shadow:0 16px 40px rgba(0,0,0,.38)!important}
+.tabbar button{transition:color .2s ease,background .2s ease,transform .16s ease}
+.tabbar button:active{transform:scale(.95)}
+.emptybox{border:1px dashed color-mix(in srgb,var(--line) 88%,transparent);border-radius:var(--r-lg);background:linear-gradient(165deg,color-mix(in srgb,var(--surface2) 90%,var(--accent) 4%),var(--surface));}
+.emptybox .ic{background:color-mix(in srgb,var(--accent) 14%,var(--surface2));color:var(--accent);box-shadow:var(--shadow-soft)}
+.emptybox b{display:block;font-size:17px;margin-bottom:4px}
+.emptybox small{display:block;max-width:260px;margin:0 auto}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+'''
+          js = '''
+<script id='premiumUiBatch13Js'>
+/* Premium UI batch 13: friendlier empty states and chart entrance motion. */
+(function(){
+  function upgradeEmptyStates(){
+    document.querySelectorAll('.emptybox').forEach(el=>{
+      if(el.dataset.premium==='1')return;
+      el.dataset.premium='1';
+      const b=el.querySelector('b');
+      if(b&&!b.textContent.trim())b.textContent='Пока нет данных';
+      const small=el.querySelector('small');
+      if(small&&!small.textContent.trim())small.textContent='Добавь запись или подключи источник — здесь появится понятная динамика.';
+    });
+  }
+  const mo=new MutationObserver(upgradeEmptyStates);
+  mo.observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',upgradeEmptyStates);
+  window.addEventListener('load',upgradeEmptyStates);
+})();
+</script>
+<!-- premium-ui-batch-13-v1 -->
+'''
+          if '</head>' not in s or '</body>' not in s:
+              raise SystemExit('Required HTML anchors not found')
+          s=s.replace('</head>',css+'</head>',1)
+          s=s.replace('</body>',js+'</body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Update FIXES.md
+        run: |
+          touch FIXES.md
+          cat >> FIXES.md <<'EOF'
+
+          ## Пакет 13 — премиальное оформление
+
+          - Обновлена тёмная и светлая темы: глубже фон, мягче акценты, аккуратнее тени.
+          - Главный экран стал спокойнее и выразительнее.
+          - Карточки, кольца и показатели получили премиальный вид и отклик на касания.
+          - Графики получили мягкие тени и плавное появление.
+          - Пустые состояния стали понятнее и красивее.
+          - Добавлены плавные анимации с учётом prefers-reduced-motion.
+          - Перед изменениями создан тег отката: ${{ env.ROLLBACK_TAG }}.
+          EOF
+      - name: Commit premium UI batch 13
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html FIXES.md
+          git commit -m "Apply premium UI batch 13" || exit 0
+          git push
