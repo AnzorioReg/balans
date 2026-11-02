@@ -1,0 +1,109 @@
+name: Apply fix batch 10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fix-batch-10.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create rollback tag
+        run: |
+          TAG=backup/pre-batch10-$(date +%Y%m%d-%H%M%S)
+          git tag "$TAG" || true
+          git push origin "$TAG" || true
+          echo "ROLLBACK_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Apply batch 10
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/assets/index.html')
+          s = p.read_text(encoding='utf-8')
+          if '<!-- fix-batch-10-v1 -->' in s:
+              print('Already patched')
+              raise SystemExit(0)
+          script = '''
+<script id='batch10Fixes'>
+/* Batch 10: daily summary, personal baselines, quick add. Observations only, not medical advice. */
+(function(){
+  function personalBaseline(m){
+    const rows=metricRecords(m,'month').map(r=>r.v).filter(Number.isFinite);
+    if(rows.length<3)return null;
+    const sorted=rows.slice().sort((a,b)=>a-b);
+    const q=p=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))];
+    return {low:q(.25),mid:q(.5),high:q(.75),count:rows.length};
+  }
+  const oldRenderTopBlock=renderTopBlock;
+  renderTopBlock=function(){
+    oldRenderTopBlock();
+    const host=document.querySelector('#topBlock');
+    if(!host||document.querySelector('#dailySummary'))return;
+    const items=[['sleep','Сон'],['heart','Пульс'],['steps','Шаги'],['activeCalories','Калории'],['water','Вода']];
+    const parts=items.map(([id,name])=>{
+      const m=byId[id];if(!m)return '';
+      const rows=metricRecords(m,'week');
+      const value=rows.length?rows.at(-1).v:NaN;
+      const base=personalBaseline(m);
+      let status='мало данных';
+      if(Number.isFinite(value)&&base){
+        if(value<base.low)status='ниже обычного';
+        else if(value>base.high)status='выше обычного';
+        else status='в обычном диапазоне';
+      }
+      return '<div class=\'drow\'><span class=\'k\'>'+esc(name)+'</span><span class=\'val num\'>'+(Number.isFinite(value)?show(m,value):'—')+' · '+status+'</span></div>';
+    }).join('');
+    const card=document.createElement('div');
+    card.id='dailySummary';
+    card.className='card';
+    card.style.cssText='margin:10px 0;padding:12px';
+    card.innerHTML='<b>Сводка дня</b><p class=\'foot\'>Сравнение с твоими обычными значениями за 30 дней. Наблюдение, не медицинский вывод.</p>'+parts;
+    host.append(card);
+  };
+  const oldRenderGroups=renderGroups;
+  renderGroups=function(){
+    oldRenderGroups();
+    const host=document.querySelector('#groups');
+    if(!host||document.querySelector('#quickAddBar'))return;
+    const bar=document.createElement('div');
+    bar.id='quickAddBar';
+    bar.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0';
+    bar.innerHTML=[['water','Вода'],['weight','Вес'],['bp','Давление'],['sleep','Сон']].map(([id,name])=>'<button class=\'btn ghost\' data-addm=\''+id+'\' style=\'min-height:38px;font-size:12px\'>'+name+'</button>').join('');
+    host.before(bar);
+  };
+})();
+</script>
+<!-- fix-batch-10-v1 -->
+'''
+          if '</body>' not in s:
+              raise SystemExit('Closing body tag not found')
+          s = s.replace('</body>', script + '</body>', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Update FIXES.md
+        run: |
+          touch FIXES.md
+          cat >> FIXES.md <<'EOF'
+
+          ## Пакет 10 — умная сводка и быстрый ввод
+
+          - Добавлена сводка дня с личными ориентирами за 30 дней.
+          - Добавлен быстрый ввод воды, веса, давления и сна с главного экрана.
+          - Добавлено предупреждение, что это наблюдения, а не медицинские выводы.
+          - Перед изменениями создан тег отката: ${{ env.ROLLBACK_TAG }}.
+          EOF
+      - name: Commit batch 10
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/assets/index.html FIXES.md
+          git commit -m "Add daily summary, personal baselines and quick add" || exit 0
+          git push
