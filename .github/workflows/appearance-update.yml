@@ -6,19 +6,7 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-      - run: python3 scripts/appearance-update.py
-      - run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace
-      - uses: actions/upload-artifact@v4
-        with:
-          name: appearance-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+    uses: ./.github/workflows/stable-apk.yml
+    with:
+      appearance: true
+    secrets: inherit

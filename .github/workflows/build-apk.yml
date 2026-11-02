@@ -1,64 +1,9 @@
 name: Build debug APK
-
 on:
   push:
-    branches:
-      - sync-auto-refresh
+    branches: [sync-auto-refresh]
   workflow_dispatch:
-
 jobs:
   build:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Restore stable debug keystore
-        id: keystore
-        uses: actions/cache@v4
-        with:
-          path: keystore/balans-debug.jks
-          key: balans-debug-keystore-v1
-
-      - name: Create stable debug keystore
-        if: steps.keystore.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p keystore
-          keytool -genkeypair -v -keystore keystore/balans-debug.jks -alias balans -keyalg RSA -keysize 2048 -validity 10000 -storepass balans123 -keypass balans123 -dname "CN=Balans Debug,O=Balans,C=RU"
-
-      - name: Set up Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Grant execute permission to Gradle wrapper
-        run: chmod +x ./gradlew
-
-      - name: Apply review tab safely
-        shell: python
-        run: |
-          from pathlib import Path
-          html=Path('app/src/main/assets/index.html');text=html.read_text(encoding='utf-8')
-          end=text.rfind('</html>')
-          if end!=-1:text=text[:end]
-          body=text.rfind('</body>')
-          js=Path('tools/review-mode.js').read_text(encoding='utf-8')
-          inject='<script>\n'+js+'\n</script>\n'
-          text=(text[:body]+inject+text[body:]) if body!=-1 else text+inject+'</body>\n'
-          html.write_text(text+'</html>\n',encoding='utf-8')
-
-      - name: Build signed debug APK
-        env:
-          BALANS_STORE_FILE: keystore/balans-debug.jks
-          BALANS_STORE_PASSWORD: balans123
-          BALANS_KEY_ALIAS: balans
-          BALANS_KEY_PASSWORD: balans123
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
-
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+    uses: ./.github/workflows/stable-apk.yml
+    secrets: inherit

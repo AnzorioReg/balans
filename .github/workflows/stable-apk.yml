@@ -1,0 +1,62 @@
+name: Shared stable APK build
+on:
+  workflow_call:
+    inputs:
+      appearance:
+        type: boolean
+        default: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Restore existing signing key
+        uses: actions/cache/restore@v4
+        with:
+          path: keystore/balans-debug.jks
+          key: balans-debug-keystore-v1
+      - name: Use backed-up key when configured
+        env:
+          KEY_BACKUP: ${{ secrets.BALANS_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEY_BACKUP" ]; then
+            mkdir -p keystore
+            printf '%s' "$KEY_BACKUP" | base64 --decode > keystore/balans-debug.jks
+          fi
+          test -s keystore/balans-debug.jks || { echo '::error::Persistent signing key unavailable. Restore the original key; no replacement key will be generated.'; exit 1; }
+          chmod 600 keystore/balans-debug.jks
+      - name: Set increasing build version
+        run: echo "BALANS_VERSION_CODE=$((100000 + $(git rev-list --count HEAD)))" >> "$GITHUB_ENV"
+      - name: Apply approved appearance patch
+        if: inputs.appearance
+        run: python3 scripts/appearance-update.py
+      - name: Build with persistent key
+        env:
+          BALANS_STORE_FILE: keystore/balans-debug.jks
+          BALANS_STORE_PASSWORD: ${{ secrets.BALANS_STORE_PASSWORD || 'balans123' }}
+          BALANS_KEY_ALIAS: ${{ secrets.BALANS_KEY_ALIAS || 'balans' }}
+          BALANS_KEY_PASSWORD: ${{ secrets.BALANS_KEY_PASSWORD || 'balans123' }}
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Record certificate and APK checksum
+        run: |
+          APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
+          "$SIGNER" verify --print-certs "$APK" > signing-certificate.txt
+          sha256sum "$APK" > apk-sha256.txt
+          cat signing-certificate.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: balans-debug-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            signing-certificate.txt
+            apk-sha256.txt
+          if-no-files-found: error
