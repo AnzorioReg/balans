@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 catalog=json.loads(Path('web-src/identity-v3.json').read_text(encoding='utf-8'))
 assert len(catalog)==5 and catalog[0]['id']=='balance'
-module=Path('web-src/visual-v3.js').read_text(encoding='utf-8').replace('__CATALOG__',json.dumps(catalog,ensure_ascii=False))
+module=Path('web-src/visual-v3.js').read_text(encoding='utf-8').replace('__CATALOG__',json.dumps(catalog,ensure_ascii=False))+'\n'+Path('web-src/visual-v4.js').read_text(encoding='utf-8')
 for name in ['web-src/index.html','app/src/main/assets/index.html']:
     path=Path(name)
     text=path.read_text(encoding='utf-8')
@@ -66,8 +66,8 @@ text=text.replace('iconCatalogV2','iconCatalogV3')
 bridge.write_text(text,encoding='utf-8')
 test=Path('scripts/ui-smoke.cjs')
 text=test.read_text(encoding='utf-8')
-text=text.replace("state.icons.length === 9","state.icons.length === 10").replace("ICON_STYLES.length === 9","ICON_STYLES.length === 10").replace('Exactly nine icon sets','Exactly ten icon sets')
-text=text.replace("['objects','anatomy','instruments','notation','signage','emoji']","['emoji-sport','emoji-body','emoji-nature','emoji-tools','emoji-life']").replace('All six new sets exist','All five emoji variants exist')
+text=text.replace("state.icons.length === 9","state.icons.length === 4").replace("ICON_STYLES.length === 9","ICON_STYLES.length === 4").replace('Exactly nine icon sets','Exactly four icon sets')
+text=text.replace("['objects','anatomy','instruments','notation','signage','emoji']","['outline','emoji','soft','duo']").replace('All six new sets exist','Only requested icon sets exist')
 text=text.replace("['atelier','ribbon','stems','mosaic']","['signature','points']")
 test.write_text(text,encoding='utf-8')
-print('Visual V3 applied: 20 material themes, 10 icon sets, 2 chart sets, 5 health/sport launcher choices.')
+print('Visual V4 applied: four card sets, original soft/duo, quiet borders, Balance plus four line-art launcher choices.')
