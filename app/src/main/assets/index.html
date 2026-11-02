@@ -961,10 +961,10 @@ function renderThemes(){renderPals();const lp=document.getElementById('layPick')
   document.querySelectorAll('[data-theme-set]').forEach(b=>b.classList.toggle('on',b.dataset.themeSet===state.theme))}
 
 /* ---------- metric sheet ---------- */
-let sheetPeriod='week';
+let sheetPeriod='day';
 let sheetSel=null;
 function openMetric(id){
-  const m=byId[id];sheetPeriod='week';sheetSel=null;const sh=$('#sheet');sh.classList.add('full');sh.style.setProperty('--c',cv(m));
+  const m=byId[id];sheetPeriod='day';sheetSel=null;const sh=$('#sheet');sh.classList.add('full');sh.style.setProperty('--c',cv(m));
   const draw=()=>{
     const head=`<div class="grab"></div><div class="hd"><span class="ic" style="background:var(--c);color:#0b0f15">${ic(mic(m))}</span><span class="t"><b>${esc(m.name)}</b><small>${m.cat} · ${esc(sourceName(m))}</small></span><button class="iconbtn" data-close aria-label="Закрыть">${ic('i-down')}</button></div>`;
     const _foldIds=foldIdsOf();
@@ -2267,7 +2267,7 @@ if(typeof state.top.showFigure!=='boolean')state.top.showFigure=state.top.style!
 if(typeof state.top.showMetrics!=='boolean')state.top.showMetrics=state.top.style!=='none';
 if(state.top.style==='none')state.top.style='heart';
 const dashboardToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-function dashboardCurrent(m){const r=recs(m).at(-1);return !avail(m)||r?.day&&r.day!==dashboardToday()?NaN:cur(m)}
+function dashboardCurrent(m){const r=recs(m).at(-1);if(!avail(m))return NaN;if(r?.day===dashboardToday())return cur(m);return Number.isFinite(r?.v)?r.v:NaN}
 function dashboardMetricCaption(m){
  const r=recs(m).at(-1);if(!Number.isFinite(dashboardCurrent(m)))return r?.day?'нет данных за сегодня':'нет данных';
  const unit=m.id==='sleep'?'ч:мин':m.unit;
@@ -4130,7 +4130,7 @@ function periodCoverage(m,p){
  const days=new Set(rows.map(r=>r.day||localDay(recordTimestamp(r)))).size;
  const scale={hour:'по часам',day:'по дням',week:'по неделям',month:'по месяцам'}[resolution];
  const operation=m.id==='distance'?'суммы':DAILY_METRICS.has(m.id)?'среднее за учтённый день':'средние измерений';
- return `${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))} · записей: ${rows.length}, дней с данными: ${days} · график: ${operation} ${scale}. Пропуски не считаются нулём.`;
+ return `${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))} · записей: ${rows.length}, дней с данными: ${days} · график: ${operation} ${scale}. Показаны только фактические записи; за даты без данных нули не добавляются.`;
 }
 function periodChange(m,p){
  const a=metricRecords(m,p).map(r=>r.v),b=metricRecords(m,p,true).map(r=>r.v);
@@ -4323,3 +4323,5 @@ ensureDemo();applyTheme();applyAnim();renderAll();if(state.priv.pin)showLock();
 </script>
 </body>
 </html>
+
+<!-- period-fix-v1 -->
