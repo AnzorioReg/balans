@@ -23,6 +23,9 @@ jobs:
         run: |
           python3 scripts/appearance-update.py
           python3 scripts/finish-v5.py
+      - name: Sync generated interface into Android assets
+        if: inputs.appearance
+        run: cp web-src/index.html app/src/main/assets/index.html
       - name: Check icon JavaScript syntax
         if: inputs.appearance
         run: |
