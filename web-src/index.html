@@ -606,7 +606,7 @@ const state={tab:'overview',stack:[],period:'week',cat:'Все',metric:'steps',c
   pinned:[],hidden:LS.get('balans2.hidden',[]),
   anim:LS.get('balans2.anim',true),demo:false,
   cardSize:LS.get('balans2.cardSize',{}),cardOrder:LS.get('balans2.cardOrder',[]),
-  manual:LS.get('balans2.manual',{}),theme:LS.get('balans2.theme','dark'),pal:Object.assign({dark:'graphite',light:'morning'},LS.get('balans2.pal',{})),srcF:'Все',layout:LS.get('balans2.layout','list')};
+  manual:LS.get('balans2.manual',{}),theme:LS.get('balans2.theme','dark'),pal:Object.assign({dark:'graphite',light:'morning'},LS.get('balans2.pal',{})),srcF:'Все',layout:LS.get('balans2.layout','grid3')};
 const demoOn=()=>false;
 
 const $=s=>document.querySelector(s);
@@ -840,7 +840,7 @@ function repack(list){
   return out;
 }
 function renderGroups(){
-  if(!['list','tiles','grid3'].includes(state.layout))state.layout='list';
+  if(!['list','tiles','grid3'].includes(state.layout))state.layout='grid3';
   document.body.dataset.layout=state.layout;
   const _foldIds=foldIdsOf();
   const _vis=AV().filter(m=>!_foldIds.includes(m.id));
