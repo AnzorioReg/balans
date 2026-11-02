@@ -1,0 +1,35 @@
+name: Split index.html
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/split-index.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Split index.html
+        run: |
+          mkdir -p docs/index-parts
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
+          size = 80_000
+          parts = [src[i:i+size] for i in range(0, len(src), size)]
+          for i, part in enumerate(parts, 1):
+              Path(f'docs/index-parts/index-part-{i:03}.txt').write_text(part, encoding='utf-8')
+          print(f'Created {len(parts)} parts')
+          PY
+      - name: Commit parts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index-parts
+          git commit -m "Split index.html for analysis" || exit 0
+          git push
