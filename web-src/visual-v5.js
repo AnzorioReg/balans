@@ -41,3 +41,44 @@ renderSrcList=function(){const el=document.querySelector('#srcCard');if(!el)retu
 renderSources=function(){const view=document.querySelector('#v-sources');if(!view)return;view.querySelector('#srcF')?.remove();view.querySelector('#srcList')?.remove();for(const node of [...view.children])if(node.classList.contains('card')&&!node.id)node.remove();renderHC();renderSrcList();};
 visualPrefs();
 })();
+
+/* V6: compact strips, safer launcher picker, list polish and interface fixes. */
+(function(){
+const css=`
+html[data-icon-set=emoji] #groups .ic svg{width:20px!important;height:20px!important}
+#hcCard .btnrow .btn[data-native=hc-sync]{white-space:nowrap;font-size:13px;padding:0 10px;min-width:0}
+.activity-glyph[data-hero-style=heart] path{stroke-width:13!important}
+.activity-glyph[data-hero-style=heart] path[data-part=track-outline]{stroke-width:15!important;opacity:.13!important}
+.lst{display:flex;flex-direction:column;gap:3px;border-radius:18px;overflow:visible}
+.lst .lr{border:1px solid color-mix(in srgb,var(--c) 14%,var(--line));border-radius:14px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 9%,transparent),transparent 72%);min-height:50px}
+.dashboard-pick-done{font-size:0!important;color:var(--muted)!important}
+.dashboard-pick-done::after{content:'Выбрать все';font-size:12px;font-weight:600}
+.activity-metrics[data-layout=soft] .metric-ring svg circle{stroke-width:4!important}
+.activity-metrics[data-layout=soft] button{background:color-mix(in srgb,var(--tc) 6%,var(--surface));border:1px solid color-mix(in srgb,var(--tc) 16%,var(--line));border-radius:16px}
+.activity-metrics[data-layout=thin] .metric-ring svg circle{stroke-width:2.5!important}
+.activity-metrics[data-layout=thin] .metric-ring{width:calc(30px * var(--ms));height:calc(30px * var(--ms))}
+.activity-metrics[data-layout=duo] .metric-ring{display:none!important}
+.activity-metrics[data-layout=duo] .metric-dot{width:26px;height:6px;border-radius:6px;background:var(--tc)}
+.activity-metrics[data-layout=duo] b{font-size:calc(17px * var(--ms))}
+.activity-metrics[data-layout=micro] .metric-ring{width:calc(24px * var(--ms));height:calc(24px * var(--ms))}
+.activity-metrics[data-layout=micro] .metric-ring em svg{width:11px;height:11px}
+.activity-metrics[data-layout=micro] b{font-size:calc(13px * var(--ms))}
+.activity-metrics[data-layout=micro] .metric-copy>span{font-size:calc(8px * var(--ms))}
+`;
+document.head.appendChild(Object.assign(document.createElement('style'),{textContent:css}));
+const drop=['premium-line','premium-round'];
+for(let i=ICON_STYLES.length-1;i>=0;i--)if(drop.includes(ICON_STYLES[i][0]))ICON_STYLES.splice(i,1);
+if(drop.includes(state.iconSet)){state.iconSet='outline';LS.set('balans2.iconSet','outline')}
+if(!HERO_PALETTES.some(x=>x[0]==='pulse'))HERO_PALETTES.push(['pulse','Пульс',['#ff3d81','#ffd166','#4cc9f0']]);
+const layouts=[['inline','Кольца в строку'],['soft','Мягкие кольца'],['thin','Тонкие кольца'],['duo','Точка и число'],['micro','Микро']];
+HERO_LAYOUTS.splice(0,HERO_LAYOUTS.length,...layouts);
+if(!layouts.some(x=>x[0]===state.top.layout))state.top.layout='inline';
+LS.set('balans2.top',state.top);
+document.addEventListener('input',e=>{const r=e.target;if(r.tagName==='INPUT'&&r.type==='range'&&Number(r.min)>=100)r.min=60;},true);
+let lastTrigger=null;
+new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes)if(n.nodeType===1&&n.classList?.contains('dashboard-popover'))n.dataset.trigger=lastTrigger||'';}).observe(document.body,{childList:true,subtree:true});
+document.addEventListener('pointerdown',e=>{const d=e.target.closest('.dots[data-dashboard]');if(d)lastTrigger=d.dataset.dashboard;},true);
+document.addEventListener('click',e=>{const d=e.target.closest('.dots[data-dashboard]');if(!d)return;const pop=[...document.querySelectorAll('.dashboard-popover')].find(p=>p.dataset.trigger===d.dataset.dashboard);if(pop){e.stopPropagation();e.preventDefault();pop.remove();document.querySelector('.scrim.on')?.classList.remove('on');}},true);
+const SAFE=new Set(['balance','heart','pulse','ecg','run']);
+document.addEventListener('click',e=>{const b=e.target.closest('.avp[data-id],.avp[data-icon],[data-launcher-id]');if(!b)return;const id=b.dataset.id||b.dataset.icon||b.dataset.launcherId;if(id&&!SAFE.has(id)){e.preventDefault();e.stopPropagation();const t=document.createElement('div');t.textContent='Этот вариант значка пока недоступен: выберите один из базовых пяти.';t.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222c39;color:#fff;padding:10px 14px;border-radius:12px;z-index:99;font-size:13px';document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}},true);
+})();
