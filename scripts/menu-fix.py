@@ -25,10 +25,13 @@ for name in ['app/src/main/assets/index.html','web-src/index.html']:
    return f'{cx+(x-cx)*factor:.2f} {cy+(y-cy)*factor:.2f}'
   return re.sub(r'(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)',pair,d)
 
+ blue=scaled_heart(new,0.58)
+ green=scaled_heart(blue,1.22)
+ orange=scaled_heart(green,1.18)
  contours=list(re.finditer(r'd="([^"]*C[^"]*Z)"',heart))
  if len(contours)==3:
-  for match,factor in ((contours[2],0.58),(contours[1],0.78)):
-   heart=heart[:match.start(1)]+scaled_heart(match.group(1),factor)+heart[match.end(1):]
+  for match,shape in ((contours[2],blue),(contours[1],green),(contours[0],orange)):
+   heart=heart[:match.start(1)]+shape+heart[match.end(1):]
  else:
   print(f'warning: expected three dashboard heart contours, found {len(contours)}; leaving heart unchanged')
 
