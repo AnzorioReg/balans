@@ -1,3 +1,4 @@
+import re
 import subprocess
 from pathlib import Path
 
@@ -16,6 +17,19 @@ for name in ['app/src/main/assets/index.html','web-src/index.html']:
  heart=heart.replace('stroke-width:140!important','stroke-width:200!important')
  heart=heart.replace('dashboardGoalBadge(x,140,246-','dashboardGoalBadge(x,175,307.5-')
  heart+=chr(10)+"if(!LS.get('balans2.heartVolumeV10',false)){state.top.size=Math.min(350,Math.round((Number(state.top.size)||220)*1.25));saveTop();LS.set('balans2.heartVolumeV10',true);}"+chr(10)
+
+ def scaled_heart(d,factor):
+  cx,cy=175.0,165.625
+  def pair(m):
+   x,y=float(m.group(1)),float(m.group(2))
+   return f'{cx+(x-cx)*factor:.2f} {cy+(y-cy)*factor:.2f}'
+  return re.sub(r'(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)',pair,d)
+
+ contours=list(re.finditer(r'd="([^"]*C[^"]*Z)"',heart))
+ assert len(contours)==3, f'Expected three heart contours, found {len(contours)}'
+ for match,factor in reversed(list(zip(contours,(1.0,0.78,0.58))))[1:]:
+  heart=heart[:match.start(1)]+scaled_heart(match.group(1),factor)+heart[match.end(1):]
+
  text=text[:start]+heart+text[end:]
  lines=text.splitlines()
  blocked=[line for line in lines if 'SAFE.has(id)' in line and "document.addEventListener('click'" in line]
