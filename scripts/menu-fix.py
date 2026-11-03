@@ -1,57 +1,91 @@
-import re
+import json
+import math
 import subprocess
 from pathlib import Path
 
-base=subprocess.run(['git','show','944a571dda4c1c0ce8596ac0d43e28deeb423fa5:scripts/menu-fix.py'],check=True,capture_output=True,text=True).stdout
-exec(compile(base,'heart-and-menu-base.py','exec'),{})
-old='M140 246 C111 222 25 164 25 96 C25 35 96 19 140 68 C184 19 255 35 255 96 C255 164 169 222 140 246 Z'
-new='M175 307.5 C138.75 277.5 31.25 205 31.25 120 C31.25 43.75 120 23.75 175 85 C230 23.75 318.75 43.75 318.75 120 C318.75 205 211.25 277.5 175 307.5 Z'
+base = subprocess.run(['git', 'show', '944a571dda4c1c0ce8596ac0d43e28deeb423fa5:scripts/menu-fix.py'], check=True, capture_output=True, text=True).stdout
+exec(compile(base, 'heart-and-menu-base.py', 'exec'), {})
+segments = [((175,307.5),(138.75,277.5),(31.25,205),(31.25,120)),((31.25,120),(31.25,43.75),(120,23.75),(175,85)),((175,85),(230,23.75),(318.75,43.75),(318.75,120)),((318.75,120),(318.75,205),(211.25,277.5),(175,307.5))]
+points = []
+for segment in segments:
+ for j in range(200):
+  t = j / 200
+  weights = ((1-t)**3, 3*(1-t)**2*t, 3*(1-t)*t*t, t**3)
+  x, y = (sum(w*p[k] for w,p in zip(weights,segment)) for k in (0,1))
+  points.append((175+(x-175)*.58, 165.625+(y-165.625)*.58))
+area = sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1]))
+sign = 1 if area > 0 else -1
+normals = []
+for a,b in zip(points,points[1:]+points[:1]):
+ dx,dy = b[0]-a[0],b[1]-a[1]
+ length = math.hypot(dx,dy)
+ normals.append((sign*dy/length,-sign*dx/length))
+def offset(distance):
+ result = []
+ for i,(x,y) in enumerate(points):
+  a,b = normals[i-1],normals[i]
+  denominator = 1+a[0]*b[0]+a[1]*b[1]
+  assert denominator > .01, 'Unexpected contour corner'
+  result.append((x+distance*(a[0]+b[0])/denominator,y+distance*(a[1]+b[1])/denominator))
+ return result
+def svg_path(coords):
+ return 'M'+' L'.join(f'{x:.4f},{y:.4f}' for x,y in coords)+' Z'
+shapes = [offset(34),offset(17),offset(0)]
+paths = [svg_path(coords) for coords in shapes]
+badge_y = [max(y for x,y in coords) for coords in shapes]
+module = '''/* APPROVED_HEART_V11 */
+(function(){
+ const previous=activityGlyph;
+ const paths=PATHS_JSON;
+ const badgeY=BADGE_JSON;
+ activityGlyph=function(style,small=false,a=ACTIVITY()){
+  if(style!=='heart')return previous(style,small,a);
+  let body='',badges='';
+  a.slice(0,3).forEach((x,i)=>{
+   const p=Number.isFinite(x.p)?Math.max(0,Math.min(1,x.p)):0;
+   const attributes=' d="'+paths[i]+'" fill="none" stroke="'+x.c+'" stroke-width="13" style="stroke-width:13!important;stroke-linejoin:miter!important" stroke-linejoin="miter" stroke-miterlimit="10"';
+   body+='<path data-heart-band="'+i+'"'+attributes+' opacity="'+(small?1:.44)+'"/>';
+   if(!small&&p>0)body+='<path'+attributes+' pathLength="100" stroke-dasharray="'+(p*100)+' 100" stroke-linecap="butt" data-goal="'+x.m.id+'"/>';
+   if(!small)badges+=dashboardGoalBadge(x,175,badgeY[i],false);
+  });
+  return '<svg class="activity-glyph '+(small?'small':'')+'" data-hero-style="heart" data-heart-version="11" viewBox="25 15 300 310" aria-hidden="true">'+body+badges+'</svg>';
+ };
+})();
+'''.replace('PATHS_JSON',json.dumps(paths)).replace('BADGE_JSON',json.dumps(badge_y))
 for name in ['app/src/main/assets/index.html','web-src/index.html']:
- p=Path(name)
- text=p.read_text(encoding='utf-8')
- start=text.index('/* PARALLEL_HEART_V9 */')
- end=text.index('ensureDemo();applyTheme();',start)
- heart=text[start:end]
- assert old in heart
- heart=heart.replace(old,new,1).replace('width="280" height="280"','width="350" height="350"').replace('viewBox="0 0 280 280"','viewBox="0 0 350 350"')
- heart=heart.replace('stroke-width:140!important','stroke-width:200!important')
- heart=heart.replace('dashboardGoalBadge(x,140,246-','dashboardGoalBadge(x,175,307.5-')
- heart+=chr(10)+"if(!LS.get('balans2.heartVolumeV10',false)){state.top.size=Math.min(350,Math.round((Number(state.top.size)||220)*1.25));saveTop();LS.set('balans2.heartVolumeV10',true);}"+chr(10)
-
- def scaled_heart(d,factor):
-  cx,cy=175.0,165.625
-  def pair(m):
-   x,y=float(m.group(1)),float(m.group(2))
-   return f'{cx+(x-cx)*factor:.2f} {cy+(y-cy)*factor:.2f}'
-  return re.sub(r'(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)',pair,d)
-
- blue=scaled_heart(new,0.58)
- green=scaled_heart(blue,1.22)
- orange=scaled_heart(green,1.18)
- contours=list(re.finditer(r'd="([^"]*C[^"]*Z)"',heart))
- if len(contours)==3:
-  for match,shape in ((contours[2],blue),(contours[1],green),(contours[0],orange)):
-   heart=heart[:match.start(1)]+shape+heart[match.end(1):]
- else:
-  print(f'warning: expected three dashboard heart contours, found {len(contours)}; leaving heart unchanged')
-
- text=text[:start]+heart+text[end:]
- lines=text.splitlines()
- blocked=[line for line in lines if 'SAFE.has(id)' in line and "document.addEventListener('click'" in line]
+ p = Path(name)
+ text = p.read_text(encoding='utf-8')
+ start = text.index('/* PARALLEL_HEART_V9 */')
+ end = text.index('ensureDemo();applyTheme();',start)
+ text = text[:start]+module+'\n'+text[end:]
+ lines = text.splitlines()
+ blocked = [line for line in lines if 'SAFE.has(id)' in line and "document.addEventListener('click'" in line]
  assert len(blocked)==2, 'Expected two obsolete icon guards'
- text=chr(10).join(line for line in lines if line not in blocked)+chr(10)
- text=text.replace('id="heroSizeRange" type="range" min="140" max="280"','id="heroSizeRange" type="range" min="140" max="350"')
+ text = '\n'.join(line for line in lines if line not in blocked)+'\n'
  p.write_text(text,encoding='utf-8')
-check=Path('scripts/menu-check.cjs')
-text=check.read_text(encoding='utf-8')
+check = Path('scripts/menu-check.cjs')
+text = check.read_text(encoding='utf-8')
+start = text.index("   await page.evaluate(()=>{\n    state.top.style='heart'")
+end = text.index('   await page.screenshot',start)
+text = text[:start]+'''   await page.evaluate(()=>{
+    state.top.style='heart';state.top.showFigure=true;renderTopBlock();
+    const svg=document.querySelector('#topBlock svg[data-heart-version="11"]');
+    if(!svg)throw new Error('Approved pointed heart missing');
+    const bands=[...svg.querySelectorAll('path[data-heart-band]')];
+    if(bands.length!==3)throw new Error('Three separate heart contours required');
+    if(new Set(bands.map(p=>p.getAttribute('d'))).size!==3)throw new Error('Heart contours overlap');
+    for(const p of bands){
+     if(getComputedStyle(p).strokeLinejoin!=='miter')throw new Error('Heart tips must remain pointed');
+     if(Math.abs(parseFloat(getComputedStyle(p).strokeWidth)-13)>.01)throw new Error('Heart stroke width overridden');
+    }
+   });
+'''+text[end:]
 anchor='   await page.close();'
-extra=r'''
-   await page.evaluate(()=>{
+extra='''   await page.evaluate(()=>{
     window.__requestedIcon=null;
     window.BalansAppearance={setIcon(id){window.__requestedIcon=id;},status(){},setSystemBars(){}};
     go('themes');
-    const buttons=[...document.querySelectorAll('[data-app-icon]')];
-    const choice=buttons.find(b=>b.dataset.appIcon!=='balance');
+    const choice=[...document.querySelectorAll('[data-app-icon]')].find(b=>b.dataset.appIcon!=='balance');
     if(!choice)throw new Error('Launcher choices missing');
     choice.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
     if(window.__requestedIcon!==choice.dataset.appIcon)throw new Error('Launcher choice blocked before native bridge');
@@ -59,3 +93,4 @@ extra=r'''
 '''
 assert text.count(anchor)==1
 check.write_text(text.replace(anchor,extra+anchor,1),encoding='utf-8')
+print('Approved V11 heart applied: three distinct contours, pointed tips, width 13 and gap 4.')
