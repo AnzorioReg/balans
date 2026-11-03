@@ -1,0 +1,387 @@
+{
+  "conclusion": "failure",
+  "databaseId": 41537095184,
+  "jobs": [
+    {
+      "completedAt": "2026-11-02T22:26:45Z",
+      "conclusion": "failure",
+      "databaseId": 125591600377,
+      "name": "apk / build",
+      "startedAt": "2026-11-02T22:25:18Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-02T22:25:20Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-02T22:25:19Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:21Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@v5",
+          "number": 2,
+          "startedAt": "2026-11-02T22:25:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:22Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-java@v5",
+          "number": 3,
+          "startedAt": "2026-11-02T22:25:21Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:22Z",
+          "conclusion": "success",
+          "name": "Apply approved appearance patch",
+          "number": 4,
+          "startedAt": "2026-11-02T22:25:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:22Z",
+          "conclusion": "success",
+          "name": "Sync generated interface and fix menu routing",
+          "number": 5,
+          "startedAt": "2026-11-02T22:25:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:22Z",
+          "conclusion": "success",
+          "name": "Check icon JavaScript syntax",
+          "number": 6,
+          "startedAt": "2026-11-02T22:25:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:46Z",
+          "conclusion": "success",
+          "name": "Install browser test dependencies",
+          "number": 7,
+          "startedAt": "2026-11-02T22:25:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:47Z",
+          "conclusion": "success",
+          "name": "Test actual browser interface",
+          "number": 8,
+          "startedAt": "2026-11-02T22:25:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:49Z",
+          "conclusion": "success",
+          "name": "Require both dashboard menus to open and close",
+          "number": 9,
+          "startedAt": "2026-11-02T22:25:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:50Z",
+          "conclusion": "success",
+          "name": "Show UI check results",
+          "number": 10,
+          "startedAt": "2026-11-02T22:25:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:51Z",
+          "conclusion": "success",
+          "name": "Upload interface test evidence",
+          "number": 11,
+          "startedAt": "2026-11-02T22:25:50Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:52Z",
+          "conclusion": "success",
+          "name": "Restore existing signing key",
+          "number": 12,
+          "startedAt": "2026-11-02T22:25:51Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:52Z",
+          "conclusion": "success",
+          "name": "Restore or create signing key",
+          "number": 13,
+          "startedAt": "2026-11-02T22:25:52Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:25:52Z",
+          "conclusion": "success",
+          "name": "Set increasing build version",
+          "number": 14,
+          "startedAt": "2026-11-02T22:25:52Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:26:41Z",
+          "conclusion": "failure",
+          "name": "Build debug APK",
+          "number": 15,
+          "startedAt": "2026-11-02T22:25:52Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:26:43Z",
+          "conclusion": "success",
+          "name": "Upload Gradle diagnostics",
+          "number": 16,
+          "startedAt": "2026-11-02T22:26:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:26:43Z",
+          "conclusion": "skipped",
+          "name": "Record certificate and APK checksum",
+          "number": 17,
+          "startedAt": "2026-11-02T22:26:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:26:43Z",
+          "conclusion": "skipped",
+          "name": "Run actions/upload-artifact@v4",
+          "number": 18,
+          "startedAt": "2026-11-02T22:26:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:26:43Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-java@v5",
+          "number": 35,
+          "startedAt": "2026-11-02T22:26:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:26:43Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@v5",
+          "number": 36,
+          "startedAt": "2026-11-02T22:26:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-02T22:26:43Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 37,
+          "startedAt": "2026-11-02T22:26:43Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/AnzorioReg/balans/actions/runs/41537095184/job/125591600377"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/AnzorioReg/balans/actions/runs/41537095184"
+}
+
+ERROR EXTRACT
+apk / build	UNKNOWN STEP	2026-11-02T22:25:22.3695926Z V5 applied: sixteen launchers, six card sets, compact sources, separate notices; real access and read failures retained.
+apk / build	UNKNOWN STEP	2026-11-02T22:25:47.9802783Z AssertionError [ERR_ASSERTION]: Exactly six icon sets
+apk / build	UNKNOWN STEP	2026-11-02T22:25:47.9970596Z ##[error]Process completed with exit code 1.
+apk / build	UNKNOWN STEP	2026-11-02T22:25:50.0019037Z   "errors": [],
+apk / build	UNKNOWN STEP	2026-11-02T22:25:50.0019261Z   "failure": "Exactly six icon sets"
+apk / build	UNKNOWN STEP	2026-11-02T22:25:50.5469322Z (node:3250) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+apk / build	UNKNOWN STEP	2026-11-02T22:25:51.8713325Z (node:3262) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+apk / build	UNKNOWN STEP	2026-11-02T22:25:55.3090019Z  - Java compilation errors at the end of the build output
+apk / build	UNKNOWN STEP	2026-11-02T22:26:29.8049574Z > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.4052206Z > Task :app:compileDebugKotlin FAILED
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5169666Z FAILURE: Build failed with an exception.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5208686Z * What went wrong:
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5209550Z Execution failed for task ':app:compileDebugKotlin'.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5211718Z > Could not isolate parameters org.jetbrains.kotlin.gradle.internal.transforms.BuildToolsApiClasspathEntrySnapshotTransform$Parameters_Decorated@4097fba2 of artifact transform BuildToolsApiClasspathEntrySnapshotTransform
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5214749Z    > Could not isolate value org.jetbrains.kotlin.gradle.internal.transforms.BuildToolsApiClasspathEntrySnapshotTransform$Parameters_Decorated@4097fba2 of type BuildToolsApiClasspathEntrySnapshotTransform.Parameters
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5217015Z       > Could not resolve all files for configuration ':app:kotlinBuildToolsApiClasspath'.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5218344Z          > Could not find org.jetbrains.kotlin:kotlin-reflect:1.6.10.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5228597Z * Exception is:
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5229530Z org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5231145Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:38)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5275696Z 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5280801Z Caused by: org.gradle.internal.operations.BuildOperationQueueFailure: There was a failure while populating the build operation queue: Could not isolate parameters org.jetbrains.kotlin.gradle.internal.transforms.BuildToolsApiClasspathEntrySnapshotTransform$Parameters_Decorated@4097fba2 of artifact transform BuildToolsApiClasspathEntrySnapshotTransform
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5847217Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5893785Z 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5898026Z Caused by: org.gradle.api.artifacts.transform.VariantTransformConfigurationException: Could not isolate parameters org.jetbrains.kotlin.gradle.internal.transforms.BuildToolsApiClasspathEntrySnapshotTransform$Parameters_Decorated@4097fba2 of artifact transform BuildToolsApiClasspathEntrySnapshotTransform
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6003019Z Caused by: org.gradle.internal.snapshot.impl.IsolationException: Could not isolate value org.jetbrains.kotlin.gradle.internal.transforms.BuildToolsApiClasspathEntrySnapshotTransform$Parameters_Decorated@4097fba2 of type BuildToolsApiClasspathEntrySnapshotTransform.Parameters
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6011478Z Caused by: org.gradle.api.internal.artifacts.ivyservice.TypedResolveException: Could not resolve all files for configuration ':app:kotlinBuildToolsApiClasspath'.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6013146Z 	at org.gradle.api.internal.artifacts.ResolveExceptionMapper.mapFailure(ResolveExceptionMapper.java:68)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6014493Z 	at org.gradle.api.internal.artifacts.ResolveExceptionMapper.mapFailures(ResolveExceptionMapper.java:60)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6016147Z 	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$DefaultResolutionHost.consolidateFailures(DefaultConfiguration.java:1995)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6038769Z 	at org.gradle.api.internal.artifacts.configurations.ResolutionHost.rethrowFailuresAndReportProblems(ResolutionHost.java:75)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6040872Z 	at org.gradle.api.internal.artifacts.configurations.ResolutionBackedFileCollection.maybeThrowResolutionFailures(ResolutionBackedFileCollection.java:87)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6086425Z Caused by: org.gradle.internal.resolve.ModuleVersionNotFoundException: Could not find org.jetbrains.kotlin:kotlin-reflect:1.6.10.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6092761Z BUILD FAILED in 49s
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.7945242Z ##[error]Process completed with exit code 1.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:42.3026513Z (node:3464) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+
+FAILED LOG TAIL
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5794520Z 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5796019Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5798035Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5799787Z 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5801263Z 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5802455Z 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5803557Z 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5804587Z 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5805711Z 	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5807183Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5839251Z 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5840893Z 	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5842594Z 	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5844268Z 	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5845783Z 	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5847217Z 	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5848860Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5850270Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5851606Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5853179Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5855001Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5856597Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5858098Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5859482Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5860860Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5862267Z 	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5863656Z 	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5864924Z 	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5866823Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5882506Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5884397Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5886013Z 	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5887815Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5889639Z 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5891227Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5892477Z 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5893785Z 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5895086Z 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5898026Z Caused by: org.gradle.api.artifacts.transform.VariantTransformConfigurationException: Could not isolate parameters org.jetbrains.kotlin.gradle.internal.transforms.BuildToolsApiClasspathEntrySnapshotTransform$Parameters_Decorated@4097fba2 of artifact transform BuildToolsApiClasspathEntrySnapshotTransform
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5901169Z 	at org.gradle.api.internal.artifacts.transform.DefaultTransform$IsolateTransformParameters.doIsolateParameters(DefaultTransform.java:680)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5903084Z 	at org.gradle.api.internal.artifacts.transform.DefaultTransform$IsolateTransformParameters.isolateParameters(DefaultTransform.java:670)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5904886Z 	at org.gradle.api.internal.artifacts.transform.DefaultTransform$IsolateTransformParameters.calculateValue(DefaultTransform.java:647)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5906611Z 	at org.gradle.api.internal.artifacts.transform.DefaultTransform$IsolateTransformParameters.calculateValue(DefaultTransform.java:563)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5936704Z 	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.lambda$attachValue$0(CalculatedValueContainer.java:229)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5938091Z 	at org.gradle.internal.Try.ofFailable(Try.java:50)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5939158Z 	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.attachValue(CalculatedValueContainer.java:224)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5940650Z 	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:195)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5942143Z 	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:186)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5943744Z 	at org.gradle.api.internal.artifacts.transform.DefaultTransform.isolateParametersIfNotAlready(DefaultTransform.java:289)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5945354Z 	at org.gradle.api.internal.artifacts.transform.TransformStep.isolateParametersIfNotAlready(TransformStep.java:110)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5947188Z 	at org.gradle.api.internal.artifacts.transform.AbstractTransformedArtifactSet$CalculateArtifacts.calculateValue(AbstractTransformedArtifactSet.java:146)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5949419Z 	at org.gradle.api.internal.artifacts.transform.AbstractTransformedArtifactSet$CalculateArtifacts.calculateValue(AbstractTransformedArtifactSet.java:100)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5951241Z 	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.lambda$attachValue$0(CalculatedValueContainer.java:229)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5952351Z 	at org.gradle.internal.Try.ofFailable(Try.java:50)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5954007Z 	at org.gradle.internal.model.CalculatedValueContainer$CalculationState.attachValue(CalculatedValueContainer.java:224)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5955547Z 	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:195)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5956992Z 	at org.gradle.internal.model.CalculatedValueContainer.finalizeIfNotAlready(CalculatedValueContainer.java:186)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5988948Z 	at org.gradle.api.internal.artifacts.transform.AbstractTransformedArtifactSet.visit(AbstractTransformedArtifactSet.java:74)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5990839Z 	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.artifact.CompositeResolvedArtifactSet.visit(CompositeResolvedArtifactSet.java:52)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5993075Z 	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.artifact.LocalFileDependencyBackedArtifactSet.visit(LocalFileDependencyBackedArtifactSet.java:164)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5995439Z 	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.artifact.ParallelResolveArtifactSet$VisitingSet$StartVisitAction.execute(ParallelResolveArtifactSet.java:95)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5997956Z 	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.artifact.ParallelResolveArtifactSet$VisitingSet$StartVisitAction.execute(ParallelResolveArtifactSet.java:72)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.5999994Z 	at org.gradle.internal.operations.DefaultBuildOperationExecutor.executeInParallel(DefaultBuildOperationExecutor.java:99)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6001050Z 	... 107 more
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6003019Z Caused by: org.gradle.internal.snapshot.impl.IsolationException: Could not isolate value org.jetbrains.kotlin.gradle.internal.transforms.BuildToolsApiClasspathEntrySnapshotTransform$Parameters_Decorated@4097fba2 of type BuildToolsApiClasspathEntrySnapshotTransform.Parameters
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6005544Z 	at org.gradle.internal.snapshot.impl.DefaultIsolatableFactory.isolate(DefaultIsolatableFactory.java:51)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6007249Z 	at org.gradle.api.internal.artifacts.transform.DefaultTransform$IsolateTransformParameters.isolateParametersExclusively(DefaultTransform.java:685)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6009276Z 	at org.gradle.api.internal.artifacts.transform.DefaultTransform$IsolateTransformParameters.doIsolateParameters(DefaultTransform.java:676)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6010361Z 	... 130 more
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6011478Z Caused by: org.gradle.api.internal.artifacts.ivyservice.TypedResolveException: Could not resolve all files for configuration ':app:kotlinBuildToolsApiClasspath'.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6013146Z 	at org.gradle.api.internal.artifacts.ResolveExceptionMapper.mapFailure(ResolveExceptionMapper.java:68)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6014493Z 	at org.gradle.api.internal.artifacts.ResolveExceptionMapper.mapFailures(ResolveExceptionMapper.java:60)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6016147Z 	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$DefaultResolutionHost.consolidateFailures(DefaultConfiguration.java:1995)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6038769Z 	at org.gradle.api.internal.artifacts.configurations.ResolutionHost.rethrowFailuresAndReportProblems(ResolutionHost.java:75)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6040872Z 	at org.gradle.api.internal.artifacts.configurations.ResolutionBackedFileCollection.maybeThrowResolutionFailures(ResolutionBackedFileCollection.java:87)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6042961Z 	at org.gradle.api.internal.artifacts.configurations.ResolutionBackedFileCollection.visitContents(ResolutionBackedFileCollection.java:77)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6044549Z 	at org.gradle.api.internal.file.AbstractFileCollection.visitStructure(AbstractFileCollection.java:360)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6046014Z 	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.visitContents(DefaultConfiguration.java:550)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6047625Z 	at org.gradle.api.internal.file.AbstractFileCollection.visitStructure(AbstractFileCollection.java:360)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6048967Z 	at org.gradle.api.internal.file.CompositeFileCollection.lambda$visitContents$0(CompositeFileCollection.java:113)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6051234Z 	at org.gradle.api.internal.file.collections.UnpackingVisitor.add(UnpackingVisitor.java:67)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6052722Z 	at org.gradle.api.internal.file.collections.ProviderBackedFileCollection.visitChildren(ProviderBackedFileCollection.java:64)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6054299Z 	at org.gradle.api.internal.file.CompositeFileCollection.visitContents(CompositeFileCollection.java:113)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6055682Z 	at org.gradle.api.internal.file.AbstractFileCollection.visitStructure(AbstractFileCollection.java:360)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6057092Z 	at org.gradle.api.internal.file.CompositeFileCollection.lambda$visitContents$0(CompositeFileCollection.java:113)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6058560Z 	at org.gradle.api.internal.file.collections.UnpackingVisitor.add(UnpackingVisitor.java:77)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6060262Z 	at org.gradle.api.internal.file.collections.DefaultConfigurableFileCollection$UnresolvedItemsCollector.visitContents(DefaultConfigurableFileCollection.java:594)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6062323Z 	at org.gradle.api.internal.file.collections.DefaultConfigurableFileCollection.visitChildren(DefaultConfigurableFileCollection.java:416)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6063957Z 	at org.gradle.api.internal.file.CompositeFileCollection.visitContents(CompositeFileCollection.java:113)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6065255Z 	at org.gradle.api.internal.file.AbstractFileCollection.getFiles(AbstractFileCollection.java:123)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6066796Z 	at org.gradle.api.internal.file.collections.DefaultConfigurableFileCollection.unpackState(DefaultConfigurableFileCollection.java:109)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6074272Z 	at org.gradle.internal.snapshot.impl.AbstractValueProcessor.processManaged(AbstractValueProcessor.java:127)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6075737Z 	at org.gradle.internal.snapshot.impl.AbstractValueProcessor.processValue(AbstractValueProcessor.java:98)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6077204Z 	at org.gradle.internal.snapshot.impl.AbstractValueProcessor.processArrayElements(AbstractValueProcessor.java:183)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6078919Z 	at org.gradle.internal.snapshot.impl.AbstractValueProcessor.processArray(AbstractValueProcessor.java:176)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6080216Z 	at org.gradle.internal.snapshot.impl.AbstractValueProcessor.processValue(AbstractValueProcessor.java:92)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6081595Z 	at org.gradle.internal.snapshot.impl.AbstractValueProcessor.processManaged(AbstractValueProcessor.java:127)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6083037Z 	at org.gradle.internal.snapshot.impl.AbstractValueProcessor.processValue(AbstractValueProcessor.java:98)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6084452Z 	at org.gradle.internal.snapshot.impl.DefaultIsolatableFactory.isolate(DefaultIsolatableFactory.java:49)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6085412Z 	... 132 more
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6086425Z Caused by: org.gradle.internal.resolve.ModuleVersionNotFoundException: Could not find org.jetbrains.kotlin:kotlin-reflect:1.6.10.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6087740Z Searched in the following locations:
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6088706Z   - https://dl.google.com/dl/android/maven2/org/jetbrains/kotlin/kotlin-reflect/1.6.10/kotlin-reflect-1.6.10.pom
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6090063Z   - https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-reflect/1.6.10/kotlin-reflect-1.6.10.pom
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6090915Z Required by:
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6091775Z     project :app > org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20 > org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.20
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6092601Z 
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6092609Z 
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6092761Z BUILD FAILED in 49s
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.6093163Z 21 actionable tasks: 21 executed
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.7945242Z ##[error]Process completed with exit code 1.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8001297Z ##[group]Run actions/upload-artifact@v4
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8001614Z with:
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8001948Z   name: gradle-diagnostics-28e47356e60f667e26ff2f9d3d19f61c37f2b0f6
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8002372Z   path: gradle-log.txt
+apk / build	UNKNOWN STEP	app/build/reports/**
+apk / build	UNKNOWN STEP	
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8002688Z   if-no-files-found: warn
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8002961Z   compression-level: 6
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8003400Z   overwrite: false
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8003645Z   include-hidden-files: false
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8003906Z env:
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8004228Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8004739Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8005134Z   MAVEN_ARGS: -ntp
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8005376Z   BALANS_VERSION_CODE: 100102
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.8005630Z ##[endgroup]
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.9701522Z (node:3464) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.9702260Z (Use `node --trace-deprecation ...` to show where the warning was created)
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.9755712Z Multiple search paths detected. Calculating the least common ancestor of all paths
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.9758185Z The least common ancestor is /home/runner/work/balans/balans. This will be the root directory of the artifact
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.9759353Z With the provided path, there will be 1 file uploaded
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.9760572Z Artifact name is valid!
+apk / build	UNKNOWN STEP	2026-11-02T22:26:41.9761196Z Root directory input is valid!
+apk / build	UNKNOWN STEP	2026-11-02T22:26:42.2842139Z Beginning upload of artifact content to blob storage
+apk / build	UNKNOWN STEP	2026-11-02T22:26:42.3026513Z (node:3464) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:42.4952335Z Uploaded bytes 3861
+apk / build	UNKNOWN STEP	2026-11-02T22:26:42.5521057Z Finished uploading artifact content to blob storage!
+apk / build	UNKNOWN STEP	2026-11-02T22:26:42.5522036Z SHA256 digest of uploaded artifact zip is 5300be104a5ae60c7865d95835a0497ecf9848b11137982d0c7791a7319324c0
+apk / build	UNKNOWN STEP	2026-11-02T22:26:42.5523448Z Finalizing artifact upload
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.0532764Z Artifact gradle-diagnostics-28e47356e60f667e26ff2f9d3d19f61c37f2b0f6.zip successfully finalized. Artifact ID 13185196427
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.0533897Z Artifact gradle-diagnostics-28e47356e60f667e26ff2f9d3d19f61c37f2b0f6 has been successfully uploaded! Final size is 3861 bytes. Artifact ID is 13185196427
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.0541072Z Artifact download URL: https://github.com/AnzorioReg/balans/actions/runs/41537095184/artifacts/13185196427
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.0767536Z Post job cleanup.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.2310405Z Post job cleanup.
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3255463Z [command]/usr/bin/git version
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3299962Z git version 2.56.0
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3374367Z Temporarily overriding HOME='/home/runner/work/_temp/b579cf7f-3964-4c43-b499-c36841377517' before making global git config changes
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3375650Z Adding repository directory to the temporary git global config as a safe directory
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3380667Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/balans/balans
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3425317Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3481240Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3798978Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3872296Z http.https://github.com/.extraheader
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3889261Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.3959205Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.4238699Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.4284323Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.4714583Z Cleaning up orphan processes
+apk / build	UNKNOWN STEP	2026-11-02T22:26:43.5069987Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache/restore@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
