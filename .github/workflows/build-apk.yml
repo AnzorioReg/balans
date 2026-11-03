@@ -15,3 +15,27 @@ jobs:
     with:
       appearance: true
     secrets: inherit
+  publish:
+    needs: apk
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Download verified APK artifact
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "balans-debug-$GITHUB_SHA" --dir dist
+          APK=$(find dist -type f -name '*.apk' | head -n 1)
+          test -n "$APK" && test -s "$APK"
+          cp "$APK" "Balans-${GITHUB_SHA:0:8}.apk"
+      - name: Publish downloadable APK
+        run: |
+          TAG="apk-$GITHUB_SHA"
+          FILE="Balans-${GITHUB_SHA:0:8}.apk"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$FILE" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Баланс APK ${GITHUB_SHA:0:8}" --notes "Сборка: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          fi
