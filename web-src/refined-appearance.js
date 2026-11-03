@@ -55,7 +55,7 @@ const previousThemes=renderThemes;
 renderThemes=function(){
  const view=document.querySelector('#v-themes');if(!view)return;
  const open=new Set([...view.querySelectorAll('.rp-fold[open]')].map(d=>d.dataset.rpKey));
- view.querySelectorAll('.rp-fold').forEach(d=>{const c=d.querySelector('.rp-content');if(!c){d.remove();return;}if(/Графики|диаграммы/.test(d.dataset.rpKey||''))d.remove();else d.replaceWith(...c.childNodes);});
+ view.querySelectorAll('.rp-fold').forEach(d=>{if(/Графики|диаграммы/.test(d.dataset.rpKey||''))d.remove();else d.replaceWith(...d.querySelector('.rp-content').childNodes);});
  previousThemes();
  for(const id of ['layPick','topPick','cardSkinPreferences']){const n=document.getElementById(id);if(n){if(n.previousElementSibling?.classList.contains('lbl2'))n.previousElementSibling.remove();n.remove();}}
  const fold=(name,nodes,key)=>{nodes=nodes.filter(Boolean);if(!nodes.length)return;const d=document.createElement('details');d.className='rp-fold';d.dataset.rpKey=key;d.open=open.has(key);const hd=document.createElement('summary');hd.textContent=name;const content=document.createElement('div');nodes[0].before(d);d.append(hd,content);content.append(...nodes);return d;};
