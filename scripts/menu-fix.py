@@ -26,9 +26,11 @@ for name in ['app/src/main/assets/index.html','web-src/index.html']:
   return re.sub(r'(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)',pair,d)
 
  contours=list(re.finditer(r'd="([^"]*C[^"]*Z)"',heart))
- assert len(contours)==3, f'Expected three heart contours, found {len(contours)}'
- for match,factor in reversed(list(zip(contours,(1.0,0.78,0.58))))[1:]:
-  heart=heart[:match.start(1)]+scaled_heart(match.group(1),factor)+heart[match.end(1):]
+ if len(contours)==3:
+  for match,factor in ((contours[2],0.58),(contours[1],0.78)):
+   heart=heart[:match.start(1)]+scaled_heart(match.group(1),factor)+heart[match.end(1):]
+ else:
+  print(f'warning: expected three dashboard heart contours, found {len(contours)}; leaving heart unchanged')
 
  text=text[:start]+heart+text[end:]
  lines=text.splitlines()
