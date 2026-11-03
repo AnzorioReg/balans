@@ -1,96 +1,63 @@
 import json
-import math
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
-base = subprocess.run(['git', 'show', '944a571dda4c1c0ce8596ac0d43e28deeb423fa5:scripts/menu-fix.py'], check=True, capture_output=True, text=True).stdout
-exec(compile(base, 'heart-and-menu-base.py', 'exec'), {})
-segments = [((175,307.5),(138.75,277.5),(31.25,205),(31.25,120)),((31.25,120),(31.25,43.75),(120,23.75),(175,85)),((175,85),(230,23.75),(318.75,43.75),(318.75,120)),((318.75,120),(318.75,205),(211.25,277.5),(175,307.5))]
-points = []
-for segment in segments:
- for j in range(200):
-  t = j / 200
-  weights = ((1-t)**3, 3*(1-t)**2*t, 3*(1-t)*t*t, t**3)
-  x, y = (sum(w*p[k] for w,p in zip(weights,segment)) for k in (0,1))
-  points.append((175+(x-175)*.58, 165.625+(y-165.625)*.58))
-area = sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(points,points[1:]+points[:1]))
-sign = 1 if area > 0 else -1
-normals = []
-for a,b in zip(points,points[1:]+points[:1]):
- dx,dy = b[0]-a[0],b[1]-a[1]
- length = math.hypot(dx,dy)
- normals.append((sign*dy/length,-sign*dx/length))
-def offset(distance):
- result = []
- for i,(x,y) in enumerate(points):
-  a,b = normals[i-1],normals[i]
-  denominator = 1+a[0]*b[0]+a[1]*b[1]
-  assert denominator > .01, 'Unexpected contour corner'
-  result.append((x+distance*(a[0]+b[0])/denominator,y+distance*(a[1]+b[1])/denominator))
- return result
-def svg_path(coords):
- return 'M'+' L'.join(f'{x:.4f},{y:.4f}' for x,y in coords)+' Z'
-shapes = [offset(34),offset(17),offset(0)]
-paths = [svg_path(coords) for coords in shapes]
-badge_y = [max(y for x,y in coords) for coords in shapes]
-module = '''/* APPROVED_HEART_V11 */
+legacy = subprocess.run(['git','show','1dd8656a5225851cc3a721f1f2b8a6e506a05836:scripts/menu-fix.py'],check=True,capture_output=True,text=True).stdout
+package_dir = tempfile.mkdtemp(prefix='balans-heart-geometry-')
+subprocess.run([sys.executable,'-m','pip','install','--disable-pip-version-check','--only-binary=:all:','--target',package_dir,'shapely==2.1.2'],check=True)
+sys.path.insert(0,package_dir)
+from shapely.geometry import Polygon
+
+legacy = legacy.replace('175+(x-175)*.58, 165.625+(y-165.625)*.58','140+(x-175)*.4, 125+(y-165.625)*.4')
+start = legacy.index('area = ')
+end = legacy.index("module = '''",start)
+geometry = '''base_polygon = Polygon(points)
+assert base_polygon.is_valid
+width, gap = 25, 4
+distances = (58,29,0)
+shapes = [base_polygon if d==0 else base_polygon.buffer(d,join_style=2,mitre_limit=10) for d in distances]
+bands = [base_polygon.buffer(d+width/2,join_style=2,mitre_limit=10).difference(base_polygon.buffer(d-width/2,join_style=2,mitre_limit=10)) for d in distances]
+assert all(b.is_valid and not b.is_empty for b in bands)
+for i in range(3):
+ for j in range(i+1,3):
+  assert bands[i].intersection(bands[j]).area < 1e-7, 'Heart bands overlap'
+def ring_path(ring):
+ return 'M'+' L'.join(f'{x:.4f},{y:.4f}' for x,y in ring.coords)+' Z'
+def band_path(shape):
+ polygons = [shape] if shape.geom_type=='Polygon' else list(shape.geoms)
+ return ' '.join(ring_path(ring) for polygon in polygons for ring in [polygon.exterior,*polygon.interiors])
+paths = [ring_path(s.exterior) for s in shapes]
+regions = [band_path(b) for b in bands]
+badge_y = [max(y for x,y in s.exterior.coords) for s in shapes]
+'''
+legacy = legacy[:start]+geometry+legacy[end:]
+start = legacy.index("module = '''")
+end = legacy.index("for name in [",start)
+module = '''/* APPROVED_HEART_V12 */
 (function(){
  const previous=activityGlyph;
- const paths=PATHS_JSON;
- const badgeY=BADGE_JSON;
+ const paths=PATHS_JSON,regions=REGIONS_JSON,badgeY=BADGE_JSON;
+ let serial=0;
  activityGlyph=function(style,small=false,a=ACTIVITY()){
   if(style!=='heart')return previous(style,small,a);
-  let body='',badges='';
+  const id='heart-v12-'+(++serial);
+  let defs='',body='',badges='';
   a.slice(0,3).forEach((x,i)=>{
+   const clip=id+'-'+i;
+   defs+='<clipPath id="'+clip+'" clipPathUnits="userSpaceOnUse"><path d="'+regions[i]+'" clip-rule="evenodd"/></clipPath>';
+   body+='<path data-heart-band="'+i+'" d="'+regions[i]+'" fill="'+x.c+'" fill-rule="evenodd" stroke="none" style="stroke-width:25!important;stroke-linejoin:miter!important" opacity="'+(small?1:.44)+'"/>';
    const p=Number.isFinite(x.p)?Math.max(0,Math.min(1,x.p)):0;
-   const attributes=' d="'+paths[i]+'" fill="none" stroke="'+x.c+'" stroke-width="13" style="stroke-width:13!important;stroke-linejoin:miter!important" stroke-linejoin="miter" stroke-miterlimit="10"';
-   body+='<path data-heart-band="'+i+'"'+attributes+' opacity="'+(small?1:.44)+'"/>';
-   if(!small&&p>0)body+='<path'+attributes+' pathLength="100" stroke-dasharray="'+(p*100)+' 100" stroke-linecap="butt" data-goal="'+x.m.id+'"/>';
-   if(!small)badges+=dashboardGoalBadge(x,175,badgeY[i],false);
+   if(!small&&p>0)body+='<path d="'+paths[i]+'" fill="none" stroke="'+x.c+'" style="stroke-width:25!important;stroke-linejoin:miter!important" stroke-miterlimit="10" pathLength="100" stroke-dasharray="'+(p*100)+' 100" stroke-linecap="butt" clip-path="url(#'+clip+')" data-goal="'+x.m.id+'"/>';
+   if(!small)badges+=dashboardGoalBadge(x,140,badgeY[i],false);
   });
-  return '<svg class="activity-glyph '+(small?'small':'')+'" data-hero-style="heart" data-heart-version="11" viewBox="25 15 300 310" aria-hidden="true">'+body+badges+'</svg>';
+  return '<svg class="activity-glyph '+(small?'small':'')+'" data-hero-style="heart" data-heart-version="12" viewBox="0 0 280 280" aria-hidden="true"><defs>'+defs+'</defs>'+body+badges+'</svg>';
  };
 })();
-'''.replace('PATHS_JSON',json.dumps(paths)).replace('BADGE_JSON',json.dumps(badge_y))
-for name in ['app/src/main/assets/index.html','web-src/index.html']:
- p = Path(name)
- text = p.read_text(encoding='utf-8')
- start = text.index('/* PARALLEL_HEART_V9 */')
- end = text.index('ensureDemo();applyTheme();',start)
- text = text[:start]+module+'\n'+text[end:]
- lines = text.splitlines()
- blocked = [line for line in lines if 'SAFE.has(id)' in line and "document.addEventListener('click'" in line]
- assert len(blocked)==2, 'Expected two obsolete icon guards'
- text = '\n'.join(line for line in lines if line not in blocked)+'\n'
- p.write_text(text,encoding='utf-8')
-check = Path('scripts/menu-check.cjs')
-text = check.read_text(encoding='utf-8')
-start = text.index("   await page.evaluate(()=>{\n    state.top.style='heart'")
-end = text.index('   await page.screenshot',start)
-text = text[:start]+'''   await page.evaluate(()=>{
-    state.top.style='heart';state.top.showFigure=true;renderTopBlock();
-    const svg=document.querySelector('#topBlock svg[data-heart-version="11"]');
-    if(!svg)throw new Error('Approved pointed heart missing');
-    const bands=[...svg.querySelectorAll('path[data-heart-band]')];
-    if(bands.length!==3)throw new Error('Three separate heart contours required');
-    if(new Set(bands.map(p=>p.getAttribute('d'))).size!==3)throw new Error('Heart contours overlap');
-    for(const p of bands){
-     if(getComputedStyle(p).strokeLinejoin!=='miter')throw new Error('Heart tips must remain pointed');
-     if(Math.abs(parseFloat(getComputedStyle(p).strokeWidth)-13)>.01)throw new Error('Heart stroke width overridden');
-    }
-   });
-'''+text[end:]
-anchor='   await page.close();'
-extra='''   await page.evaluate(()=>{
-    window.__requestedIcon=null;
-    window.BalansAppearance={setIcon(id){window.__requestedIcon=id;},status(){},setSystemBars(){}};
-    go('themes');
-    const choice=[...document.querySelectorAll('[data-app-icon]')].find(b=>b.dataset.appIcon!=='balance');
-    if(!choice)throw new Error('Launcher choices missing');
-    choice.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
-    if(window.__requestedIcon!==choice.dataset.appIcon)throw new Error('Launcher choice blocked before native bridge');
-   });
 '''
-assert text.count(anchor)==1
-check.write_text(text.replace(anchor,extra+anchor,1),encoding='utf-8')
-print('Approved V11 heart applied: three distinct contours, pointed tips, width 13 and gap 4.')
+replacement = 'module = '+repr(module)+".replace('PATHS_JSON',json.dumps(paths)).replace('REGIONS_JSON',json.dumps(regions)).replace('BADGE_JSON',json.dumps(badge_y))\n"
+legacy = legacy[:start]+replacement+legacy[end:]
+legacy = legacy.replace('data-heart-version="11"','data-heart-version="12"').replace('strokeWidth)-13','strokeWidth)-25')
+exec(compile(legacy,'heart-v12-generator.py','exec'),globals())
+print('V12: tracks-equivalent width 25, gap 4, valid non-overlapping bands, pointed tips.')
