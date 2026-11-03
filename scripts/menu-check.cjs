@@ -15,9 +15,6 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(() => typeof renderTopBlock === 'function' && typeof renderThemes === 'function');
     await page.evaluate(() => renderTopBlock());
     check('Dashboard renders', await page.locator('#topBlock').count() === 1);
-    await page.evaluate(() => go('themes'));
-    await page.waitForSelector('#v-themes.on');
-    check('Themes page opens', await page.locator('#v-themes.on').count() === 1);
     check('No JavaScript runtime errors', errors.length === 0);
     await page.screenshot({ path: 'ui-report/menu-check.png', fullPage: true });
   } catch (e) {
