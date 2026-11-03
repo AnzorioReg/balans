@@ -65,9 +65,10 @@ jobs:
           Проверьте упавший job и лог. После исправления этот Issue можно закрыть.
           EOF
           )
+          gh label create "ci-failure" --repo "$GITHUB_REPOSITORY" --color "d73a4a" --description "Failed CI build" >/dev/null 2>&1 || true
           EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$TITLE in:title" --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
-          else
-            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --label "ci-failure" --body "$BODY"
+          elif ! gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --label "ci-failure" --body "$BODY"; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
           fi
