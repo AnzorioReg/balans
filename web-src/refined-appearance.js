@@ -6,6 +6,7 @@ if(LS.get('balans2.premiumDefaultsV2',false)!==true){state.pal.dark='premium-ony
 const chartSets=[['atelier','Ателье','Столбцы активности и точные линии измерений'],['ribbon','Лента','Заливка динамики и округлённые столбцы'],['stems','Маркеры','Значения с чёткими опорными линиями'],['mosaic','Мозаика записей','Одна ячейка на показанную запись, цвет по её значению']];
 for(const item of chartSets)if(!VISUAL_STYLES.some(x=>x[0]===item[0]))VISUAL_STYLES.push(item);
 const savedChart=LS.get('balans2.chartSet','signature');if(VISUAL_STYLES.some(x=>x[0]===savedChart))state.chartSet=savedChart;
+ICON_STYLES.splice(0,ICON_STYLES.length,...ICON_STYLES.filter(x=>['outline','soft','duo'].includes(x[0])));
 if(!ICON_STYLES.some(x=>x[0]===state.iconSet)){state.iconSet='outline';LS.set('balans2.iconSet','outline');}
 LS.set('balans2.cardSkin','original');delete document.documentElement.dataset.cardSkin;
 const renderBase=renderRealVisual;
@@ -57,7 +58,7 @@ renderThemes=function(){
  view.querySelectorAll('.rp-fold').forEach(d=>{if(/Графики|диаграммы/.test(d.dataset.rpKey||''))d.remove();else d.replaceWith(...d.querySelector('.rp-content').childNodes);});
  previousThemes();
  for(const id of ['layPick','topPick','cardSkinPreferences']){const n=document.getElementById(id);if(n){if(n.previousElementSibling?.classList.contains('lbl2'))n.previousElementSibling.remove();n.remove();}}
- const fold=(name,nodes,key)=>{nodes=nodes.filter(Boolean);if(!nodes.length)return;const d=document.createElement('details');d.className='rp-fold';d.dataset.rpKey=key;d.open=open.has(key);const hd=document.createElement('summary');hd.textContent=name;const content=document.createElement('div');content.className='rp-content';nodes[0].before(d);d.append(hd,content);content.append(...nodes);return d;};
+ const fold=(name,nodes,key)=>{nodes=nodes.filter(Boolean);if(!nodes.length)return;const d=document.createElement('details');d.className='rp-fold';d.dataset.rpKey=key;d.open=open.has(key);const hd=document.createElement('summary');hd.textContent=name;const content=document.createElement('div');nodes[0].before(d);d.append(hd,content);content.append(...nodes);return d;};
  const themeNodes=[...view.children].filter(n=>n.classList.contains('themes')||['palDark','palLight'].includes(n.id)||n.classList.contains('lbl2')&&/Ночные темы|Дневные темы/.test(n.textContent));
  fold('Темы · тёмные и светлые',themeNodes,'themes');
  const levels=view.querySelector('.appearance-levels');if(levels){const heading=levels.previousElementSibling;fold('Яркость и контраст',[heading?.classList.contains('lbl2')?heading:null,levels],'levels');}

@@ -37,7 +37,7 @@ renderHC=function(){const el=document.querySelector('#hcCard');if(!el)return;con
 renderSrcList=function(){const el=document.querySelector('#srcCard');if(!el)return;
  const button=(action,text,disabled=false,extra='')=>'<button class="btn ghost" data-native="'+action+'" '+extra+' '+(disabled?'disabled':'')+'>'+text+'</button>';
  const busy=bleState.connected||bleState.connecting;
- el.innerHTML='<div class="card ble-card"><b>Приборы по Bluetooth</b><div class="btnrow">'+button('ble-scan',bleState.scanning?'Поиск…':'Найти прибор',busy)+button('ble-stop','Остановить')+button('ble-scan-all','Расширенный поиск',busy)+'</div><div class="lbl2">Сохранённые приборы</div>'+state.savedDevices.map(d=>'<div class="item ble-device-row is-saved"><span class="t"><b>'+esc(d.name)+'</b></span>'+button('ble-connect','Подключить','data-address="'+esc(d.address)+'"')+'</div>')+'</div>'+(bleState.connected?button('ble-disconnect','Отключить прибор'):'')+(bleState.last?'<p class="ble-status" id="bleStatus">'+esc(bleState.last)+'</p>':'')+'</div>';};
+ el.innerHTML='<div class="card ble-card"><b>Приборы по Bluetooth</b><div class="btnrow">'+button('ble-scan',bleState.scanning?'Поиск…':'Найти прибор',busy)+button('ble-stop','Остановить')+button('ble-scan-all','Расширенный поиск',busy)+'</div><div class="lbl2">Сохранённые приборы</div>'+state.savedDevices.map(d=>'<div class="item ble-device-row is-saved"><span class="t"><b>'+esc(d.name)+'</b></span>'+button('ble-connect','Подключить',busy,'data-address="'+esc(d.address)+'"')+'<button class="xbtn" data-native="ble-forget" data-address="'+esc(d.address)+'" aria-label="Забыть прибор">×</button></div>').join('')+'<label class="frow"><span class="k">Автоподключение</span><input type="checkbox" id="bleAuto" '+(state.bleAuto?'checked':'')+' aria-label="Автоподключение"></label><p class="ble-status" id="bleStatus" role="status">'+esc(bleState.message)+'</p><div id="bleDevices">'+Object.values(bleState.devices).map(d=>'<div class="item ble-device-row"><span class="t"><b>'+esc(d.name||'BLE-прибор')+'</b></span>'+button('ble-connect','Подключить',false,'data-address="'+esc(d.address)+'"')+'</div>').join('')+'</div>'+(bleState.connected?button('ble-disconnect','Отключить прибор'):'')+(bleState.last?'<p class="ble-status">'+esc(bleState.last)+'</p>':'')+'</div>';};
 renderSources=function(){const view=document.querySelector('#v-sources');if(!view)return;view.querySelector('#srcF')?.remove();view.querySelector('#srcList')?.remove();for(const node of [...view.children])if(node.classList.contains('card')&&!node.id)node.remove();renderHC();renderSrcList();};
 visualPrefs();
 })();
@@ -54,7 +54,7 @@ html[data-icon-set=emoji] #groups .ic svg{width:20px!important;height:20px!impor
 .dashboard-pick-done{font-size:0!important;color:var(--muted)!important}
 .dashboard-pick-done::after{content:'Выбрать все';font-size:12px;font-weight:600}
 .activity-metrics[data-layout=soft] .metric-ring svg circle{stroke-width:4!important}
-.activity-metrics[data-layout=soft] button{background:color-mix(in srgb,var(--tc) 6%,var(--surface));border:1px solid color-mix(in srgb,var(--tc) 16%,var(--surface));border-radius:16px}
+.activity-metrics[data-layout=soft] button{background:color-mix(in srgb,var(--tc) 6%,var(--surface));border:1px solid color-mix(in srgb,var(--tc) 16%,var(--line));border-radius:16px}
 .activity-metrics[data-layout=thin] .metric-ring svg circle{stroke-width:2.5!important}
 .activity-metrics[data-layout=thin] .metric-ring{width:calc(30px * var(--ms));height:calc(30px * var(--ms))}
 .activity-metrics[data-layout=duo] .metric-ring{display:none!important}
@@ -62,8 +62,13 @@ html[data-icon-set=emoji] #groups .ic svg{width:20px!important;height:20px!impor
 .activity-metrics[data-layout=duo] b{font-size:calc(17px * var(--ms))}
 .activity-metrics[data-layout=micro] .metric-ring{width:calc(24px * var(--ms));height:calc(24px * var(--ms))}
 .activity-metrics[data-layout=micro] .metric-ring em svg{width:11px;height:11px}
+.activity-metrics[data-layout=micro] b{font-size:calc(13px * var(--ms))}
+.activity-metrics[data-layout=micro] .metric-copy>span{font-size:calc(8px * var(--ms))}
 `;
 document.head.appendChild(Object.assign(document.createElement('style'),{textContent:css}));
+const drop=['premium-line','premium-round'];
+for(let i=ICON_STYLES.length-1;i>=0;i--)if(drop.includes(ICON_STYLES[i][0]))ICON_STYLES.splice(i,1);
+if(drop.includes(state.iconSet)){state.iconSet='outline';LS.set('balans2.iconSet','outline')}
 if(!HERO_PALETTES.some(x=>x[0]==='pulse'))HERO_PALETTES.push(['pulse','Пульс',['#ff3d81','#ffd166','#4cc9f0']]);
 const layouts=[['inline','Кольца в строку'],['soft','Мягкие кольца'],['thin','Тонкие кольца'],['duo','Точка и число'],['micro','Микро']];
 HERO_LAYOUTS.splice(0,HERO_LAYOUTS.length,...layouts);

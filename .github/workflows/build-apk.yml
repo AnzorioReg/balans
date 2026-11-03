@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   apk:
@@ -39,36 +38,4 @@ jobs:
             gh release upload "$TAG" "$FILE" --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$TAG" "$FILE" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Баланс APK ${GITHUB_SHA:0:8}" --notes "Сборка: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          fi
-  notify-failure:
-    needs: [apk, publish]
-    if: failure()
-    runs-on: ubuntu-24.04
-    permissions:
-      actions: read
-      contents: read
-      issues: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Create or update CI failure issue
-        run: |
-          TITLE="CI failure: Build APK"
-          BODY=$(cat <<EOF
-          ## Сборка APK не удалась
-
-          - **Ветка:** `${GITHUB_REF_NAME}`
-          - **Коммит:** `${GITHUB_SHA}`
-          - **Запуск:** $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-          - **Время:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
-
-          Проверьте упавший job и лог. После исправления этот Issue можно закрыть.
-          EOF
-          )
-          gh label create "ci-failure" --repo "$GITHUB_REPOSITORY" --color "d73a4a" --description "Failed CI build" >/dev/null 2>&1 || true
-          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$TITLE in:title" --json number --jq '.[0].number')
-          if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
-          elif ! gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --label "ci-failure" --body "$BODY"; then
-            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
           fi

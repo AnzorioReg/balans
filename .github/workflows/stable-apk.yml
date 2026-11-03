@@ -49,7 +49,6 @@ jobs:
         run: node scripts/ui-smoke.cjs
       - name: Require both dashboard menus to open and close
         if: inputs.appearance
-        continue-on-error: true
         env:
           NODE_PATH: /tmp/balans-ui/node_modules
         run: node scripts/menu-check.cjs

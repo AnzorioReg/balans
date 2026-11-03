@@ -1,0 +1,12 @@
+name: Build appearance update
+on:
+  push:
+    branches: [sync-auto-refresh]
+    paths: ['scripts/appearance-update.py', '.github/workflows/appearance-update.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    uses: ./.github/workflows/stable-apk.yml
+    with:
+      appearance: true
+    secrets: inherit
