@@ -6,7 +6,6 @@ if(LS.get('balans2.premiumDefaultsV2',false)!==true){state.pal.dark='premium-ony
 const chartSets=[['atelier','Ателье','Столбцы активности и точные линии измерений'],['ribbon','Лента','Заливка динамики и округлённые столбцы'],['stems','Маркеры','Значения с чёткими опорными линиями'],['mosaic','Мозаика записей','Одна ячейка на показанную запись, цвет по её значению']];
 for(const item of chartSets)if(!VISUAL_STYLES.some(x=>x[0]===item[0]))VISUAL_STYLES.push(item);
 const savedChart=LS.get('balans2.chartSet','signature');if(VISUAL_STYLES.some(x=>x[0]===savedChart))state.chartSet=savedChart;
-ICON_STYLES.splice(0,ICON_STYLES.length,...ICON_STYLES.filter(x=>['outline','soft','duo'].includes(x[0])));
 if(!ICON_STYLES.some(x=>x[0]===state.iconSet)){state.iconSet='outline';LS.set('balans2.iconSet','outline');}
 LS.set('balans2.cardSkin','original');delete document.documentElement.dataset.cardSkin;
 const renderBase=renderRealVisual;
