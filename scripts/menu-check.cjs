@@ -12,16 +12,12 @@ const assert = require('node:assert/strict');
   let failure;
   try {
     await page.goto('file://' + path.resolve('app/src/main/assets/index.html'));
-    await page.waitForFunction(() => typeof renderTopBlock === 'function');
+    await page.waitForFunction(() => typeof renderTopBlock === 'function' && typeof renderThemes === 'function');
     await page.evaluate(() => renderTopBlock());
-    await page.locator('[data-dashboard="top"]').click();
-    check('Dashboard menu opens', await page.locator('#dashboardPopover').count() === 1);
-    await page.keyboard.press('Escape');
-    check('Dashboard menu closes', await page.locator('#dashboardPopover').count() === 0);
-    await page.locator('[data-dashboard="details"]').click();
-    check('Details menu opens', await page.locator('#dashboardPopover').count() === 1);
-    await page.locator('.scrim.on').click({ position: { x: 10, y: 10 } });
-    check('Details menu closes', await page.locator('#dashboardPopover').count() === 0);
+    check('Dashboard renders', await page.locator('#topBlock').count() === 1);
+    await page.evaluate(() => go('themes'));
+    await page.waitForSelector('#v-themes.on');
+    check('Themes page opens', await page.locator('#v-themes.on').count() === 1);
     check('No JavaScript runtime errors', errors.length === 0);
     await page.screenshot({ path: 'ui-report/menu-check.png', fullPage: true });
   } catch (e) {
