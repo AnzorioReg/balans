@@ -24,16 +24,32 @@ public final class AppearanceBridge {
     @JavascriptInterface public void setIcon(String id) {
         if (!Arrays.asList(ICONS).contains(id)) { callback("", "Неизвестный значок"); return; }
         activity.runOnUiThread(() -> {
+            String previous=activity.getPreferences(0).getString("launcherIcon","heart");
+            if (id.equals(previous)) { callback(id,"Этот значок уже выбран."); return; }
             try {
                 PackageManager pm=activity.getPackageManager();
-                // Enable the new entry first so a failed operation never removes every launcher.
+                // Enable the requested launcher first. If this fails, the current
+                // launcher remains available and no icon is removed.
                 pm.setComponentEnabledSetting(component(id),PackageManager.COMPONENT_ENABLED_STATE_ENABLED,PackageManager.DONT_KILL_APP);
-                for (String other : ICONS) {
-                    if (!other.equals(id)) pm.setComponentEnabledSetting(component(other),PackageManager.COMPONENT_ENABLED_STATE_DISABLED,PackageManager.DONT_KILL_APP);
+                boolean disabledPrevious=false;
+                if (!previous.equals(id) && Arrays.asList(ICONS).contains(previous)) {
+                    try {
+                        pm.setComponentEnabledSetting(component(previous),PackageManager.COMPONENT_ENABLED_STATE_DISABLED,PackageManager.DONT_KILL_APP);
+                        disabledPrevious=true;
+                    } catch (Exception ignored) {
+                        // Keep the previous launcher enabled rather than risking a missing icon.
+                    }
+                }
+                if (!disabledPrevious && !previous.equals(id)) {
+                    // Restore the requested icon if the old one could not be disabled,
+                    // so the home screen always keeps at least one launcher entry.
+                    pm.setComponentEnabledSetting(component(id),PackageManager.COMPONENT_ENABLED_STATE_ENABLED,PackageManager.DONT_KILL_APP);
                 }
                 activity.getPreferences(0).edit().putString("launcherIcon",id).apply();
                 callback(id,"Значок выбран. Рабочий стол может обновить его с небольшой задержкой.");
-            } catch (Exception e) { callback("","Не удалось изменить значок: "+e.getLocalizedMessage()); }
+            } catch (Exception e) {
+                callback("","Не удалось изменить значок: "+e.getLocalizedMessage());
+            }
         });
     }
     private ComponentName component(String id) {
