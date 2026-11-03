@@ -1,0 +1,525 @@
+rap(b);
+   }
+   case 'water':{
+    const p=pct(GOAL.water),gw=Math.min(54,h*.8),gh=h-6,gx=6,gy=3,fy=gy+gh*(1-p),cups=Math.max(1,Math.ceil(GOAL.water/250)),cx0=gx+gw+12,cols=w-cx0>=cups*4+(cups-1)*4?cups:Math.min(4,cups),nr=Math.ceil(cups/cols),cw=Math.max(2,Math.min(22,(w-cx0-(cols-1)*4)/cols,(h-6)/(nr*1.45))),ch=cw*1.25;
+    let b=`<defs>${grad(g,true,true)}<clipPath id="${g}c"><rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="12"/></clipPath></defs><rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="12" fill="var(--surface3)" opacity=".6"/><g clip-path="url(#${g}c)">${p>0?`<path d="M${gx-gw} ${fy}q${gw/4} -6 ${gw/2} 0t${gw/2} 0t${gw/2} 0t${gw/2} 0t${gw/2} 0V${gy+gh}H${gx-gw}Z" fill="url(#${g})"/>`:''}</g><rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="12" fill="none" stroke="${P[0]}" stroke-opacity=".6" stroke-width="1.5"/><text x="${gx+gw/2}" y="${gy+gh/2+5}" font-size="13" font-weight="800" fill="var(--text)" text-anchor="middle">${Number.isFinite(current)?Math.round(p*100)+'%':'—'}</text>`;
+    const amount=Number.isFinite(current)?Math.max(0,current)/250:0;
+    for(let i=0;i<cups;i++){const x=cx0+(i%cols)*(cw+4),y=(h-nr*(ch+3))/2+Math.floor(i/cols)*(ch+3),fraction=Math.max(0,Math.min(1,amount-i)),d=`M${x} ${y}H${x+cw}L${x+cw*.85} ${y+ch}H${x+cw*.15}Z`;b+=`<path d="${d}" fill="${fraction>0?`url(#${g})`:'none'}" fill-opacity="${fraction}" stroke="${fraction>0?P[1]:'var(--line)'}" stroke-width="1.5" stroke-linejoin="round"/>`}
+    if(h>=65&&w>=210)b+=`<text x="${cx0}" y="${h-2}" font-size="10" fill="var(--muted)">${fmt(amount,1)} экв. стаканов по 250 мл</text>`;return wrap(b);
+   }
+   // Registered callbacks in viz2.js, with the same geometry and original colors.
+   case 'totalCalories':case 'floors':case 'elevation':case 'nutrition':case 'mindfulness':case 'bmr':return wrap(miniBar(v.slice(0,7)));
+   case 'speed':case 'bodyWater':case 'skinTemperature':return wrap(miniLine(v.slice(0,7)));
+   case 'resp':return wrap(miniLine(v,P,false));
+   case 'cadence':case 'cyclingCadence':return wrap(miniLine(v,P,true));
+   case 'height':return wrap(`<line x1="6" y1="${h*.3}" x2="${w-6}" y2="${h*.3}" stroke="${P[0]}" stroke-width="3" stroke-linecap="round"/>`);
+   case 'leanMass':return wrap(miniBar(v.slice(0,6),true));
+   case 'boneMass':{
+    const values=v.slice(0,7),a=Math.min(...values),z=Math.max(...values),span=z-a||1;return wrap(values.map((x,i)=>`<circle cx="${values.length===1?w/2:6+i*(w-12)/(values.length-1)}" cy="${h-6-(h-14)*(z===a?.5:(x-a)/span)}" r="3" fill="${P[i%2]}" opacity=".85">${title(rows[i])}</circle>`).join(''));
+   }
+   case 'bodyFat':{
+    const values=v.slice(0,5),sum=values.reduce((a,x)=>a+Math.max(0,x),0);let X=0;return wrap(values.map((x,i)=>{const ww=sum?Math.max(0,x)/sum*(w-4):0,b=`<rect x="${X+2}" y="4" width="${ww}" height="${h-8}" rx="3" fill="${P[i%P.length]}">${title(rows[i])}</rect>`;X+=ww;return b}).join(''));
+   }
+   case 'temp':{
+    const p=(last.v-range[0])/(range[1]-range[0]),hh=(h-8)*p;return wrap(`<rect x="${w/2-8}" y="4" width="16" height="${h-8}" rx="8" fill="var(--surface3)"/><rect x="${w/2-8}" y="${h-4-hh}" width="16" height="${hh}" rx="8" fill="url(#${g})" fill-opacity=".9"/><defs>${grad()}</defs><title>Шкала записей: ${fmt(range[0],1)}–${fmt(range[1],1)} °C</title>`);
+   }
+   case 'glucose':case 'vo2':{
+    const p=(last.v-range[0])/(range[1]-range[0]),r=Math.max(2,Math.min(w/2,h/2)-5),cx=w/2,cy=h/2,L=Math.PI*r;
+    return wrap(`<defs>${grad(g,false)}</defs><path d="M${cx-r} ${cy}A${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="var(--surface3)" stroke-width="6" stroke-linecap="round"/><path d="M${cx-r} ${cy}A${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="url(#${g})" stroke-width="6" stroke-linecap="round" stroke-dasharray="${L}" stroke-dashoffset="${L*(1-p)}"/><text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="${Math.min(w,h)*.28}" font-weight="800" fill="var(--text)">${fmt(last.v,m.dec)}</text><text x="${cx}" y="${cy+r*.6}" text-anchor="middle" font-size="8" fill="var(--muted)">${fmt(range[0],m.dec)}–${fmt(range[1],m.dec)}</text><title>Шкала по записям, ${esc(m.unit)}</title>`);
+   }
+   case 'power':{
+    const p=(last.v-range[0])/(range[1]-range[0]),X=8+p*(w-16);return wrap(`<path d="M${X-8} ${h/2-5}L${X} ${h/2-8}L${X+8} ${h/2-5}L${X} ${h/2+8}L${X-8} ${h/2+5}Z" fill="url(#${g})"/><defs>${grad(g,true,true)}</defs><title>Шкала записей: ${fmt(range[0],m.dec)}–${fmt(range[1],m.dec)} Вт</title>`);
+   }
+  }
+  return wrap(miniLine());
+ }
+ // Original vizBig: original geometry, axes, palette and moving average.
+ const L=Math.min(34,w*.13),R=8,T=10,B=24,base=h-B,step=(w-L-R)/n,X=i=>L+step*i+step/2;
+ const scale=(values,zero=false,pad=.2)=>{
+  let a=Math.min(...values),z=Math.max(...values);
+  if(zero){a=Math.min(0,a);if(z===a)z=a+1}
+  else [a,z]=padRange(a,z,pad);
+  return {mn:a,mx:z,y:x=>T+(h-T-B)*(1-(x-a)/(z-a))};
+ };
+ const axes=s=>{
+  let b='';[s.mn,(s.mn+s.mx)/2,s.mx].forEach(t=>{const y=s.y(t);b+=`<line x1="${L}" x2="${w-R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--faint)">${esc(fmt(t,s.mx-s.mn<12?m.dec:0))}</text>`});
+  rows.forEach((r,i)=>{if(n<=7||[0,Math.floor((n-1)/2),n-1].includes(i))b+=`<text x="${X(i)}" y="${h-6}" text-anchor="middle" font-size="10" fill="var(--faint)">${oaDate(r)}</text>`});return b;
+ };
+ let s,b='';
+ switch(m.id){
+  case 'steps':case 'activeCalories':case 'water':{
+   const goal=({steps:GOAL.steps,activeCalories:GOAL.active,water:GOAL.water})[m.id];
+   s=scale(goal>0?v.concat(goal*1.1):v,true);b=axes(s)+`<defs>${grad(g,true,m.id==='water')}</defs>`;const bw=Math.max(.5,step*.62);
+   if(goal>0){const gy=s.y(goal);b+=`<line x1="${L}" x2="${w-R}" y1="${gy}" y2="${gy}" stroke="${P.at(-1)}" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${w-R}" y="${gy-4}" font-size="10" font-weight="700" fill="${P.at(-1)}" text-anchor="end">цель ${fmt(goal)}</text>`}
+   v.forEach((x,i)=>{const y=s.y(x),hit=goal>0&&x>=goal,hh=Math.max(0,base-y);b+=`<g>${title(rows[i])}<rect x="${X(i)-bw/2}" y="${y}" width="${bw}" height="${hh}" rx="${Math.min(bw/2.2,7,hh/2)}" fill="url(#${g})" opacity="${hit||i===n-1?1:.55}"/>${m.id==='water'&&bw>10?`<circle cx="${X(i)}" cy="${y-7}" r="3" fill="${P[0]}"/>`:hit&&bw>8?`<circle cx="${X(i)}" cy="${y-6}" r="3" fill="${P.at(-1)}"/>`:''}</g>`});break;
+  }
+  case 'distance':{
+   const c=rows.map(r=>cumulative.get(r));s=scale(c,true);b=axes(s);
+   const pts=c.map((x,i)=>[X(i),s.y(x)]),d=smooth(pts);
+   b+=`<defs>${grad(g,false)}<linearGradient id="${g}a" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${P[0]}" stop-opacity=".4"/><stop offset="1" stop-color="${P[1]}" stop-opacity="0"/></linearGradient></defs><path d="${d}L${pts.at(-1)[0]} ${base}L${pts[0][0]} ${base}Z" fill="url(#${g}a)"/><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="3"/>`;
+   const bw=Math.max(.5,step*.3);v.forEach((x,i)=>{const hh=Math.min(h-T-B,Math.max(0,x)/Math.max(.000001,total)*(h-T-B)*3);b+=`<rect x="${X(i)-bw/2}" y="${base-hh}" width="${bw}" height="${hh}" rx="${bw/2}" fill="${P[1]}" opacity=".35">${title(rows[i])}</rect>`});
+   if(n<=31)pts.forEach((p,i)=>b+=`<circle cx="${p[0]}" cy="${p[1]}" r="${i===n-1?5:2.5}" fill="${i===n-1?P[0]:'var(--surface)'}" stroke="${P[0]}" stroke-width="2"/>`);
+   b+=`<text x="${L+4}" y="${T+12}" font-size="11" font-weight="700" fill="var(--text)">всего ${fmt(total,1)} км по записям</text>`;break;
+  }
+  case 'exercise':{
+   s=scale(v.concat(Math.max(...v)*1.3),true);b=axes(s)+`<defs><radialGradient id="${g}" cx=".35" cy=".35" r=".8"><stop stop-color="${P[0]}"/><stop offset="1" stop-color="${P[1]}"/></radialGradient></defs>`;
+   v.forEach((x,i)=>{const r=Math.min(step*.48,18)*Math.sqrt(Math.max(0,x)/Math.max(.000001,mx));b+=`<circle cx="${X(i)}" cy="${s.y(x)}" r="${r}" fill="url(#${g})" opacity=".9">${title(rows[i])}</circle>`;if(n<=7)b+=`<text x="${X(i)}" y="${s.y(x)+4}" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">${fmt(x,m.dec)}</text>`});break;
+  }
+  case 'heart':{
+   s=scale(v,false,.35);b=axes(s);const pts=v.map((x,i)=>[X(i),s.y(x)]),d=smooth(pts);
+   b+=`<defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="0" y1="${s.y(s.mn)}" x2="0" y2="${s.y(s.mx)}"><stop stop-color="${P[0]}"/><stop offset=".6" stop-color="${P[1]}"/><stop offset="1" stop-color="${P[2]}"/></linearGradient><filter id="${g}f"><feGaussianBlur stdDeviation="3"/></filter></defs><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="6" opacity=".35" filter="url(#${g}f)"/><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="2.6" stroke-linecap="round"/>`;
+   [[v.indexOf(mx),P[2]],[v.indexOf(mn),P[0]]].forEach(([i,c])=>b+=`<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="4.5" fill="var(--surface)" stroke="${c}" stroke-width="2.4"/>`);break;
+  }
+  case 'restingHeart':case 'hrv':case 'spo2':{
+   const band=[rawMin,rawMax];s=scale(v.concat(band),false,.3);b=axes(s)+`<rect x="${L}" y="${s.y(band[1])}" width="${w-L-R}" height="${Math.max(0,s.y(band[0])-s.y(band[1]))}" fill="${P[0]}" opacity=".14" rx="6"/><text x="${w-R-4}" y="${s.y(band[1])-4}" font-size="10" fill="${P[0]}" text-anchor="end">диапазон записей</text><defs>${grad(g,true,true)}</defs>`;
+   if(m.id==='hrv')v.forEach((x,i)=>b+=`<line x1="${X(i)}" x2="${X(i)}" y1="${base}" y2="${s.y(x)}" stroke="${P[0]}" stroke-width="${Math.max(1.5,step*.18)}" stroke-linecap="round" opacity=".7"/><circle cx="${X(i)}" cy="${s.y(x)}" r="${Math.max(2,Math.min(5,step*.3))}" fill="${P[1]}">${title(rows[i])}</circle>`);
+   else if(m.id==='spo2'){const pts=v.map((x,i)=>[X(i),s.y(x)]),d=smooth(pts);b+=`<path d="${d}L${pts.at(-1)[0]} ${base}L${pts[0][0]} ${base}Z" fill="url(#${g})" opacity=".28"/><path d="${d}" fill="none" stroke="${P[0]}" stroke-width="2.4"/>`;pts.forEach((p,i)=>b+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${P[1]}">${title(rows[i])}</circle>`)}
+   else {b+=`<path d="${v.map((x,i)=>(i?'L':'M')+X(i)+' '+s.y(x)).join(' ')}" fill="none" stroke="${P[0]}" stroke-opacity=".4" stroke-width="1.5"/>`;v.forEach((x,i)=>b+=`<circle cx="${X(i)}" cy="${s.y(x)}" r="${Math.max(2.2,Math.min(5.5,step*.32))}" fill="${P[1]}" stroke="var(--surface)" stroke-width="1.5">${title(rows[i])}</circle>`)}
+   break;
+  }
+  case 'bp':{
+   const dia=rows.map(r=>r.lo).filter(Number.isFinite);s=scale(v.concat(dia),false,.15);b=axes(s)+`<defs>${grad(g,true,true)}</defs>`;const bw=Math.max(.5,Math.min(14,step*.5));
+   rows.forEach((r,i)=>{const y=s.y(r.v);if(Number.isFinite(r.lo)){const top=Math.min(y,s.y(r.lo)),hh=Math.abs(s.y(r.lo)-y);b+=`<rect x="${X(i)-bw/2}" y="${top}" width="${bw}" height="${hh}" rx="${Math.min(bw/2,hh/2)}" fill="url(#${g})">${title(r)}</rect>`;if(bw>8&&hh>bw)b+=`<circle cx="${X(i)}" cy="${top+bw/2}" r="${Math.max(.5,bw/2-3)}" fill="#fff" opacity=".85"/><circle cx="${X(i)}" cy="${top+hh-bw/2}" r="${Math.max(.5,bw/2-3)}" fill="#fff" opacity=".85"/>`}else b+=`<circle cx="${X(i)}" cy="${y}" r="3.5" fill="${P[0]}">${title(r)}</circle>`});break;
+  }
+  case 'sleep':{
+   if(n===1){const phases=oaHypnogram(last,w,h,false);if(phases)return wrap(phases)}
+   const phaseHours=r=>{const out=[0,0,0,0,0];oaStages(r).forEach(st=>{const l=oaPhase(st.kind);out[l<0?4:l]+=(st.end-st.start)/3600000});return out};
+   const durations=rows.map(phaseHours),totals=durations.map(a=>a.reduce((s,x)=>s+x,0));
+   s=scale(v.concat(totals,GOAL.sleep>0?[GOAL.sleep]:[]),true);b=axes(s);const bw=Math.max(.5,step*.6);
+   rows.forEach((r,i)=>{if(!oaStages(r).length){const y=s.y(r.v);b+=`<rect x="${X(i)-bw/2}" y="${y}" width="${bw}" height="${Math.max(0,base-y)}" rx="${Math.min(4,bw/2)}" fill="${P[0]}">${title(r)}</rect>`;return}
+    let acc=0;[3,2,1,0,4].forEach(l=>{const amount=durations[i][l];if(amount<=0)return;const y0=s.y(acc),y1=s.y(acc+amount);b+=`<rect x="${X(i)-bw/2}" y="${y1}" width="${bw}" height="${Math.max(0,y0-y1-.6)}" rx="${Math.min(3,bw/3)}" fill="${l===4?'var(--faint)':ORIGINAL_AUTHOR_PHASES[l][1]}"/>`;acc+=amount});
+   });
+   if(GOAL.sleep>0){const gy=s.y(GOAL.sleep);b+=`<line x1="${L}" x2="${w-R}" y1="${gy}" y2="${gy}" stroke="var(--text)" stroke-opacity=".5" stroke-dasharray="5 4"/><text x="${w-R}" y="${gy-4}" font-size="10" fill="var(--muted)" text-anchor="end">цель ${fmt(GOAL.sleep,1)} ч</text>`}break;
+  }
+  case 'weight':{
+   s=scale(v,false,.4);b=axes(s);const pts=v.map((x,i)=>[X(i),s.y(x)]),d=smooth(pts),windowSize=Math.max(2,Math.round(all.length/6)),prefix=[0],indices=new Map();
+   all.forEach((r,i)=>{prefix.push(prefix.at(-1)+r.v);indices.set(r,i)});
+   const ma=rows.map(r=>{const i=indices.get(r),a=Math.max(0,i-windowSize);return(prefix[i+1]-prefix[a])/(i+1-a)});
+   b+=`<defs>${grad(g,false)}<linearGradient id="${g}a" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${P[0]}" stop-opacity=".38"/><stop offset="1" stop-color="${P[1]}" stop-opacity="0"/></linearGradient></defs><path d="${d}L${pts.at(-1)[0]} ${base}L${pts[0][0]} ${base}Z" fill="url(#${g}a)"/><path d="${smooth(ma.map((x,i)=>[X(i),s.y(x)]))}" fill="none" stroke="var(--text)" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="5 4"/><path d="${d}" fill="none" stroke="url(#${g})" stroke-width="3"/><circle cx="${pts.at(-1)[0]}" cy="${pts.at(-1)[1]}" r="5" fill="${P[1]}" stroke="var(--surface)" stroke-width="2"/>`;break;
+  }
+  default:{
+   // Original drawChart fallback: bar / line, NOT the later MD reinterpretation.
+   const bar=m.chart==='bar'||m.id==='nutrition';s=scale(v,bar,.25);b=axes(s);
+   const c=`var(${CATS[m.cat].c})`;
+   if(bar){const bw=Math.max(.5,step*.62);v.forEach((x,i)=>{const y=s.y(x),hh=Math.max(0,base-y);b+=`<rect x="${X(i)-bw/2}" y="${y}" width="${bw}" height="${hh}" rx="${Math.min(4,bw/2,hh/2)}" fill="${c}" opacity="${i===n-1?1:.75}">${title(rows[i])}</rect>`})}
+   else {const pts=v.map((x,i)=>[X(i),s.y(x)]),d=pts.map((p,i)=>(i?'L':'M')+p.join(' ')).join(' ');
+    b+=`<defs><linearGradient id="${g}" x1="0" x2="0" y1="0" y2="1"><stop stop-color="${c}" stop-opacity=".38"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs><path d="${d}L${pts.at(-1)[0]} ${base}L${pts[0][0]} ${base}Z" fill="url(#${g})"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${pts.at(-1)[0]}" cy="${pts.at(-1)[1]}" r="5" fill="var(--surface)" stroke="${c}" stroke-width="2.4"/>`;
+   }break;
+  }
+ }
+ return wrap(b);
+}
+
+/* Appearance is independent of measurement availability. */
+const APP_IDENTITIES=[
+ {"id":"balance","name":"Баланс","colors":["#3ee2c4","#ff6a91","#59a9ff"],"paths":["M54 30 A24 24 0 1 1 30 54","M54 38 A16 16 0 1 1 38 54","M54 46 A8 8 0 1 1 46 54"]},
+ {"id":"heart","name":"Сердце","colors":["#ff608f","#51e9cb","#72b7ff"],"paths":["M54 77 C48 72 29 59 29 45 C29 29 46 27 54 39 C62 27 79 29 79 45 C79 59 60 72 54 77 Z","M54 67 C49 62 38 55 38 46 C38 37 49 35 54 45 C59 35 70 37 70 46 C70 55 59 62 54 67 Z"]},
+ {"id":"pulse","name":"Пульс","colors":["#ff6c9c","#75deff"],"paths":["M29 54 H42 L48 38 L58 72 L65 48 L70 54 H80","M35 31 A33 33 0 0 1 81 76","M27 40 A33 33 0 0 0 68 85"]},
+ {"id":"drop","name":"Вода","colors":["#59c9ff","#59efd9"],"paths":["M54 26 C46 41 32 49 32 63 A22 22 0 0 0 76 63 C76 49 62 41 54 26 Z","M43 65 C43 73 52 77 60 73"]},
+ {"id":"leaf","name":"Энергия жизни","colors":["#7ee97d","#36d9bb"],"paths":["M32 75 C24 44 45 27 77 31 C81 62 59 81 32 75 Z","M33 75 L65 44","M47 61 L45 45","M56 52 H71"]},
+ {"id":"sun","name":"Ритм дня","colors":["#ffd369","#ff906a"],"paths":["M54 36 A18 18 0 1 1 53.99 36","M54 23 V28 M54 80 V85 M23 54 H28 M80 54 H85","M32 32 L36 36 M72 72 L76 76 M32 76 L36 72 M72 36 L76 32"]},
+ {"id":"tracks","name":"Движение","colors":["#ff6a9b","#54e9cb","#73b9ff"],"paths":["M45 29 H59 A25 25 0 0 1 59 79 H45 A25 25 0 0 1 45 29 Z","M46 38 H58 A16 16 0 0 1 58 70 H46 A16 16 0 0 1 46 38 Z","M48 47 H57 A7 7 0 0 1 57 61 H48"]},
+ {"id":"flower","name":"Гармония","colors":["#ff73a7","#61e5c7","#a995ff"],"paths":["M54 54 C32 42 37 22 51 29 C62 35 60 46 54 54 C76 66 71 86 57 79 C46 73 48 62 54 54","M54 54 C66 32 86 37 79 51 C73 62 62 60 54 54 C42 76 22 71 29 57 C35 46 46 48 54 54"]},
+ {"id":"shield","name":"Забота","colors":["#68bdff","#70e5c3"],"paths":["M54 26 L77 36 V54 C77 69 66 78 54 84 C42 78 31 69 31 54 V36 Z","M43 53 L51 61 L66 44"]},
+ {"id":"person","name":"Активная жизнь","colors":["#ffd36c","#ff799e","#62dfd0"],"paths":["M54 27 A7 7 0 1 1 53.99 27","M31 48 L47 53 H61 L77 48","M54 51 V65 M54 65 L39 82 M54 65 L69 82"]}
+]
+;
+const EXTRA_THEMES={
+ dark:[
+ ['ember','Коралловая ночь','#160d12','#21131a','#2c1c25','#3d2934','#ffa891'],
+ ['lagoon','Лагуна','#06161b','#0c222a','#122e38','#1b3c48','#65e6f6'],
+ ['forest','Лесной свет','#0b1611','#14241a','#1e3023','#2a3f2c','#b6ed7a'],
+ ['sakura','Ночная сакура','#180e18','#241624','#311f32','#422a43','#ffa7d3'],
+ ['cobalt','Кобальт','#0b1225','#141e36','#1d2a47','#293a5c','#89b8ff']
+ ],
+ light:[
+ ['peach','Персик','#fff2ea','#fffaf6','#f7e9df','#efdbcd','#a43c21'],
+ ['pistachio','Фисташка','#f2f7e7','#fcfff6','#e9f0dc','#dce7c9','#456900'],
+ ['pearl','Жемчуг','#f3f4fc','#ffffff','#e9ebf8','#dce0f2','#5353b4'],
+ ['rose','Розовый кварц','#fff0f4','#fffafd','#f8e4ec','#eed1df','#a52b64'],
+ ['aqua','Аквамарин','#eaf8f8','#f8ffff','#dbefef','#c9e4e5','#006e79']
+ ]
+};
+let themeCss='';
+Object.entries(EXTRA_THEMES).forEach(([mode,themes])=>themes.forEach(([id,name,bg,surface,surface2,surface3,accent])=>{
+ PALS[mode].push([id,name,bg,surface3,accent]);
+ themeCss+=`[data-theme="${mode}"][data-pal="${id}"]{--bg:${bg};--surface:${surface};--surface2:${surface2};--surface3:${surface3};--accent:${accent};--accent-ink:${mode==='dark'?'#10131a':'#ffffff'};--line:${mode==='dark'?'#4a4f60':'#b5bdcd'};--text:${mode==='dark'?'#f5f6ff':'#182332'};--muted:${mode==='dark'?'#bdc4d5':'#4c5d70'};--faint:${mode==='dark'?'#a1adbe':'#5f6d7d'}}`;
+}));
+const appearanceCss=document.createElement('style');
+appearanceCss.textContent=themeCss+`
+.app-icon-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.app-icon-choice{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:6px 2px;font-size:12px;line-height:1.2;border:1px solid transparent;border-radius:12px}
+.app-icon-choice.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.app-icon-choice svg{width:100%;max-width:62px;aspect-ratio:1;border-radius:16px;filter:var(--visual-filter,none)}
+.sources-fold{margin:16px 0}.sources-fold>summary{cursor:pointer;font-weight:650;display:flex;gap:8px;align-items:center;min-height:48px;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--surface)}
+.sources-fold>summary::before{content:'+';color:var(--accent);font-size:22px}.sources-fold[open]>summary::before{content:'−'}.sources-fold>summary span{margin-left:auto;color:var(--muted)}
+.chart-comparison{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chart-comparison>div{min-width:0}.chart-comparison small{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+button:disabled{opacity:.5;cursor:default}.activity-glyph{filter:var(--visual-filter,none)!important}
+#v-themes .lbl2{margin:14px 0 7px;font-size:12px}
+#v-themes .pg-intro{font-size:12px;line-height:1.4;margin-bottom:10px}
+#v-themes .pals{gap:6px}
+#v-themes .pal{font-size:10px;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+#v-themes .psw{height:36px!important;border-radius:10px;padding:5px}
+#v-themes .lay{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+#v-themes .lay button{padding:9px 7px;border-radius:10px;min-width:0;font-size:12px;overflow-wrap:anywhere}
+#v-themes .lay small{font-size:10px}
+#v-themes .visual-choices{gap:6px}
+#v-themes .visual-choice{padding:8px;border-radius:11px}
+#v-themes .visual-choice b{font-size:12px;padding-right:12px}
+#v-themes .visual-choice small{font-size:10px;line-height:1.35;margin-top:3px}
+#v-themes .choice-preview{height:28px;margin-bottom:5px;gap:9px}
+#v-themes .choice-preview .real-visual{height:28px}
+#v-themes .choice-preview>svg.i{width:22px;height:22px}
+#v-themes .app-icon-grid{gap:5px}
+#v-themes .app-icon-choice{font-size:10px;gap:4px;padding:5px 2px}
+#v-themes .app-icon-choice svg{max-width:46px;border-radius:12px}
+#v-themes .foot{font-size:11px;line-height:1.4}
+.appearance-levels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+#v-themes .appearance-levels .contrast-control{margin:0!important;padding:10px;min-width:0}
+#v-themes .appearance-levels .contrast-label{flex-wrap:wrap;gap:3px;margin-bottom:3px;font-size:12px}
+#v-themes .appearance-levels output{font-size:10px}
+#v-themes .appearance-levels input{height:28px}
+#v-themes .appearance-levels .contrast-ends{font-size:10px}
+#v-themes .appearance-step-controls{margin-top:4px!important}
+#v-themes .appearance-reset{grid-column:1/-1;margin:0;padding:8px;font-size:12px}
+@media(max-width:340px){.appearance-levels{grid-template-columns:1fr}}
+`;
+document.head.appendChild(appearanceCss);
+state.appIcon=LS.get('balans2.appIcon','heart');
+function identitySVG(item){
+ return `<svg viewBox="0 0 108 108" role="img" aria-label="${esc(item.name)}"><rect width="108" height="108" rx="26" fill="#0b0f15"/><g fill="none" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">${item.paths.map((p,i)=>`<path d="${p}" stroke="${item.colors[i%item.colors.length]}"/>`).join('')}</g></svg>`;
+}
+function renderIdentityPrefs(){
+ const node=document.createElement('section');node.id='identityPreferences';
+ node.innerHTML=`<div class="lbl2">Иконка приложения</div><div class="app-icon-grid">${APP_IDENTITIES.map(item=>`<button class="app-icon-choice ${state.appIcon===item.id?'on':''}" data-app-icon="${item.id}" aria-pressed="${state.appIcon===item.id}">${identitySVG(item)}<span>${esc(item.name)}</span></button>`).join('')}</div><p class="foot" id="appIconStatus">${window.BalansAppearance?'Выбранный значок появится на рабочем столе. Некоторые оболочки обновляют его не сразу.':'В HTML доступен предпросмотр. Иконка на телефоне меняется в APK.'}</p>`;
+ return node;
+}
+window.onAppearanceEvent=function(ev){
+ if(APP_IDENTITIES.some(i=>i.id===ev.id)){state.appIcon=ev.id;LS.set('balans2.appIcon',ev.id)}
+ document.querySelectorAll('[data-app-icon]').forEach(b=>{b.classList.toggle('on',b.dataset.appIcon===state.appIcon);b.setAttribute('aria-pressed',String(b.dataset.appIcon===state.appIcon))});
+ if(ev.message&&$('#appIconStatus'))$('#appIconStatus').textContent=ev.message;
+ const chosen=APP_IDENTITIES.find(i=>i.id===state.appIcon);
+ if(chosen)document.querySelector('link[rel=icon]')?.setAttribute('href','data:image/svg+xml,'+encodeURIComponent(identitySVG(chosen)));
+};
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-app-icon]');if(!b)return;
+ if(window.BalansAppearance)window.BalansAppearance.setIcon(b.dataset.appIcon);
+ else onAppearanceEvent({id:b.dataset.appIcon,message:'Предпросмотр выбран. Для изменения значка на телефоне используйте APK.'});
+});
+document.addEventListener('change',e=>{
+ if(e.target.id==='bleAuto'){state.bleAuto=e.target.checked;LS.set('balans2.bleAuto',state.bleAuto);if(state.bleAuto)tryBleAuto()}
+});
+const baseRenderThemes=renderThemes;
+renderThemes=function(){
+ baseRenderThemes();
+ const view=$('#v-themes');if(!view)return;
+ view.querySelector('#visualPreferences')?.remove();view.querySelector('#identityPreferences')?.remove();
+ view.appendChild(renderVisualPreferences());view.appendChild(renderIdentityPrefs());
+ if(!view.querySelector('.appearance-levels')){
+  const contrast=view.querySelector('#contrastRange')?.closest('.contrast-control');
+  const brightness=view.querySelector('#brightnessRange')?.closest('.contrast-control');
+  const reset=view.querySelector('.appearance-reset');
+  if(contrast&&brightness){
+   const levels=document.createElement('div');levels.className='appearance-levels';
+   contrast.before(levels);levels.append(contrast,brightness);if(reset)levels.append(reset);
+  }
+ }
+};
+let pendingSystemBars=0,lastSystemBars='';
+function updateSystemBars(){
+ if(!window.BalansAppearance)return;
+ if(pendingSystemBars)return;
+ pendingSystemBars=requestAnimationFrame(()=>{
+ pendingSystemBars=0;
+ const probe=document.createElement('span');probe.style.backgroundColor='var(--bg)';probe.style.display='none';document.body.appendChild(probe);
+ // Canvas resolves CSS color-mix to actual sRGB on Android WebView.
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.fillStyle=getComputedStyle(probe).backgroundColor;ctx.fillRect(0,0,1,1);
+ const d=ctx.getImageData(0,0,1,1).data,color='#'+[d[0],d[1],d[2]].map(x=>x.toString(16).padStart(2,'0')).join('');probe.remove();
+ const key=state.theme+color;
+ if(key!==lastSystemBars){lastSystemBars=key;window.BalansAppearance.setSystemBars(state.theme,color)}
+ });
+}
+const themeWithSystemBars=applyTheme;
+applyTheme=function(){themeWithSystemBars();updateSystemBars()};
+const contrastWithSystemBars=applyContrast;
+applyContrast=function(){contrastWithSystemBars();updateSystemBars()};
+document.addEventListener('input',e=>{if(['brightnessRange','contrastRange'].includes(e.target.id))requestAnimationFrame(updateSystemBars)});
+window.BalansAppearance?.status();
+
+/* Native local schedules. HTML cannot pretend to deliver Android notifications. */
+let reminderInfo={enabled:false,scheduled:0,message:''};
+function syncNativeReminders(ask=false){
+ if(!window.BalansReminders)return;
+ window.BalansReminders.sync(JSON.stringify(state.rem),!!state.priv.hideNotif);
+ if(ask&&state.rem.some(r=>r.on))window.BalansReminders.requestPermission();
+}
+function testNativeReminder(){
+ if(window.BalansReminders)window.BalansReminders.test();
+ else toast('Нужна APK-версия','HTML-файл не отправляет системные напоминания Android.');
+}
+window.onReminderEvent=function(ev){
+ reminderInfo={...reminderInfo,...ev};
+ const status=$('#reminderStatus');if(status)status.textContent=ev.message||'';
+};
+const remindersPage=MPAGES.remind.r;
+MPAGES.remind.r=function(){
+ return remindersPage()+`<p class="foot" role="status" id="reminderStatus">${window.BalansReminders?esc(reminderInfo.message||'Разрешите уведомления при добавлении напоминания. Android может задерживать доставку в режиме энергосбережения.'):'Системные уведомления доступны в APK, а не в HTML-файле.'}</p>`;
+};
+document.addEventListener('submit',e=>{
+ if(e.target.id==='fRem')queueMicrotask(()=>syncNativeReminders(true));
+});
+document.addEventListener('click',e=>{
+ const a=e.target.closest('[data-x]')?.dataset.x;
+ if(['remtog','remdel'].includes(a)||(a==='ptog'&&e.target.closest('[data-x]')?.dataset.a==='hideNotif'))queueMicrotask(()=>syncNativeReminders(a==='remtog'));
+});
+const foregroundWithReminders=window.onAppForeground;
+window.onAppForeground=()=>{foregroundWithReminders?.();syncNativeReminders()};
+if(window.BalansReminders)setTimeout(()=>syncNativeReminders(),500);
+
+/* Period-aware analysis. Raw records remain the source of statistics and exports.
+   Plot buckets never invent zeroes for missing dates or extrapolate history. */
+function periodWindow(p,previous=false){
+ const now=new Date(),days={day:1,week:7,month:30,'6m':183,year:366,all:36500}[p]||7;
+ const end=previous?new Date(now.getFullYear(),now.getMonth(),now.getDate()-(days-1)).getTime()-1:Date.now();
+ const start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-(previous?2*days-1:days-1)).getTime();
+ return {start,end};
+}
+const periodDate=ts=>new Date(ts).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+const legendBefore116=bigLegend;
+bigLegend=function(m,p){
+ if(!p)return legendBefore116(m);
+ if(m.id==='sleep')return metricChartRecords(m,p).at(-1)?.stages?.length?legendBefore116(m):'';
+ if(m.id==='bp')return '<span>Средние верхнего и нижнего давления рассчитаны по переданным значениям каждого типа. Отсутствующее нижнее не вычисляется.</span>';
+ return legendBefore116(m);
+};
+function periodLower(m,p){
+ const a=metricRecords(m,p).map(r=>r.lo).filter(Number.isFinite);
+ return a.length?avg(a):undefined;
+}
+function chartBucket(p){return p==='year'||p==='all'?'month':p==='6m'?'week':p==='day'?'hour':'day'}
+const chartPeriodCache=new Map();
+function metricChartRecords(m,p,previous=false){
+ const rows=metricRecords(m,p,previous),key=m.id+':'+p+':'+previous,old=chartPeriodCache.get(key);
+ if(old?.rows===rows)return old.result;
+ const resolution=chartBucket(p),buckets=new Map();
+ for(const r of rows){
+  const d=new Date(recordTimestamp(r));
+  if(resolution==='month')d.setDate(1);
+  if(resolution==='week')d.setDate(d.getDate()-(d.getDay()+6)%7);
+  if(resolution==='hour')d.setMinutes(0,0,0);else d.setHours(0,0,0,0);
+  const k=d.getTime();if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(r);
+ }
+ const result=[...buckets.entries()].sort((a,b)=>a[0]-b[0]).map(([start,rs])=>{
+  if(rs.length===1)return rs[0];
+  // Keep daily-goal charts in daily units, even on a month/week scale.
+  // Distance alone uses interval totals for its original cumulative route.
+  const lo=rs.map(r=>r.lo).filter(Number.isFinite),sum=m.id==='distance';
+  const out={...rs.at(-1),v:sum?rs.reduce((s,r)=>s+r.v,0):avg(rs.map(r=>r.v)),
+   bucketStart:start,bucketEnd:recordTimestamp(rs.at(-1)),sampleCount:rs.length,
+   aggregate:sum?'sum':'mean'};
+  if(lo.length)out.lo=avg(lo);else delete out.lo;
+  // A multi-session average has no single actual sleep-stage timeline.
+  if(m.id==='sleep'){delete out.stages;delete out.sleepKind}
+  return out;
+ });
+ chartPeriodCache.set(key,{rows,result});return result;
+}
+function periodCoverage(m,p){
+ const rows=metricRecords(m,p),resolution=chartBucket(p);
+ if(!rows.length)return 'За выбранный период нет сохранённых измерений.';
+ const days=new Set(rows.map(r=>r.day||localDay(recordTimestamp(r)))).size;
+ const scale={hour:'по часам',day:'по дням',week:'по неделям',month:'по месяцам'}[resolution];
+ const operation=m.id==='distance'?'суммы':DAILY_METRICS.has(m.id)?'среднее за учтённый день':'средние измерений';
+ return `${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))} · записей: ${rows.length}, дней с данными: ${days} · график: ${operation} ${scale}. Пропуски не считаются нулём.`;
+}
+function periodChange(m,p){
+ const a=metricRecords(m,p).map(r=>r.v),b=metricRecords(m,p,true).map(r=>r.v);
+ if(!a.length||!b.length)return {text:'Нет данных для сравнения с предыдущим периодом',short:'—',cls:''};
+ const before=avg(b),current=avg(a);
+ if(before===0)return {text:'Предыдущее среднее равно нулю; процент не рассчитывается',short:'—',cls:''};
+ const d=(current-before)/Math.abs(before)*100,short=Math.abs(d)<.5?'≈':(d>0?'+':'−')+fmt(Math.abs(d),1)+'%';
+ return {text:`${short} к среднему предыдущего периода · записей: ${b.length}`,short,cls:d>0?'tr-up':d<0?'tr-dn':''};
+}
+drawChart=function(m,p,compare=false){
+ const raw=metricRecords(m,p),previous=compare?metricRecords(m,p,true):null;
+ let svg=renderRealVisual(m,W,H,metricChartRecords(m,p),false);
+ if(previous)svg=`<div class="chart-comparison"><div><small>Текущий период</small>${svg}</div><div><small>Предыдущий период</small>${renderRealVisual(m,W,H,metricChartRecords(m,p,true),false)}</div></div>`;
+ return {svg:`<div data-chart-period="${p}" data-chart-bucket="${chartBucket(p)}">${svg}</div>`,v:raw.map(r=>r.v),p:previous?.map(r=>r.v)||null,noSel:true};
+};
+renderDynamics=function(){
+ renderHeat();
+ $('#periods').innerHTML=PERIODS.map(([k,l])=>`<button data-period="${k}" class="${state.period===k?'on':''}">${l}</button>`).join('');
+ let report=$('#dynamicsReport');
+ if(!report){report=document.createElement('button');report.id='dynamicsReport';report.className='btn ghost dynamics-report';report.dataset.openReport='';$('#periods').after(report)}
+ report.innerHTML=ic('i-file')+'Отчёт о показателях';
+ if(!avail(byId[state.metric])){if(!AV().length){$('#cats').innerHTML='';$('#dynCard').innerHTML='<div class="emptybox">Нет сохранённых показателей.<button class="btn" data-act="add">Добавить показатель</button></div>';$('#picker').innerHTML='<span class="t">Выберите показатель после добавления данных</span>';return}state.metric=AV()[0].id}
+ const cs=Object.keys(CATS).filter(c=>AV().some(m=>m.cat===c));if(!cs.includes(state.cat))state.cat='Все';
+ $('#cats').innerHTML=['Все',...cs].map(c=>`<button class="chip ${state.cat===c?'on':''}" data-cat="${c}">${c}</button>`).join('');
+ const m=byId[state.metric],canCmp=['bar','line'].includes(m.chart),r=drawChart(m,state.period,state.cmp&&canCmp);
+ $('#picker').style.setProperty('--c',cv(m));$('#dynCard').style.setProperty('--c',cv(m));
+ $('#picker').innerHTML=`<span class="ic">${ic(mic(m))}</span><span class="t"><small>Показатель · ${m.cat}</small><b>${esc(m.name)}</b></span>${ic('i-down','i chev')}`;
+ const sum=DAILY_METRICS.has(m.id)&&state.period==='day',v=r.v;
+ const big=v.length?(sum?v.reduce((a,b)=>a+b,0):avg(v)):NaN;
+ $('#dynCard').innerHTML=`
+ <div class="period-caption">${sum?'Всего за день':'Среднее за выбранный период'}</div>
+ <div class="big num">${show(m,big,periodLower(m,state.period))}${m.id!=='sleep'?`<small>${m.unit}</small>`:''}</div>
+ <p class="period-coverage">${esc(periodCoverage(m,state.period))}</p>
+ <div class="delta">${esc(periodChange(m,state.period).text)}</div>
+ <div class="chart">${r.svg}</div><div class="legend">${bigLegend(m,state.period)}</div>
+ <div class="stats">${metricSummary(m,state.period).map(([a,b])=>`<div class="stat"><small>${a}</small><b class="num">${b}</b></div>`).join('')}</div>
+ ${canCmp?`<button class="toggle" data-act="cmp" aria-pressed="${state.cmp}"><span>Сравнить с предыдущим периодом</span><span class="sw ${state.cmp?'on':''}"></span></button>`:''}`;
+};
+
+/* Touchable, labelled record coverage, not a medical score. */
+let heatSelectedDay=null,heatModel=null;
+renderHeat=function(){
+ const el=$('#heat');if(!el)return;
+ const rows=M.map(m=>recs(m)),today=localDay();
+ if(!heatModel||heatModel.day!==today||rows.some((r,i)=>r!==heatModel.rows[i])){
+  const dates=Array.from({length:28},(_,i)=>{const d=new Date();d.setDate(d.getDate()-27+i);return localDay(d)});
+  const entries=new Map(dates.map(d=>[d,{metrics:new Set(),records:0}]));
+  rows.forEach((rs,i)=>{for(const r of rs){if(!Number.isFinite(r.v))continue;const day=r.day||localDay(recordTimestamp(r)),entry=entries.get(day);if(entry){entry.metrics.add(M[i].id);entry.records++}}});
+  heatModel={day:today,rows,dates,entries};
+ }
+ const {dates,entries}=heatModel;
+ if(!entries.has(heatSelectedDay))heatSelectedDay=dates.filter(d=>entries.get(d).metrics.size).at(-1)||today;
+ el.innerHTML=dates.map(day=>{
+  const n=entries.get(day).metrics.size,p=n/M.length,selected=day===heatSelectedDay;
+  const title=`${day}: ${n?'показателей с записями: '+n:'нет данных'}`;
+  return `<button class="heat-day${selected?' selected':''}" data-heat-day="${day}" aria-pressed="${selected}" aria-label="${title}"><i class="${!n?'':p<.35?'l1':p<.75?'l2':'l3'}" title="${title}"><span>${Number(day.slice(-2))}</span><b>${n||'—'}</b></i></button>`;
+ }).join('');
+ let detail=$('#heatDetails');
+ if(!detail){detail=document.createElement('div');detail.id='heatDetails';detail.setAttribute('aria-live','polite');el.after(detail)}
+ const chosen=entries.get(heatSelectedDay),activeDays=dates.filter(d=>entries.get(d).metrics.size).length;
+ detail.innerHTML=`<p class="period-coverage">За 28 дней: ${activeDays} дней с записями. В клетке: число и количество показателей.</p><b>${periodDate(new Date(heatSelectedDay+'T12:00:00').getTime())}</b><p>${chosen.metrics.size?`${chosen.metrics.size} показателей · ${chosen.records} записей`:'Нет сохранённых записей за этот день'}</p><div class="heat-metrics">${[...chosen.metrics].map(id=>`<button class="chip" data-metric="${id}">${ic(mic(byId[id]))}${esc(byId[id].name)}</button>`).join('')}</div>`;
+};
+
+/* One report implementation for screen, text and downloadable HTML. */
+const reportPeriodLabel=p=>PERIODS.find(x=>x[0]===p)?.[1]||'Неделя';
+function reportDiary(){const w=periodWindow(state.rperiod),start=localDay(w.start),end=localDay(w.end);return state.diary.filter(d=>d.d>=start&&d.d<=end).slice().sort((a,b)=>b.d.localeCompare(a.d))}
+function reportLimits(){
+ const h=state.healthInfo||{},parts=[];
+ if(h.range?.historyLimited)parts.push('Health Connect ограничил доступ к старой истории.');
+ if(h.range?.truncated)parts.push('Часть истории усечена лимитом чтения.');
+ if(h.warnings?.length)parts.push(`Ограничений последнего чтения: ${h.warnings.length}. Подробности в «Источниках».`);
+ if(h.sampling)parts.push('Частые датчики: до одной фактической точки в час за последние 30 дней и в 6 часов за более старые дни. Минимум и максимум относятся к сохранённой выборке.');
+ return parts.join(' ');
+}
+reportRows=function(){return M.filter(m=>metricRecords(m,state.rperiod).length).map(m=>{
+ const rows=metricRecords(m,state.rperiod),stats=metricSummary(m,state.rperiod),change=periodChange(m,state.rperiod);
+ return {id:m.id,n:m.name,a:stats[0][1]+(m.id==='sleep'?'':' '+m.unit),r:`${stats[1][1]}–${stats[2][1]}`,t:change.short,c:change.cls,count:rows.length,
+  days:new Set(rows.map(r=>r.day||localDay(recordTimestamp(r)))).size,
+  range:`${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))}`};
+})};
+function reportTable(rows){
+ return `<div class="report-scroll"><table class="rtab"><thead><tr><th>Показатель / данные</th><th>Среднее</th><th>Мин–макс</th><th>К пред. периоду</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.n)}<small>${r.count} записей · ${r.days} дней<br>${esc(r.range)}</small></td><td data-label="Среднее">${esc(r.a)}</td><td data-label="Мин–макс">${r.r.split('–').map(s=>`<span class="report-number">${esc(s)}</span>`).join(' – ')}</td><td data-label="К пред. периоду">${esc(r.t)}</td></tr>`).join('')||'<tr><td colspan="4">За выбранный период нет сохранённых измерений.</td></tr>'}</tbody></table></div>`;
+}
+MPAGES.report={t:'Отчёт о показателях',tab:'dynamics',r(){
+ const diary=reportDiary(),w=periodWindow(state.rperiod);
+ return `<div class="seg report-periods">${PERIODS.map(([k,l])=>`<button data-x="rper" data-a="${k}" class="${state.rperiod===k?'on':''}">${l}</button>`).join('')}</div>
+ <div class="card"><b>${reportPeriodLabel(state.rperiod)}</b><p class="period-coverage">${state.rperiod==='all'?'Все сохранённые даты':periodDate(w.start)+' – '+periodDate(w.end)} · ${esc(state.prof.name||'')}</p>${reportLimits()?`<p class="period-coverage">${esc(reportLimits())}</p>`:''}${reportTable(reportRows())}</div>
+ ${diary.length?`<div class="card" style="margin-top:10px"><b>Дневник за выбранный период</b>${diary.map(d=>`<div class="drow"><span class="k">${dRu(d.d)}</span><span>${esc(d.t)}</span></div>`).join('')}</div>`:''}
+ <div class="btnrow"><button class="btn" data-x="repSave">${ic('i-dl')}Сохранить</button><button class="btn ghost" data-x="repShare">Поделиться</button></div>
+ <p class="foot">Среднее, минимум и максимум рассчитаны по фактическим записям; отсутствующие дни не заменяются нулями. Тренд сравнивает средние двух равных по длительности периодов, если есть обе выборки. Дневные итоги не складываются повторно. Не является медицинским заключением.</p>`;
+}};
+reportText=function(){
+ return `Баланс · Отчёт о показателях · ${reportPeriodLabel(state.rperiod)}\n${state.prof.name||''}\n`+
+ reportRows().map(r=>`${r.n}: среднее ${r.a}; мин–макс ${r.r}; ${r.count} записей, ${r.days} дней; ${r.range}; к предыдущему периоду ${r.t}`).join('\n')+
+ '\n\nДневник:\n'+reportDiary().map(d=>`${dRu(d.d)}: ${d.t}`).join('\n')+
+ '\n\n'+reportLimits()+'\nТолько фактические записи, пропуски не считаются нулём. Не является медицинским заключением.';
+};
+reportHTML=function(){
+ const diary=reportDiary();
+ return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Отчёт о показателях · Баланс</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:960px;margin:30px auto;padding:16px;color:#18212c}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:10px;border-bottom:1px solid #ccd2da}small{display:block;color:#566475}.report-scroll{overflow:auto}footer{margin-top:24px;color:#566475}</style></head><body><h1>Отчёт о показателях</h1><p>${esc(state.prof.name||'')} · ${reportPeriodLabel(state.rperiod)} · ${new Date().toLocaleDateString('ru-RU')}</p>${reportTable(reportRows())}${diary.length?`<h2>Дневник за выбранный период</h2>${diary.map(d=>`<p>${dRu(d.d)}: ${esc(d.t)}</p>`).join('')}`:''}<footer>Среднее и диапазон по сохранённым записям. Пропуски не заменены нулями. Сравнение со средним предыдущего равного периода при наличии данных. Источники: разрешённые записи Health Connect, Bluetooth и ручные записи при наличии. Не является медицинским заключением.</footer></body></html>`;
+};
+for(const group of MORE)group[1]=group[1].filter(x=>x[0]!=='report');
+MORE.find(g=>g[0]==='Отчёты и помощь')[0]='Помощь и безопасность';
+document.addEventListener('click',e=>{
+ const h=e.target.closest('[data-heat-day]');if(h){heatSelectedDay=h.dataset.heatDay;renderHeat();return}
+ if(e.target.closest('[data-open-report]')){state.rperiod=state.period;go('report')}
+});
+const style116=document.createElement('style');
+style116.textContent=`
+.period-coverage,.period-caption{font-size:var(--fs-xs);color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
+.report-number{white-space:nowrap}
+@media(max-width:480px){.report-scroll .rtab{display:block;min-width:0;width:100%}.report-scroll thead{display:none}.report-scroll tbody{display:block}.report-scroll tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}.report-scroll td{display:block;min-width:0;padding:3px 0;border:0;overflow-wrap:anywhere}.report-scroll td:first-child{grid-column:1/-1;font-size:var(--fs-s);font-weight:700}.report-scroll td small{font-weight:400}.report-scroll td[data-label]::before{content:attr(data-label);display:block;font-size:10px;color:var(--muted);margin-bottom:4px}.report-scroll td[colspan]{grid-column:1/-1}}
+.dynamics-report{margin:10px 0;width:100%;justify-content:center}.heat-day{padding:0;border:2px solid transparent;border-radius:9px;background:none;color:var(--text);min-width:0}.heat-day.selected{border-color:var(--accent)}.heat i{display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;font-style:normal;box-sizing:border-box}.heat i span{font-size:10px;opacity:.9}.heat i b{font-size:15px;text-align:right;color:var(--text)}#heatDetails>p{margin:7px 0}.heat-metrics{display:flex;flex-wrap:wrap;gap:5px}.heat-metrics .chip{display:flex;align-items:center;gap:4px;font-size:11px;padding:5px 7px}.heat-metrics .i{width:15px;height:15px}.report-periods{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px}.report-scroll{max-width:100%;overflow:auto;overscroll-behavior:contain}.rtab td{vertical-align:top}.rtab small{display:block;font-size:10px;color:var(--muted);line-height:1.4;margin-top:4px}.report-scroll .rtab{min-width:350px}.report-scroll th{white-space:normal}
+@media(max-width:480px){.report-scroll table.rtab{min-width:0}}
+`;
+document.head.appendChild(style116);
+
+/* Large Health Connect history is stored asynchronously, not in 5MB localStorage.
+   Backup/restore and explicit reset use the same store. No health data leaves device. */
+let healthDBPromise=null,healthCacheError='',healthCacheSuspended=false;
+function healthDB(){
+ if(healthDBPromise)return healthDBPromise;
+ healthDBPromise=new Promise((resolve,reject)=>{
+  if(!window.indexedDB)return reject(new Error('Хранилище IndexedDB недоступно'));
+  const request=indexedDB.open('balans-health',1);
+  request.onupgradeneeded=()=>request.result.createObjectStore('snapshots');
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error||new Error('Не удалось открыть хранилище'));
+ });
+ return healthDBPromise;
+}
+async function readHealthCache(){
+ const db=await healthDB();return new Promise((resolve,reject)=>{
+  const request=db.transaction('snapshots').objectStore('snapshots').get('current');
+  request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+ });
+}
+async function replaceHealthCache(records,info){
+ try{
+  const db=await healthDB();
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction('snapshots','readwrite');
+   tx.objectStore('snapshots').put({records,info},'current');
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+  localStorage.removeItem('balans2.deviceData');healthCacheError='';return true;
+ }catch(e){
+  const saved=LS.set('balans2.deviceData',records);
+  healthCacheError=saved?'':'Не удалось сохранить историю на устройстве. Освободите место и повторите синхронизацию.';
+  if(!saved)toast('История пока только в памяти',healthCacheError);
+  return saved;
+ }
+}
+function persistHealthCache(){return healthCacheSuspended?Promise.resolve(false):replaceHealthCache(state.deviceData,state.healthInfo)}
+async function restoreHealthCache(records,info){
+ healthCacheSuspended=true;
+ const saved=await replaceHealthCache(records,info);
+ if(!saved)healthCacheSuspended=false;
+ return saved;
+}
+async function clearHealthCache(){
+ healthCacheSuspended=true;
+ try{
+  const db=await healthDB();
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction('snapshots','readwrite');tx.objectStore('snapshots').delete('current');
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+  localStorage.removeItem('balans2.deviceData');return true;
+ }catch(e){healthCacheSuspended=false;if(healthDBPromise)healthCacheError='Не удалось очистить хранилище истории';return !window.indexedDB}
+}
+const healthCacheReady=(async()=>{
+ try{
+  const stored=await readHealthCache();
+  if(stored?.records&&(stored.info?.at||0)>=(state.healthInfo.at||0)){
+   state.deviceData=stored.records;state.healthInfo=stored.info||state.healthInfo;
+   refreshDataSections();renderHC();
+  }else if(Object.keys(state.deviceData).length)await persistHealthCache();
+ }catch(e){/* Existing localStorage snapshot remains a safe compatibility fallback. */}
+})();
+// Apply initial native permissions after disk load, so revoked types cannot reappear.
+const healthEventBeforeCache=window.onHealthEvent;
+window.onHealthEvent=ev=>healthCacheReady.then(()=>{
+ if(healthCacheSuspended)return;
+ healthEventBeforeCache(ev);
+ if(['permissions','synced','disconnected'].includes(ev.type))return persistHealthCache();
+});
+
+ensureDemo();applyTheme();applyAnim();renderAll();if(state.priv.pin)showLock();
+</script>
+</body>
+</html>

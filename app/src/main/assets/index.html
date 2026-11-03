@@ -367,6 +367,7 @@ body.anim .animrun svg rect{transform-box:fill-box;transform-origin:50% 100%;ani
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<link rel="stylesheet" href="batch14.css">
 </head>
 <body>
 <div class="stage">
@@ -961,16 +962,16 @@ function renderThemes(){renderPals();const lp=document.getElementById('layPick')
   document.querySelectorAll('[data-theme-set]').forEach(b=>b.classList.toggle('on',b.dataset.themeSet===state.theme))}
 
 /* ---------- metric sheet ---------- */
-let sheetPeriod='week';
+let sheetPeriod='day';
 let sheetSel=null;
 function openMetric(id){
-  const m=byId[id];sheetPeriod='week';sheetSel=null;const sh=$('#sheet');sh.classList.add('full');sh.style.setProperty('--c',cv(m));
+  const m=byId[id];sheetPeriod='day';sheetSel=null;const sh=$('#sheet');sh.classList.add('full');sh.style.setProperty('--c',cv(m));
   const draw=()=>{
     const head=`<div class="grab"></div><div class="hd"><span class="ic" style="background:var(--c);color:#0b0f15">${ic(mic(m))}</span><span class="t"><b>${esc(m.name)}</b><small>${m.cat} · ${esc(sourceName(m))}</small></span><button class="iconbtn" data-close aria-label="Закрыть">${ic('i-down')}</button></div>`;
     const _foldIds=foldIdsOf();
     const folded=_foldIds.includes(id);
     const actions=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="btn" data-addm="${m.id}">${ic('i-plus')}Добавить</button><button class="btn ghost" data-dyn="${m.id}">${ic('i-chart')}Сравнить</button></div>`;
-    const rl=recs(m).length?`<div class="h4">Ваши записи</div><div class="card dl">${recs(m).slice().reverse().slice(0,5).map(r=>`<div class="drow"><span class="k">${esc(r.d)}</span><span class="val num">${show(m,r.v,r.lo)}${m.id==='sleep'?'':' '+m.unit}</span></div>`).join('')}</div>`:'';
+    const rl=recs(m).length?`<div class="h4">Ваши записи</div><div class="card dl">${recs(m).slice().reverse().slice(0,5).map(r=>`<div class="drow"><span class="k">${esc(actualDate(r))}</span><span class="val num">${show(m,r.v,r.lo)}${m.id==='sleep'?'':' '+m.unit}</span></div>`).join('')}</div>`:'';
     const rm=state.manual[m.id]&&!(state.deviceData?.[m.id]?.length||state.bleData?.[m.id]?.length)?`<button class="btn ghost" style="width:100%;margin-top:12px" data-rm="${m.id}">Убрать ручной показатель</button>`:'';
     const about=`<div class="h4">О показателе</div><div class="card about">${ABOUT[m.cat]}</div>`;
     if(!hasHistory(m)){sh.innerHTML=head+`<div class="dhero"><div class="big num">${showCur(m)}<small>${m.unit}</small></div><div class="note">${ic('i-info')}<span>График появится с первым измерением.</span></div></div>`+actions+rl+about+rm;return}
@@ -1605,7 +1606,8 @@ function reportHTML(){const P={week:'7 дней',month:'30 дней',year:'12 м
 <h1>Отчёт о показателях</h1><small>${esc(p.name)}${p.year?' · '+esc(p.year)+' г.р.':''} · рост ${p.height} см · период: ${P[state.rperiod]} по ${new Date().toLocaleDateString('ru-RU')}</small>
 <table><tr><th>Показатель</th><th>Среднее</th><th>Мин–макс</th><th>Тренд</th></tr>${reportRows().map(r=>`<tr><td>${esc(r.n)}</td><td class="n">${r.a}</td><td class="n">${r.r}</td><td>${r.t}</td></tr>`).join('')}</table>
 ${state.diary.length?`<h2>События из дневника</h2><table>${state.diary.slice().sort((a,b)=>b.d.localeCompare(a.d)).map(d=>`<tr><td style="width:130px">${dRu(d.d)}</td><td>${esc(d.t)}</td></tr>`).join('')}</table>`:''}
-<footer>Источники: ${demoOn()?'демонстрационные данные, ':''}${Object.keys(state.deviceData||{}).length?'Health Connect, ':''}${Object.keys(state.bleData||{}).length?'Bluetooth, ':''}ручные записи при наличии. Сформировано приложением «Баланс». Не является медицинским заключением.</footer></body></html>`}
+<footer>Источники: ${demoOn()?'демонстрационные данные, ':''}${Object.keys(state.deviceData||{}).length?'Health Connect, ':''}${Object.keys(state.bleData||{}).length?'Bluetooth, ':''}ручные записи при наличии. Сформировано приложением «Баланс». Не является медицинским заключением.</footer>
+</body></html>`}
 
 /* ===== Вкладка «Цель»: тело, план, тренировки, скидки, подписка ===== */
 (function(){const st=document.createElement('style');st.textContent=`
@@ -2267,7 +2269,7 @@ if(typeof state.top.showFigure!=='boolean')state.top.showFigure=state.top.style!
 if(typeof state.top.showMetrics!=='boolean')state.top.showMetrics=state.top.style!=='none';
 if(state.top.style==='none')state.top.style='heart';
 const dashboardToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-function dashboardCurrent(m){const r=recs(m).at(-1);return !avail(m)||r?.day&&r.day!==dashboardToday()?NaN:cur(m)}
+function dashboardCurrent(m){const r=recs(m).at(-1);if(!avail(m))return NaN;if(r?.day===dashboardToday())return cur(m);return Number.isFinite(r?.v)?r.v:NaN}
 function dashboardMetricCaption(m){
  const r=recs(m).at(-1);if(!Number.isFinite(dashboardCurrent(m)))return r?.day?'нет данных за сегодня':'нет данных';
  const unit=m.id==='sleep'?'ч:мин':m.unit;
@@ -3103,7 +3105,7 @@ vizMini=function(m,w=150,h=44){
  if(old?.rows===rows&&old.last===fallback.at(-1))return old.svg;
  const value=renderRealVisual(m,w,h,fallback,true);visualCache.set(key,{rows,last:fallback.at(-1),svg:value});return value;
 };
-drawChart=function(m,p,compare=false){
+drawChartOverrideDisabled=function(m,p,compare=false){
  const rows=metricRecords(m,p),reduced=visualRecordSubset(rows,70);
  const previous=compare?metricRecords(m,p,true):null;
  let svg=renderRealVisual(m,W,H,rows,false);
@@ -4130,7 +4132,7 @@ function periodCoverage(m,p){
  const days=new Set(rows.map(r=>r.day||localDay(recordTimestamp(r)))).size;
  const scale={hour:'по часам',day:'по дням',week:'по неделям',month:'по месяцам'}[resolution];
  const operation=m.id==='distance'?'суммы':DAILY_METRICS.has(m.id)?'среднее за учтённый день':'средние измерений';
- return `${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))} · записей: ${rows.length}, дней с данными: ${days} · график: ${operation} ${scale}. Пропуски не считаются нулём.`;
+ return `${periodDate(recordTimestamp(rows[0]))} – ${periodDate(recordTimestamp(rows.at(-1)))} · записей: ${rows.length}, дней с данными: ${days} · график: ${operation} ${scale}. Показаны только фактические записи; за даты без данных нули не добавляются.`;
 }
 function periodChange(m,p){
  const a=metricRecords(m,p).map(r=>r.v),b=metricRecords(m,p,true).map(r=>r.v);
@@ -4140,13 +4142,13 @@ function periodChange(m,p){
  const d=(current-before)/Math.abs(before)*100,short=Math.abs(d)<.5?'≈':(d>0?'+':'−')+fmt(Math.abs(d),1)+'%';
  return {text:`${short} к среднему предыдущего периода · записей: ${b.length}`,short,cls:d>0?'tr-up':d<0?'tr-dn':''};
 }
-drawChart=function(m,p,compare=false){
+drawChartOverrideDisabled=function(m,p,compare=false){
  const raw=metricRecords(m,p),previous=compare?metricRecords(m,p,true):null;
  let svg=renderRealVisual(m,W,H,metricChartRecords(m,p),false);
  if(previous)svg=`<div class="chart-comparison"><div><small>Текущий период</small>${svg}</div><div><small>Предыдущий период</small>${renderRealVisual(m,W,H,metricChartRecords(m,p,true),false)}</div></div>`;
  return {svg:`<div data-chart-period="${p}" data-chart-bucket="${chartBucket(p)}">${svg}</div>`,v:raw.map(r=>r.v),p:previous?.map(r=>r.v)||null,noSel:true};
 };
-renderDynamics=function(){
+renderDynamicsOverrideDisabled=function(){
  renderHeat();
  $('#periods').innerHTML=PERIODS.map(([k,l])=>`<button data-period="${k}" class="${state.period===k?'on':''}">${l}</button>`).join('');
  let report=$('#dynamicsReport');
@@ -4323,3 +4325,5 @@ ensureDemo();applyTheme();applyAnim();renderAll();if(state.priv.pin)showLock();
 </script>
 </body>
 </html>
+
+<!-- period-fix-v1 -->

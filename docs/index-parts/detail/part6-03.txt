@@ -1,0 +1,93 @@
+e:collapse}td,th{text-align:left;padding:10px;border-bottom:1px solid #ccd2da}small{display:block;color:#566475}.report-scroll{overflow:auto}footer{margin-top:24px;color:#566475}</style></head><body><h1>Отчёт о показателях</h1><p>${esc(state.prof.name||'')} · ${reportPeriodLabel(state.rperiod)} · ${new Date().toLocaleDateString('ru-RU')}</p>${reportTable(reportRows())}${diary.length?`<h2>Дневник за выбранный период</h2>${diary.map(d=>`<p>${dRu(d.d)}: ${esc(d.t)}</p>`).join('')}`:''}<footer>Среднее и диапазон по сохранённым записям. Пропуски не заменены нулями. Сравнение со средним предыдущего равного периода при наличии данных. Источники: разрешённые записи Health Connect, Bluetooth и ручные записи при наличии. Не является медицинским заключением.</footer></body></html>`;
+};
+for(const group of MORE)group[1]=group[1].filter(x=>x[0]!=='report');
+MORE.find(g=>g[0]==='Отчёты и помощь')[0]='Помощь и безопасность';
+document.addEventListener('click',e=>{
+ const h=e.target.closest('[data-heat-day]');if(h){heatSelectedDay=h.dataset.heatDay;renderHeat();return}
+ if(e.target.closest('[data-open-report]')){state.rperiod=state.period;go('report')}
+});
+const style116=document.createElement('style');
+style116.textContent=`
+.period-coverage,.period-caption{font-size:var(--fs-xs);color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
+.report-number{white-space:nowrap}
+@media(max-width:480px){.report-scroll .rtab{display:block;min-width:0;width:100%}.report-scroll thead{display:none}.report-scroll tbody{display:block}.report-scroll tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}.report-scroll td{display:block;min-width:0;padding:3px 0;border:0;overflow-wrap:anywhere}.report-scroll td:first-child{grid-column:1/-1;font-size:var(--fs-s);font-weight:700}.report-scroll td small{font-weight:400}.report-scroll td[data-label]::before{content:attr(data-label);display:block;font-size:10px;color:var(--muted);margin-bottom:4px}.report-scroll td[colspan]{grid-column:1/-1}}
+.dynamics-report{margin:10px 0;width:100%;justify-content:center}.heat-day{padding:0;border:2px solid transparent;border-radius:9px;background:none;color:var(--text);min-width:0}.heat-day.selected{border-color:var(--accent)}.heat i{display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;font-style:normal;box-sizing:border-box}.heat i span{font-size:10px;opacity:.9}.heat i b{font-size:15px;text-align:right;color:var(--text)}#heatDetails>p{margin:7px 0}.heat-metrics{display:flex;flex-wrap:wrap;gap:5px}.heat-metrics .chip{display:flex;align-items:center;gap:4px;font-size:11px;padding:5px 7px}.heat-metrics .i{width:15px;height:15px}.report-periods{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px}.report-scroll{max-width:100%;overflow:auto;overscroll-behavior:contain}.rtab td{vertical-align:top}.rtab small{display:block;font-size:10px;color:var(--muted);line-height:1.4;margin-top:4px}.report-scroll .rtab{min-width:350px}.report-scroll th{white-space:normal}
+@media(max-width:480px){.report-scroll table.rtab{min-width:0}}
+`;
+document.head.appendChild(style116);
+
+/* Large Health Connect history is stored asynchronously, not in 5MB localStorage.
+   Backup/restore and explicit reset use the same store. No health data leaves device. */
+let healthDBPromise=null,healthCacheError='',healthCacheSuspended=false;
+function healthDB(){
+ if(healthDBPromise)return healthDBPromise;
+ healthDBPromise=new Promise((resolve,reject)=>{
+  if(!window.indexedDB)return reject(new Error('Хранилище IndexedDB недоступно'));
+  const request=indexedDB.open('balans-health',1);
+  request.onupgradeneeded=()=>request.result.createObjectStore('snapshots');
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error||new Error('Не удалось открыть хранилище'));
+ });
+ return healthDBPromise;
+}
+async function readHealthCache(){
+ const db=await healthDB();return new Promise((resolve,reject)=>{
+  const request=db.transaction('snapshots').objectStore('snapshots').get('current');
+  request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+ });
+}
+async function replaceHealthCache(records,info){
+ try{
+  const db=await healthDB();
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction('snapshots','readwrite');
+   tx.objectStore('snapshots').put({records,info},'current');
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+  localStorage.removeItem('balans2.deviceData');healthCacheError='';return true;
+ }catch(e){
+  const saved=LS.set('balans2.deviceData',records);
+  healthCacheError=saved?'':'Не удалось сохранить историю на устройстве. Освободите место и повторите синхронизацию.';
+  if(!saved)toast('История пока только в памяти',healthCacheError);
+  return saved;
+ }
+}
+function persistHealthCache(){return healthCacheSuspended?Promise.resolve(false):replaceHealthCache(state.deviceData,state.healthInfo)}
+async function restoreHealthCache(records,info){
+ healthCacheSuspended=true;
+ const saved=await replaceHealthCache(records,info);
+ if(!saved)healthCacheSuspended=false;
+ return saved;
+}
+async function clearHealthCache(){
+ healthCacheSuspended=true;
+ try{
+  const db=await healthDB();
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction('snapshots','readwrite');tx.objectStore('snapshots').delete('current');
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+  localStorage.removeItem('balans2.deviceData');return true;
+ }catch(e){healthCacheSuspended=false;if(healthDBPromise)healthCacheError='Не удалось очистить хранилище истории';return !window.indexedDB}
+}
+const healthCacheReady=(async()=>{
+ try{
+  const stored=await readHealthCache();
+  if(stored?.records&&(stored.info?.at||0)>=(state.healthInfo.at||0)){
+   state.deviceData=stored.records;state.healthInfo=stored.info||state.healthInfo;
+   refreshDataSections();renderHC();
+  }else if(Object.keys(state.deviceData).length)await persistHealthCache();
+ }catch(e){/* Existing localStorage snapshot remains a safe compatibility fallback. */}
+})();
+// Apply initial native permissions after disk load, so revoked types cannot reappear.
+const healthEventBeforeCache=window.onHealthEvent;
+window.onHealthEvent=ev=>healthCacheReady.then(()=>{
+ if(healthCacheSuspended)return;
+ healthEventBeforeCache(ev);
+ if(['permissions','synced','disconnected'].includes(ev.type))return persistHealthCache();
+});
+
+ensureDemo();applyTheme();applyAnim();renderAll();if(state.priv.pin)showLock();
+</script>
+</body>
+</html>
